@@ -5,17 +5,18 @@ const database = new DatabaseSync("bots.db");
 // Execute SQL statements from strings.
 database.exec(`
   CREATE TABLE bots(
-    key UUID PRIMARY KEY,
-    description TEXT,
-    name TEXT,
-    instructions TEXT
+    id UUID PRIMARY KEY,
+    description TEXT not null,
+    name TEXT not null,
+    instructions TEXT not null,
+    deleted INTEGER not null
   ) STRICT
 `);
 
 //TODO add FK to bots table
 database.exec(`
   CREATE TABLE bot_schedule(
-    key UUID PRIMARY KEY,
+    id UUID PRIMARY KEY,
     cron TEXT
   ) STRICT
 `);

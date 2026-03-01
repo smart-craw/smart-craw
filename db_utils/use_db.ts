@@ -4,11 +4,15 @@ const database = new DatabaseSync("bots.db");
 
 // Create a prepared statement to insert data into the database.
 export const insertBot = database.prepare(
-  "INSERT INTO bots (key, description, name, instructions) VALUES (?, ?, ?, ?)",
+  "INSERT INTO bots (key, description, name, instructions, deleted) VALUES (?, ?, ?, ?, 0)",
 );
 
 export const getBot = database.prepare(
   "SELECT key, description, name, instructions from bots where key=?",
+);
+
+export const getBots = database.prepare(
+  "SELECT key, description, name, instructions from bots where deleted=0",
 );
 // Execute the prepared statement with bound values.
 /*insertBot.run(1, "hello");

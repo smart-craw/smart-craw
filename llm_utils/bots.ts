@@ -22,7 +22,7 @@ export function createBot(
   name: string,
   description: string,
   instructions: string,
-  id: string | null,
+  id: string | undefined,
 ): BotDefinition {
   return {
     name,

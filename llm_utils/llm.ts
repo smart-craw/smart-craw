@@ -36,7 +36,7 @@ export function instructLlm(
   mcpServers: McpServerConfig[],
   bots: BotDefinition[],
   approvalCb: (toolName: string, input: any) => Promise<boolean>,
-  notificationCb: (message: string) => undefined,
+  notificationCb: (message: string, type: string) => void,
   mq: WebSocketMessageQueue,
 ): Query {
   const q = query({
