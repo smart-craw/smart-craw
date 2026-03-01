@@ -9,6 +9,8 @@ export type BotIdInput = {
 
 export type ApprovalInput = {
   approved: boolean;
+  toolName: string;
+  id: string;
 };
 
 export type WebSocketInput = {

@@ -1,15 +1,12 @@
 import {
   AgentDefinition,
   Query,
-  HookCallback,
   McpServerConfig,
-  NotificationHookInput,
-  PermissionResult,
   query,
 } from "@anthropic-ai/claude-agent-sdk";
 import { type BotDefinition } from "./bots";
 import { WebSocketMessageQueue } from "./ws";
-
+import { approvalWrapper, notificationWrapper } from "./responses";
 function convertMcpListToObject(
   mcpServers: McpServerConfig[],
 ): Record<string, McpServerConfig> {
@@ -34,40 +31,6 @@ function convertAgentListToObject(
     };
   }, {});
 }
-const notificationWrapper = (
-  notificationCb: (message: string) => undefined,
-) => {
-  const notificationHandler: HookCallback = async (
-    input,
-    toolUseID,
-    { signal },
-  ) => {
-    const notification = input as NotificationHookInput;
-    notificationCb(notification.message);
-    return {};
-  };
-  return notificationHandler;
-};
-const approvalWrapper = (
-  approvalCb: (toolName: string, input: any) => Promise<boolean>,
-) => {
-  return async function customApprovalCallback(
-    toolName: string,
-    input: any,
-  ): Promise<PermissionResult> {
-    //console.log(`⏸️ Agent paused. Claude wants to use: ${toolName}`);
-    //console.log(`Input parameters: ${JSON.stringify(input)}`);
-
-    // 2. Integrate with your app's state/UI here.
-    // Example: This function could send a WebSocket event to your frontend
-    // and await a Promise that resolves when the user clicks "Approve" or "Deny".
-    const isApproved = await approvalCb(toolName, input);
-
-    return isApproved
-      ? { behavior: "allow" }
-      : { behavior: "deny", message: "Tool use denied" };
-  };
-};
 
 export function instructLlm(
   mcpServers: McpServerConfig[],

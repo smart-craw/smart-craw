@@ -1,4 +1,9 @@
-import { type Query } from "@anthropic-ai/claude-agent-sdk";
+import {
+  Query,
+  HookCallback,
+  NotificationHookInput,
+  PermissionResult,
+} from "@anthropic-ai/claude-agent-sdk";
 /*export async function handleLLMResult(
   query: Query,
   cb: (msg: string) => undefined,
@@ -31,3 +36,33 @@ export async function handleLLMResponse(
     }
   }
 }
+
+export const notificationWrapper = (
+  notificationCb: (message: string, type: string) => void,
+) => {
+  const notificationHandler: HookCallback = async (
+    input,
+    toolUseID,
+    { signal },
+  ) => {
+    const notification = input as NotificationHookInput;
+    notificationCb(notification.message, notification.notification_type);
+    return {};
+  };
+  return notificationHandler;
+};
+
+export const approvalWrapper = (
+  approvalCb: (toolName: string, input: any) => Promise<boolean>,
+) => {
+  return async function customApprovalCallback(
+    toolName: string,
+    input: any,
+  ): Promise<PermissionResult> {
+    const isApproved = await approvalCb(toolName, input);
+
+    return isApproved
+      ? { behavior: "allow" }
+      : { behavior: "deny", message: "Tool use denied" };
+  };
+};

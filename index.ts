@@ -1,13 +1,12 @@
-import { type CreateBotInput, type WebSocketInput } from "./models";
-
-import { BotDefinition, botExecute, createBot } from "./llm_utils/bots";
-import { insertBot, getBot } from "./db_utils/use_db";
+import { WebSocketMessageQueue } from "./llm_utils/ws";
+import { type WebSocketInput } from "./models";
 
 //put this behind an nginx proxy
 import { WebSocketServer } from "ws";
 const wss = new WebSocketServer({ port: 8080 });
 
 wss.on("connection", function connection(ws) {
+  const messageQueue = new WebSocketMessageQueue();
   ws.on("error", console.error);
 
   ws.on("message", function message(data) {

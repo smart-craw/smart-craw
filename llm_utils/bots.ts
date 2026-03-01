@@ -1,15 +1,10 @@
 import {
-  SDKSession,
-  unstable_v2_createSession,
-  createSdkMcpServer,
-  tool,
-  type McpSdkServerConfigWithInstance,
-  type SDKMessage,
   type AgentDefinition,
   type Query,
   query,
 } from "@anthropic-ai/claude-agent-sdk";
 import { v4 as uuidv4 } from "uuid";
+import { approvalWrapper, notificationWrapper } from "./responses";
 
 export type BotDefinition = {
   definition: Record<string, AgentDefinition>;
@@ -44,7 +39,8 @@ export function createBot(
 //should bots have mcp servers?
 export function botExecute(
   bot: BotDefinition,
-  //cb: (msg: string) => undefined,
+  approvalCb: (toolName: string, input: any) => Promise<boolean>,
+  notificationCb: (message: string, type: string) => void,
 ): Query {
   const queryResult = query({
     prompt: bot.definition[bot.name].prompt,
@@ -57,6 +53,10 @@ export function botExecute(
       },*/
       //allowedTools: ["mcp__claude-code-docs__*"],
       tools: { type: "preset", preset: "claude_code" },
+      canUseTool: approvalWrapper(approvalCb),
+      hooks: {
+        Notification: [{ hooks: [notificationWrapper(notificationCb)] }],
+      },
     },
   });
   return queryResult;
