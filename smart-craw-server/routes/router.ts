@@ -13,7 +13,6 @@ import {
 } from "../models";
 const Action = {
   CreateBot: "createbot",
-  ExecuteBot: "executebot",
   Approval: "approval",
   AssistantMessage: "assistantmessage",
   ResultMessage: "resultmessage",
