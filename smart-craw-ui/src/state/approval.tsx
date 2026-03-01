@@ -4,8 +4,8 @@ export type Approval = {
   input: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
 
-type Action = Approval & { type: string };
-export function approvalReducer(approvals: Approval[], action: Action) {
+export type ApprovalAction = Approval & { type: string };
+export function approvalReducer(approvals: Approval[], action: ApprovalAction) {
   const { type, ...rest } = action;
   switch (type) {
     case "added": {

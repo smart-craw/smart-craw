@@ -3,7 +3,7 @@ export type Message = {
   type: string; //user, assistant
 };
 
-type MessageAction = {
+export type MessagePayload = {
   id: string;
   message: string;
   messageType: string;
@@ -11,9 +11,9 @@ type MessageAction = {
 
 export type MessageState = Record<string, Message[]>;
 
-type Action = MessageAction & { type: string };
+export type MessageAction = MessagePayload & { type: string };
 
-export function messageReducer(messages: MessageState, action: Action) {
+export function messageReducer(messages: MessageState, action: MessageAction) {
   const { type, ...rest } = action;
   switch (type) {
     case "added": {

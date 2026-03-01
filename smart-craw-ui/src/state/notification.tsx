@@ -3,11 +3,11 @@ export type Notification = {
   notificationType: string;
 };
 
-type Action = Notification & { type: string };
+export type NotificationAction = Notification & { type: string };
 const MAX_NOTIFICATIONS = 100; //keep to some realistic number
 export function notificationReducer(
   notifications: Notification[],
-  action: Action,
+  action: NotificationAction,
 ) {
   const { type, ...rest } = action;
   switch (type) {

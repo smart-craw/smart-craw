@@ -1,6 +1,8 @@
-import type { Approval } from "../state/approval";
+import type { Dispatch } from "react";
+import type { Approval, ApprovalAction } from "../state/approval";
 import type { Bot, BotAction } from "../state/bot";
-import type { Notification } from "../state/notification";
+import type { Notification, NotificationAction } from "../state/notification";
+import type { MessageAction } from "../state/message";
 const Action = {
   CreateBot: "createbot",
   Approval: "approval",
@@ -28,10 +30,10 @@ type NotificationResponse = Notification & {
 };
 
 export function connectWs(
-  botDispatch: React.ActionDispatch<[action: BotAction]>,
-  messageDispatch: React.ActionDispatch<React.AnyActionArg>,
-  notificationDispatch: React.ActionDispatch<React.AnyActionArg>,
-  approvalDispatch: React.ActionDispatch<React.AnyActionArg>,
+  botDispatch: Dispatch<BotAction>,
+  messageDispatch: Dispatch<MessageAction>,
+  notificationDispatch: Dispatch<NotificationAction>,
+  approvalDispatch: Dispatch<ApprovalAction>,
 ): WebSocket {
   const url = new URL(`/`, window.location.href);
   //handles https and wss too since both end in s
@@ -60,7 +62,7 @@ export function connectWs(
       case Action.AssistantMessage: {
         const { id, message } = rest as MessageResponse;
         messageDispatch({
-          type: "message",
+          type: "added",
           id,
           message,
           messageType: "assistant",
@@ -70,7 +72,7 @@ export function connectWs(
       case Action.ResultMessage: {
         const { id, message } = rest as MessageResponse;
         messageDispatch({
-          type: "message",
+          type: "added",
           id,
           message,
           messageType: "result",
