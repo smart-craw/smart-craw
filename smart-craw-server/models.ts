@@ -1,4 +1,4 @@
-import { McpServerConfig } from "@anthropic-ai/claude-agent-sdk";
+import { type McpServerConfig } from "@anthropic-ai/claude-agent-sdk";
 
 export type CreateBotInput = {
   description: string;

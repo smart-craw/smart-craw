@@ -1,22 +1,23 @@
-import { getBot, insertBot, getBots } from "../db_utils/use_db";
-import { botExecute, createBot } from "../llm_utils/bots";
-import { instructLlm } from "../llm_utils/llm";
-import { handleLLMResponse } from "../llm_utils/responses";
-import { WebSocketMessageQueue } from "../llm_utils/ws";
+import { getBot, insertBot, getBots } from "../db_utils/use_db.ts";
+import { botExecute, createBot } from "../llm_utils/bots.ts";
+import { instructLlm } from "../llm_utils/llm.ts";
+import { handleLLMResponse } from "../llm_utils/responses.ts";
+import { WebSocketMessageQueue } from "../llm_utils/ws.ts";
 import WebSocket from "ws";
-import {
+import type {
   ApprovalInput,
   BotIdInput,
   ConverseInput,
   CreateBotInput,
   ExecuteLLMInput,
-} from "../models";
+} from "../models.ts";
 const Action = {
   CreateBot: "createbot",
   Approval: "approval",
   AssistantMessage: "assistantmessage",
   ResultMessage: "resultmessage",
   Notification: "notification",
+  GetBots: "getbots",
 } as const;
 
 //this is mutable "global" state.  Be careful
@@ -36,11 +37,27 @@ export const routeCreateBot = (
   ws.send(
     JSON.stringify({
       id: bot.id,
-      name: bot.name,
+      name,
+      description,
+      instructions,
       action: Action.CreateBot,
     }),
   );
   //return ;
+};
+
+export const routeGetAllBots = (ws: WebSocket) => {
+  //might want to get cron as well
+  const bots = getBots.all().map((v) => {
+    const { name, description, instructions, id } = v as CreateBotInput;
+    return { name, description, instructions, id };
+  });
+  ws.send(
+    JSON.stringify({
+      bots,
+      action: Action.GetBots,
+    }),
+  );
 };
 export const routeExecuteBot = ({ id }: BotIdInput, ws: WebSocket) => {
   const { name, description, instructions } = getBot.get(id) as CreateBotInput;

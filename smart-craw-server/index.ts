@@ -1,4 +1,4 @@
-import { WebSocketMessageQueue } from "./llm_utils/ws";
+import { WebSocketMessageQueue } from "./llm_utils/ws.ts";
 import {
   ApprovalInput,
   BotIdInput,
@@ -6,7 +6,7 @@ import {
   CreateBotInput,
   ExecuteLLMInput,
   type WebSocketInput,
-} from "./models";
+} from "./models.ts";
 
 //put this behind an nginx proxy
 import { WebSocketServer } from "ws";
@@ -16,7 +16,8 @@ import {
   routeCreateBot,
   routeExecuteBot,
   routeExecuteLlm,
-} from "./routes/router";
+  routeGetAllBots,
+} from "./routes/router.ts";
 
 const wss = new WebSocketServer({ port: 8080 });
 
@@ -35,6 +36,9 @@ wss.on("connection", function connection(ws) {
         break;
       case "/bot/execute":
         routeExecuteBot(input as BotIdInput, ws);
+        break;
+      case "/bot/all":
+        routeGetAllBots(ws);
         break;
       case "/llm/execute":
         routeExecuteLlm(input as ExecuteLLMInput, ws, messageQueue);

@@ -1,4 +1,4 @@
-import { SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
+import { type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
 
 export class WebSocketMessageQueue {
   private queue: SDKUserMessage[] = [];

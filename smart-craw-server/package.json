@@ -17,10 +17,12 @@
   },
   "license": "MIT",
   "author": "Daniel Stahl",
-  "type": "esm",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "npm run test"
+    "test": "npm run test",
+    "init_db": "node db_utils/create_db.ts",
+    "start": "node index.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.62",

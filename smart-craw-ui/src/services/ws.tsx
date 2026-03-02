@@ -1,10 +1,11 @@
 import type { Dispatch } from "react";
-import type { Approval, ApprovalAction } from "../state/approval";
-import type { Bot, BotAction } from "../state/bot";
+//import type { Approval, ApprovalAction } from "../state/approval";
+import type { Bot, Bots, BotAction } from "../state/bot";
 import type { Notification, NotificationAction } from "../state/notification";
 import type { MessageAction } from "../state/message";
 const Action = {
   CreateBot: "createbot",
+  GetBots: "getbots",
   Approval: "approval",
   AssistantMessage: "assistantmessage",
   ResultMessage: "resultmessage",
@@ -15,16 +16,25 @@ type CreateBotResponse = Bot & {
   action: (typeof Action)[keyof typeof Action];
 };
 
+type GetBotsResponse = Bots & {
+  action: (typeof Action)[keyof typeof Action];
+};
+
 type MessageResponse = {
   message: string;
   id: string;
   action: (typeof Action)[keyof typeof Action];
 };
 
-type ApprovalResponse = Approval & {
+/*type ApprovalResponse = Approval & {
+  action: (typeof Action)[keyof typeof Action];
+};*/
+type ApprovalResponse = {
+  toolName: string;
+  id: string;
+  input: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   action: (typeof Action)[keyof typeof Action];
 };
-
 type NotificationResponse = Notification & {
   action: (typeof Action)[keyof typeof Action];
 };
@@ -33,7 +43,7 @@ export function connectWs(
   botDispatch: Dispatch<BotAction>,
   messageDispatch: Dispatch<MessageAction>,
   notificationDispatch: Dispatch<NotificationAction>,
-  approvalDispatch: Dispatch<ApprovalAction>,
+  //approvalDispatch: Dispatch<ApprovalAction>,
 ): WebSocket {
   const url = new URL(`/`, window.location.href);
   //handles https and wss too since both end in s
@@ -45,18 +55,34 @@ export function connectWs(
   ws.onmessage = (event) => {
     const { action, ...rest } = JSON.parse(event.data) as
       | CreateBotResponse
+      | GetBotsResponse
       | ApprovalResponse
       | NotificationResponse
       | MessageResponse;
     switch (action) {
       case Action.CreateBot: {
-        const { name, id } = rest as Bot;
-        botDispatch({ type: "added", name, id });
+        const { name, id, description, instructions } = rest as Bot;
+        botDispatch({
+          type: "added",
+          name,
+          id,
+          description,
+          instructions,
+          approval: null,
+        });
+        break;
+      }
+      case Action.GetBots: {
+        const { bots } = rest as Bots;
+        botDispatch({
+          type: "set",
+          bots,
+        });
         break;
       }
       case Action.Approval: {
-        const { toolName, id, input } = rest as Approval;
-        approvalDispatch({ type: "added", toolName, id, input });
+        const { toolName, id, input } = rest as ApprovalResponse;
+        botDispatch({ type: "approval", id, approval: { toolName, input } });
         break;
       }
       case Action.AssistantMessage: {

@@ -4,7 +4,7 @@ import {
   query,
 } from "@anthropic-ai/claude-agent-sdk";
 import { v4 as uuidv4 } from "uuid";
-import { approvalWrapper, notificationWrapper } from "./responses";
+import { approvalWrapper, notificationWrapper } from "./responses.ts";
 
 export type BotDefinition = {
   definition: Record<string, AgentDefinition>;
