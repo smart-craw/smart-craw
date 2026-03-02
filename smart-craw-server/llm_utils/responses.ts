@@ -1,21 +1,14 @@
-import {
+import type {
   Query,
   HookCallback,
   NotificationHookInput,
   PermissionResult,
 } from "@anthropic-ai/claude-agent-sdk";
-/*export async function handleLLMResult(
-  query: Query,
-  cb: (msg: string) => undefined,
-) {
-  for await (const msg of query) {
-    if (msg.type === "result") {
-      //console.log(msg.result);
-      cb(msg.result);
-    }
-  }
-  }*/
 
+type Block = {
+  type: string;
+  text: string;
+};
 export async function handleLLMResponse(
   query: Query,
   id: string, //just bot id?  What about "normal" llm?
@@ -23,12 +16,23 @@ export async function handleLLMResponse(
   cbResult: (msg: string, id: string) => void,
 ) {
   for await (const msg of query) {
+    console.log("printing message", msg);
     if (msg.type === "assistant") {
       const text = msg.message.content
-        .filter((block) => block.type === "text")
-        .map((block) => block.text)
+        .filter((block: Block) => block.type === "text")
+        .map((block: Block) => block.text)
         .join("");
-      cbAssistance(text, id);
+      console.log("full message");
+      console.log(text);
+      //cbAssistance(text, id);
+    }
+    if (msg.type === "stream_event") {
+      const { event } = msg;
+      if (event.type === "content_block_delta") {
+        if (event.delta.type === "text_delta") {
+          cbAssistance(event.delta.text, id);
+        }
+      }
     }
     if (msg.type === "result") {
       //console.log(msg.result);

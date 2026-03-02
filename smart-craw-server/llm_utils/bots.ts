@@ -4,7 +4,7 @@ import {
   query,
 } from "@anthropic-ai/claude-agent-sdk";
 import { v4 as uuidv4 } from "uuid";
-import { approvalWrapper, notificationWrapper } from "./responses";
+import { approvalWrapper, notificationWrapper } from "./responses.ts";
 
 export type BotDefinition = {
   definition: Record<string, AgentDefinition>;
@@ -22,7 +22,7 @@ export function createBot(
   name: string,
   description: string,
   instructions: string,
-  id: string | null,
+  id: string | undefined,
 ): BotDefinition {
   return {
     name,
@@ -56,6 +56,13 @@ export function botExecute(
       canUseTool: approvalWrapper(approvalCb),
       hooks: {
         Notification: [{ hooks: [notificationWrapper(notificationCb)] }],
+      },
+      model: "hf.co/Qwen/Qwen3-4B-GGUF:latest",
+      env: {
+        ...process.env,
+        ANTHROPIC_BASE_URL: "http://localhost:11434",
+        ANTHROPIC_AUTH_TOKEN: "ollama",
+        ANTHROPIC_API_KEY: "sk-local-dummy", // Needs a placeholder string
       },
     },
   });
