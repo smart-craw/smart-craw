@@ -62,6 +62,8 @@ export const routeGetAllBots = (ws: WebSocket) => {
 export const routeExecuteBot = ({ id }: BotIdInput, ws: WebSocket) => {
   const { name, description, instructions } = getBot.get(id) as CreateBotInput;
   const bot = createBot(name, description, instructions, id);
+  console.log("GOTHERE");
+  console.log(bot);
   const query = botExecute(
     bot,
     approvalWebsocket(bot.id, ws),

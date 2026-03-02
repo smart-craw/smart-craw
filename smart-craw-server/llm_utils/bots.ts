@@ -57,6 +57,13 @@ export function botExecute(
       hooks: {
         Notification: [{ hooks: [notificationWrapper(notificationCb)] }],
       },
+      model: "hf.co/Qwen/Qwen3-4B-GGUF:latest",
+      env: {
+        ...process.env,
+        ANTHROPIC_BASE_URL: "http://localhost:11434",
+        ANTHROPIC_AUTH_TOKEN: "ollama",
+        ANTHROPIC_API_KEY: "sk-local-dummy", // Needs a placeholder string
+      },
     },
   });
   return queryResult;

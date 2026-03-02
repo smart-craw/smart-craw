@@ -16,12 +16,23 @@ export async function handleLLMResponse(
   cbResult: (msg: string, id: string) => void,
 ) {
   for await (const msg of query) {
+    console.log("printing message", msg);
     if (msg.type === "assistant") {
       const text = msg.message.content
         .filter((block: Block) => block.type === "text")
         .map((block: Block) => block.text)
         .join("");
-      cbAssistance(text, id);
+      console.log("full message");
+      console.log(text);
+      //cbAssistance(text, id);
+    }
+    if (msg.type === "stream_event") {
+      const { event } = msg;
+      if (event.type === "content_block_delta") {
+        if (event.delta.type === "text_delta") {
+          cbAssistance(event.delta.text, id);
+        }
+      }
     }
     if (msg.type === "result") {
       //console.log(msg.result);

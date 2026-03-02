@@ -1,4 +1,4 @@
-import { useReducer, createContext, useState } from "react";
+import { useReducer, createContext, useState, useEffect } from "react";
 //import reactLogo from "./assets/react.svg";
 //import viteLogo from "/vite.svg";
 import "./App.css";
@@ -20,6 +20,7 @@ function App() {
     notificationReducer,
     [],
   );
+
   //const [approvalState, approvalDispatch] = useReducer(approvalReducer, []);
   //put dispatches here
   const ws = connectWs(
@@ -51,6 +52,14 @@ function App() {
     setIsModalOpen(false);
   };
   const toggleModal = () => setIsModalOpen((v) => !v);
+  const execute = (id: string) => () => {
+    ws.send(
+      JSON.stringify({
+        path: "/bot/execute",
+        input: { id },
+      }),
+    );
+  };
   return (
     <WsContext value={ws}>
       <Button onClick={toggleModal}>Add New</Button>
@@ -59,7 +68,7 @@ function App() {
         onCreate={onCreate}
         onCancel={toggleModal}
       />
-      <BotList onConfirm={onConfirm} data={botState} />
+      <BotList onConfirm={onConfirm} execute={execute} data={botState} />
     </WsContext>
   );
 }

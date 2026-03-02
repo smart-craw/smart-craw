@@ -1,11 +1,11 @@
 import { WebSocketMessageQueue } from "./llm_utils/ws.ts";
-import {
+import type {
   ApprovalInput,
   BotIdInput,
   ConverseInput,
   CreateBotInput,
   ExecuteLLMInput,
-  type WebSocketInput,
+  WebSocketInput,
 } from "./models.ts";
 
 //put this behind an nginx proxy
@@ -27,7 +27,6 @@ wss.on("connection", function connection(ws) {
     console.error(err);
     messageQueue.close();
   });
-
   ws.on("message", function message(data) {
     const { path, input } = JSON.parse(data.toString()) as WebSocketInput;
     switch (path) {

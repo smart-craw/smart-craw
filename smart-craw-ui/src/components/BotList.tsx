@@ -6,6 +6,7 @@ import type { ExpandableConfig } from "antd/es/table/interface";
 
 function setColumns(
   onConfirm: (id: string, toolName: string) => () => void,
+  execute: (id: string) => () => void,
 ): TableProps<Bot>["columns"] {
   return [
     {
@@ -42,26 +43,27 @@ function setColumns(
           </Popconfirm>
         ),
     },
-    /*{
+    {
       title: "Action",
       key: "action",
-      render: (_, _row) => <Button>Run</Button>,
-    },*/
+      render: (_, row) => <Button onClick={execute(row.id)}>Run</Button>,
+    },
   ];
 }
 
 interface Props {
   data: Bot[];
   onConfirm: (id: string, toolName: string) => () => void;
+  execute: (id: string) => () => void;
 }
 const defaultExpandable: ExpandableConfig<Bot> = {
   expandedRowRender: (record: Bot) => <p>{record.instructions}</p>,
 };
-const BotList: React.FC<Props> = ({ data, onConfirm }: Props) => (
+const BotList: React.FC<Props> = ({ data, onConfirm, execute }: Props) => (
   <Table<Bot>
     expandable={defaultExpandable}
-    columns={setColumns(onConfirm)}
-    dataSource={data}
+    columns={setColumns(onConfirm, execute)}
+    dataSource={data.map((v) => ({ ...v, key: v.id }))}
   />
 );
 

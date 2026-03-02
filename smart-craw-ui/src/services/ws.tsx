@@ -45,12 +45,17 @@ export function connectWs(
   notificationDispatch: Dispatch<NotificationAction>,
   //approvalDispatch: Dispatch<ApprovalAction>,
 ): WebSocket {
-  const url = new URL(`/`, window.location.href);
+  const url = new URL(`/ws`, window.location.href);
   //handles https and wss too since both end in s
   url.protocol = url.protocol.replace("http", "ws");
   const ws = new WebSocket(url);
   ws.onopen = () => {
     console.log("connected");
+    ws.send(
+      JSON.stringify({
+        path: "/bot/all",
+      }),
+    );
   };
   ws.onmessage = (event) => {
     const { action, ...rest } = JSON.parse(event.data) as
@@ -87,6 +92,7 @@ export function connectWs(
       }
       case Action.AssistantMessage: {
         const { id, message } = rest as MessageResponse;
+        console.log(message);
         messageDispatch({
           type: "added",
           id,
