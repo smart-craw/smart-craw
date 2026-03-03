@@ -57,6 +57,7 @@ export function botExecute(
       hooks: {
         Notification: [{ hooks: [notificationWrapper(notificationCb)] }],
       },
+      includePartialMessages: true, //doesn't seem to do much?
       model: "hf.co/Qwen/Qwen3-4B-GGUF:latest",
       env: {
         ...process.env,

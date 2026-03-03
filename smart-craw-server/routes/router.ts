@@ -15,7 +15,8 @@ const Action = {
   CreateBot: "createbot",
   Approval: "approval",
   AssistantMessage: "assistantmessage",
-  ResultMessage: "resultmessage",
+  CompleteMessage: "completemessage",
+  //ResultMessage: "resultmessage",
   Notification: "notification",
   GetBots: "getbots",
 } as const;
@@ -69,7 +70,7 @@ export const routeExecuteBot = ({ id }: BotIdInput, ws: WebSocket) => {
     approvalWebsocket(bot.id, ws),
     notification(ws),
   );
-  handleLLMResponse(query, id, assistantMessage(ws), resultMessage(ws));
+  handleLLMResponse(query, id, assistantMessage(ws), completeMessage(ws));
 };
 
 export const routeExecuteLlm = (
@@ -88,7 +89,7 @@ export const routeExecuteLlm = (
     notification(ws),
     wsm,
   );
-  handleLLMResponse(query, id, assistantMessage(ws), resultMessage(ws));
+  handleLLMResponse(query, id, assistantMessage(ws), completeMessage(ws));
 };
 
 export const routeConversation = (
@@ -135,7 +136,15 @@ export const assistantMessage =
     );
   };
 
-export const resultMessage =
+export const completeMessage = (ws: WebSocket) => (id: string) => {
+  ws.send(
+    JSON.stringify({
+      id,
+      action: Action.CompleteMessage,
+    }),
+  );
+};
+/*export const resultMessage =
   (ws: WebSocket) => (message: string, id: string) => {
     ws.send(
       JSON.stringify({
@@ -145,7 +154,7 @@ export const resultMessage =
       }),
     );
   };
-
+*/
 export const notification =
   (ws: WebSocket) => (message: string, type: string) => {
     ws.send(

@@ -8,7 +8,7 @@ const Action = {
   GetBots: "getbots",
   Approval: "approval",
   AssistantMessage: "assistantmessage",
-  ResultMessage: "resultmessage",
+  CompleteMessage: "completemessage",
   Notification: "notification",
 } as const;
 
@@ -101,10 +101,10 @@ export function connectWs(
         });
         break;
       }
-      case Action.ResultMessage: {
+      case Action.CompleteMessage: {
         const { id, message } = rest as MessageResponse;
         messageDispatch({
-          type: "added",
+          type: "completed",
           id,
           message,
           messageType: "result",

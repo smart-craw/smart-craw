@@ -9,6 +9,7 @@ export type Bot = {
   description: string;
   instructions: string;
   approval: Approval | null;
+  isExecuting: boolean;
 };
 
 type ApprovalA = {
@@ -16,11 +17,16 @@ type ApprovalA = {
   approval: Approval | null;
 };
 
+type Executing = {
+  id: string;
+  isExecuting: boolean;
+};
+
 export type Bots = {
   bots: Bot[];
 };
 
-export type BotAction = (Bot | Bots | ApprovalA) & { type: string };
+export type BotAction = (Bot | Bots | ApprovalA | Executing) & { type: string };
 
 export function botReducer(bots: Bot[], action: BotAction) {
   const { type, ...rest } = action;
@@ -31,7 +37,10 @@ export function botReducer(bots: Bot[], action: BotAction) {
     }
     case "added": {
       const { name, id, description, instructions, approval } = rest as Bot;
-      return [...bots, { name, id, description, instructions, approval }];
+      return [
+        ...bots,
+        { name, id, description, instructions, approval, isExecuting: false },
+      ];
     }
     case "approval": {
       const { id, approval } = rest as ApprovalA;
@@ -44,6 +53,14 @@ export function botReducer(bots: Bot[], action: BotAction) {
     case "deleted": {
       const { id } = rest as Bot;
       return bots.filter((t) => t.id !== id);
+    }
+    case "started": {
+      const { id } = rest as Executing;
+      return bots.map((v) => (v.id === id ? { ...v, isExecuting: true } : v));
+    }
+    case "finished": {
+      const { id } = rest as Executing;
+      return bots.map((v) => (v.id === id ? { ...v, isExecuting: false } : v));
     }
     default: {
       throw Error("Unknown action: " + type);

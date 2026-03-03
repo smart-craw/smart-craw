@@ -13,10 +13,10 @@ export async function handleLLMResponse(
   query: Query,
   id: string, //just bot id?  What about "normal" llm?
   cbAssistance: (msg: string, id: string) => void,
-  cbResult: (msg: string, id: string) => void,
+  cbComplete: (id: string) => void,
+  //cbResult: (msg: string, id: string) => void,
 ) {
   for await (const msg of query) {
-    console.log("printing message", msg);
     if (msg.type === "assistant") {
       const text = msg.message.content
         .filter((block: Block) => block.type === "text")
@@ -34,10 +34,10 @@ export async function handleLLMResponse(
         }
       }
     }
-    if (msg.type === "result") {
+    /*if (msg.type === "result") {
       //console.log(msg.result);
       cbResult(msg.result, id);
-    }
+      }*/
   }
 }
 
