@@ -1,4 +1,4 @@
-import { useReducer, createContext, useState, useEffect } from "react";
+import { useReducer, createContext, useState } from "react";
 //import reactLogo from "./assets/react.svg";
 //import viteLogo from "/vite.svg";
 import "./App.css";
@@ -53,12 +53,17 @@ function App() {
   };
   const toggleModal = () => setIsModalOpen((v) => !v);
   const execute = (id: string) => () => {
+    botDispatch({ type: "started", id });
     ws.send(
       JSON.stringify({
         path: "/bot/execute",
         input: { id },
       }),
     );
+  };
+  //todo, actually implement the backend of this
+  const stopExecute = (id: string) => () => {
+    botDispatch({ type: "finished", id });
   };
   return (
     <WsContext value={ws}>
@@ -68,7 +73,12 @@ function App() {
         onCreate={onCreate}
         onCancel={toggleModal}
       />
-      <BotList onConfirm={onConfirm} execute={execute} data={botState} />
+      <BotList
+        onConfirm={onConfirm}
+        execute={execute}
+        stopExecute={stopExecute}
+        data={botState}
+      />
     </WsContext>
   );
 }

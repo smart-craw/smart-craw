@@ -24,6 +24,7 @@ export async function handleLLMResponse(
         .join("");
       console.log("full message");
       console.log(text);
+      cbComplete(id);
       //cbAssistance(text, id);
     }
     if (msg.type === "stream_event") {

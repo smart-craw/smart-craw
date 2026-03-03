@@ -1,4 +1,4 @@
-import { Table, Popconfirm, Button, Spin } from "antd";
+import { Table, Popconfirm, Button } from "antd";
 
 import type { TableProps } from "antd";
 import type { Bot } from "../state/bot";
@@ -7,7 +7,7 @@ import type { ExpandableConfig } from "antd/es/table/interface";
 function setColumns(
   onConfirm: (id: string, toolName: string) => () => void,
   execute: (id: string) => () => void,
-  isExecuting: boolean,
+  stopExecute: (id: string) => () => void,
 ): TableProps<Bot>["columns"] {
   return [
     {
@@ -20,6 +20,7 @@ function setColumns(
       title: "Name",
       dataIndex: "name",
       key: "name",
+      //on click, render modal with model messages (use a table that can expand for the Reasoning CoT)
       render: (text) => <a>{text}</a>,
     },
     {
@@ -48,7 +49,13 @@ function setColumns(
       title: "Action",
       key: "action",
       render: (_, row) =>
-        isExecuting ? <Spin /> : <Button onClick={execute(row.id)}>Run</Button>,
+        row.isExecuting ? (
+          <Button danger loading onClick={stopExecute(row.id)}>
+            Stop
+          </Button>
+        ) : (
+          <Button onClick={execute(row.id)}>Run</Button>
+        ),
     },
   ];
 }
@@ -57,7 +64,7 @@ interface Props {
   data: Bot[];
   onConfirm: (id: string, toolName: string) => () => void;
   execute: (id: string) => () => void;
-  isExecuting: boolean;
+  stopExecute: (id: string) => () => void;
 }
 const defaultExpandable: ExpandableConfig<Bot> = {
   expandedRowRender: (record: Bot) => <p>{record.instructions}</p>,
@@ -66,11 +73,11 @@ const BotList: React.FC<Props> = ({
   data,
   onConfirm,
   execute,
-  isExecuting,
+  stopExecute,
 }: Props) => (
   <Table<Bot>
     expandable={defaultExpandable}
-    columns={setColumns(onConfirm, execute, isExecuting)}
+    columns={setColumns(onConfirm, execute, stopExecute)}
     dataSource={data.map((v) => ({ ...v, key: v.id }))}
   />
 );

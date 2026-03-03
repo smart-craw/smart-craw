@@ -102,12 +102,14 @@ export function connectWs(
         break;
       }
       case Action.CompleteMessage: {
-        const { id, message } = rest as MessageResponse;
+        const { id } = rest as MessageResponse;
         messageDispatch({
           type: "completed",
           id,
-          message,
-          messageType: "result",
+        });
+        botDispatch({
+          type: "finished",
+          id,
         });
         break;
       }

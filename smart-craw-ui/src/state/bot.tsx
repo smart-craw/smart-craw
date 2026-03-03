@@ -19,7 +19,7 @@ type ApprovalA = {
 
 type Executing = {
   id: string;
-  isExecuting: boolean;
+  //isExecuting: boolean;
 };
 
 export type Bots = {
