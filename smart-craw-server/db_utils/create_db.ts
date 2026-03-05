@@ -11,13 +11,24 @@ database.exec(`
     name TEXT not null,
     instructions TEXT not null,
     deleted INTEGER not null
-  ) STRICT
+  )
 `);
 
-//TODO add FK to bots table
 database.exec(`
   CREATE TABLE IF NOT EXISTS bot_schedule(
     id TEXT PRIMARY KEY,
-    cron TEXT
-  ) STRICT
+    cron TEXT,
+    FOREIGN KEY(id) REFERENCES bots(id) ON DELETE CASCADE
+  )
+`);
+
+database.exec(`
+  CREATE TABLE IF NOT EXISTS bot_messages(
+    id TEXT PRIMARY KEY,
+    bot_id TEXT not null,
+    message TEXT not null,
+    reasoning TEXT not null,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY(bot_id) REFERENCES bots(id) ON DELETE CASCADE
+  )
 `);

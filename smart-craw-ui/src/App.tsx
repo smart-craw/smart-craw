@@ -1,4 +1,4 @@
-import { useReducer, createContext, useState } from "react";
+import { useReducer, createContext, useState, useEffect } from "react";
 //import reactLogo from "./assets/react.svg";
 //import viteLogo from "/vite.svg";
 //import "./index.css";
@@ -7,6 +7,7 @@ import {
   connectWs,
   createBot,
   executeBot,
+  getMessages,
   sendApproval,
   stopBot,
 } from "./services/ws";
@@ -65,6 +66,12 @@ function App() {
     botDispatch({ type: botAction.FINISHED, id });
   };
   const selectedBot = botState.find((v) => v.id === selectedId);
+  useEffect(() => {
+    if (selectedId && !messageState[selectedId]) {
+      getMessages(ws, selectedId);
+    }
+  }, [selectedId, ws, messageState]);
+  console.log(messageState);
   return (
     <WsContext value={ws}>
       <BotContext value={botState}>

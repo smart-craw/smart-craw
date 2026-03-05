@@ -4,8 +4,7 @@ import type {
   NotificationHookInput,
   PermissionResult,
 } from "@anthropic-ai/claude-agent-sdk";
-//this induces side effects.  TODO pass this into the functions that need it for "pure" functions
-import { insertMessage } from "../db_utils/use_db.ts";
+
 type Block = {
   type: string;
   text: string;
@@ -15,7 +14,7 @@ export async function handleLLMResponse(
   id: string, //just bot id?  What about "normal" llm?
   cbAssistance: (msg: string, id: string) => void,
   cbComplete: (id: string) => void,
-  //cbResult: (msg: string, id: string) => void,
+  insertMessage: (id: string, message: string, reasoning: string) => void,
 ) {
   for await (const msg of query) {
     if (msg.type === "assistant") {
@@ -23,11 +22,9 @@ export async function handleLLMResponse(
         .filter((block: Block) => block.type === "text")
         .map((block: Block) => block.text)
         .join("");
-      console.log("full message");
-      console.log(text);
       cbComplete(id);
-      insertMessage.run(/*message information */);
-      //cbAssistance(text, id);
+      const [reasoning, message] = text.split("</think>");
+      insertMessage(id, message, reasoning.replace("<think>", ""));
     }
     if (msg.type === "stream_event") {
       const { event } = msg;
@@ -37,10 +34,6 @@ export async function handleLLMResponse(
         }
       }
     }
-    /*if (msg.type === "result") {
-      //console.log(msg.result);
-      cbResult(msg.result, id);
-      }*/
   }
 }
 

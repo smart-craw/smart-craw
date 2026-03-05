@@ -1,11 +1,20 @@
 import { createContext } from "react";
-export type Message = {
-  reasoning: string;
+
+type MessageOutput = {
+  id: string; //message id
   message: string;
+  reasoning: string;
+  timestamp: Date | string | null;
+};
+export type MessagesOutput = {
+  messages: MessageOutput[];
+  id: string; //bot id
+};
+
+export type Message = MessageOutput & {
   partialReasoning: boolean; //true if reasoning isn't finished
   partialMessage: boolean;
   type: string; //user, assistant
-  timestamp: Date | null;
 };
 
 export type MessagePayload = {
@@ -20,17 +29,47 @@ type MessageComplete = {
 
 export type MessageState = Record<string, Message[]>;
 
-export type MessageAction = (MessagePayload | MessageComplete) & {
+export type MessageAction = (
+  | MessagePayload
+  | MessageComplete
+  | MessagesOutput
+) & {
   type: string;
 };
 export const MessageContext = createContext<MessageState | null>(null);
 export const messageAction = {
   ADDED: "added",
   FINISHED: "finished",
+  SET: "set",
 } as const;
+
+// eg 2026-03-05 16:48:21
+// exported for testing
+export function dateUtcConvertor(dateInUTC: string) {
+  return new Date(`${dateInUTC.replace(" ", "T")}Z`);
+}
+
 export function messageReducer(messages: MessageState, action: MessageAction) {
   const { type, ...rest } = action;
   switch (type) {
+    case messageAction.SET: {
+      const { id, messages: messagesById } = rest as MessagesOutput;
+      console.log(messagesById);
+      return {
+        ...messages,
+        [id]: messagesById.map(
+          ({ id, message, reasoning, timestamp }: MessageOutput) => ({
+            id,
+            message,
+            reasoning,
+            timestamp: dateUtcConvertor(timestamp as string),
+            partialReasoning: false,
+            partialMessage: false,
+            type: "assistant",
+          }),
+        ),
+      };
+    }
     case messageAction.ADDED: {
       const { id, message, messageType } = rest as MessagePayload;
       const messagesForBot = messages[id];

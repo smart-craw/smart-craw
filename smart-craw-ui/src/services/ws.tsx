@@ -3,7 +3,11 @@ import { botAction } from "../state/bot";
 import type { Bot, Bots, BotAction } from "../state/bot";
 import { notificationAction } from "../state/notification";
 import type { Notification, NotificationAction } from "../state/notification";
-import { messageAction, type MessageAction } from "../state/message";
+import {
+  messageAction,
+  type MessageAction,
+  type MessagesOutput,
+} from "../state/message";
 const Action = {
   CreateBot: "createbot",
   GetBots: "getbots",
@@ -11,6 +15,7 @@ const Action = {
   AssistantMessage: "assistantmessage",
   CompleteMessage: "completemessage",
   Notification: "notification",
+  GetMessages: "getmessages",
 } as const;
 
 type CreateBotResponse = Bot & {
@@ -18,6 +23,10 @@ type CreateBotResponse = Bot & {
 };
 
 type GetBotsResponse = Bots & {
+  action: (typeof Action)[keyof typeof Action];
+};
+
+type GetMessagesResponse = MessagesOutput & {
   action: (typeof Action)[keyof typeof Action];
 };
 
@@ -60,7 +69,8 @@ export function connectWs(
       | GetBotsResponse
       | ApprovalResponse
       | NotificationResponse
-      | MessageResponse;
+      | MessageResponse
+      | GetMessagesResponse;
     switch (action) {
       case Action.CreateBot: {
         const { name, id, description, instructions } = rest as Bot;
@@ -88,6 +98,15 @@ export function connectWs(
           type: botAction.APPROVAL,
           id,
           approval: { toolName, input },
+        });
+        break;
+      }
+      case Action.GetMessages: {
+        const { id, messages } = rest as GetMessagesResponse;
+        messageDispatch({
+          type: messageAction.SET,
+          id,
+          messages,
         });
         break;
       }
@@ -164,6 +183,15 @@ export function getBots(ws: WebSocket) {
   ws.send(
     JSON.stringify({
       path: "/bot/all",
+    }),
+  );
+}
+
+export function getMessages(ws: WebSocket, id: string) {
+  ws.send(
+    JSON.stringify({
+      input: { id },
+      path: "/bot/messages",
     }),
   );
 }

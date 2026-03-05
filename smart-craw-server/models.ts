@@ -6,6 +6,21 @@ export type CreateBotInput = {
   name: string;
   id?: string;
 };
+
+export type BotOutput = {
+  description: string;
+  instructions: string;
+  name: string;
+  id: string;
+};
+
+export type MessageOutput = {
+  id: string; //message id
+  message: string;
+  reasoning: string;
+  timestamp: Date;
+};
+
 export type BotIdInput = {
   id: string;
 };

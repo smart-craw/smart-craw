@@ -1,5 +1,5 @@
 //this induces side effects.  TODO pass this into the functions that need it for "pure" functions
-import { getBot, insertBot, getBots } from "../db_utils/use_db.ts";
+import { getBot, insertBot, getBots, getMessages } from "../db_utils/use_db.ts";
 import { botExecute, createBot } from "../llm_utils/bots.ts";
 import { instructLlm } from "../llm_utils/llm.ts";
 import { handleLLMResponse } from "../llm_utils/responses.ts";
@@ -8,11 +8,13 @@ import WebSocket from "ws";
 import type {
   ApprovalInput,
   BotIdInput,
+  BotOutput,
   ConverseInput,
   CreateBotInput,
   ExecuteLLMInput,
 } from "../models.ts";
-import type { Query } from "@anthropic-ai/claude-agent-sdk";
+import { type Query } from "@anthropic-ai/claude-agent-sdk";
+
 const Action = {
   CreateBot: "createbot",
   Approval: "approval",
@@ -20,24 +22,23 @@ const Action = {
   CompleteMessage: "completemessage",
   Notification: "notification",
   GetBots: "getbots",
+  GetMessages: "getmessages",
 } as const;
 
-//this is mutable "global" state.  TODO pass this into the functions that need it for "pure" functions
-export const pendingApprovals = new Map<string, (approved: boolean) => void>();
-const holdQueries = new Map<string, Query>();
 export const routeCreateBot = (
   { description, name, instructions }: CreateBotInput,
   ws: WebSocket,
+  insertBot: (
+    id: string,
+    name: string,
+    description: string,
+    instructions: string,
+  ) => void,
 ) => {
   const bot = createBot(name, description, instructions, undefined);
   const botDefinition = bot.definition[bot.name];
 
-  insertBot.run(
-    bot.id,
-    botDefinition.description,
-    bot.name,
-    botDefinition.prompt,
-  );
+  insertBot(bot.id, bot.name, botDefinition.description, botDefinition.prompt);
   ws.send(
     JSON.stringify({
       id: bot.id,
@@ -52,10 +53,7 @@ export const routeCreateBot = (
 
 export const routeGetAllBots = (ws: WebSocket) => {
   //might want to get cron as well
-  const bots = getBots.all().map((v) => {
-    const { name, description, instructions, id } = v as CreateBotInput;
-    return { name, description, instructions, id };
-  });
+  const bots = getBots();
   ws.send(
     JSON.stringify({
       bots,
@@ -63,35 +61,69 @@ export const routeGetAllBots = (ws: WebSocket) => {
     }),
   );
 };
-export const routeExecuteBot = ({ id }: BotIdInput, ws: WebSocket) => {
-  const { name, description, instructions } = getBot.get(id) as CreateBotInput;
+export const routeGetMessages = ({ id }: BotIdInput, ws: WebSocket) => {
+  const messages = getMessages(id);
+  ws.send(
+    JSON.stringify({
+      id,
+      messages,
+      action: Action.GetMessages,
+    }),
+  );
+};
+export const routeExecuteBot = (
+  { id }: BotIdInput,
+  ws: WebSocket,
+  getBot: (id: string) => CreateBotInput,
+  insertMessage: (id: string, message: string, reasoning: string) => void,
+  holdQueries: Map<string, Query>,
+  pendingApprovals: Map<string, (approved: boolean) => void>,
+) => {
+  const { name, description, instructions } = getBot(id);
   const bot = createBot(name, description, instructions, id);
   const query = botExecute(
     bot,
-    approvalWebsocket(bot.id, ws),
+    approvalWebsocket(bot.id, ws, pendingApprovals),
     notification(ws),
   );
   holdQueries.set(id, query);
-  handleLLMResponse(query, id, assistantMessage(ws), completeMessage(ws));
+  handleLLMResponse(
+    query,
+    id,
+    assistantMessage(ws),
+    completeMessage(ws),
+    insertMessage,
+  );
 };
 
 export const routeExecuteLlm = (
   { id, mcpConfigs }: ExecuteLLMInput,
   ws: WebSocket,
   wsm: WebSocketMessageQueue,
+  insertMessage: (id: string, message: string, reasoning: string) => void,
+  holdQueries: Map<string, Query>,
+  pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
-  const bots = getBots.all().map((v) => {
-    const { name, description, instructions, id } = v as CreateBotInput;
-    return createBot(name, description, instructions, id);
-  });
+  const bots = getBots().map(
+    ({ name, description, instructions, id }: BotOutput) => {
+      return createBot(name, description, instructions, id);
+    },
+  );
   const query = instructLlm(
     mcpConfigs, // mcpServers
     bots,
-    approvalWebsocket(id, ws),
+    approvalWebsocket(id, ws, pendingApprovals),
     notification(ws),
     wsm,
   );
-  handleLLMResponse(query, id, assistantMessage(ws), completeMessage(ws));
+  holdQueries.set(id, query);
+  handleLLMResponse(
+    query,
+    id,
+    assistantMessage(ws),
+    completeMessage(ws),
+    insertMessage,
+  );
 };
 
 export const routeConversation = (
@@ -101,7 +133,10 @@ export const routeConversation = (
   wsm.enqueue(message);
 };
 
-export const routeApproval = ({ approved, id }: ApprovalInput) => {
+export const routeApproval = (
+  { approved, id }: ApprovalInput,
+  pendingApprovals: Map<string, (approved: boolean) => void>,
+) => {
   const resolve = pendingApprovals.get(id);
   if (resolve) {
     resolve(approved);
@@ -110,7 +145,10 @@ export const routeApproval = ({ approved, id }: ApprovalInput) => {
     console.warn(`No pending approval found for bot id: ${id}`);
   }
 };
-export const routeStopBot = ({ id }: BotIdInput) => {
+export const routeStopBot = (
+  { id }: BotIdInput,
+  holdQueries: Map<string, Query>,
+) => {
   const query = holdQueries.get(id);
   if (query) {
     query.close();
@@ -122,7 +160,12 @@ export const routeStopBot = ({ id }: BotIdInput) => {
 
 // Instead of polling global state, we issue a Promise and store its resolver
 export const approvalWebsocket =
-  (id: string, ws: WebSocket) => async (toolName: string, input: any) => {
+  (
+    id: string,
+    ws: WebSocket,
+    pendingApprovals: Map<string, (approved: boolean) => void>,
+  ) =>
+  async (toolName: string, input: any) => {
     ws.send(
       JSON.stringify({
         toolName,
@@ -155,17 +198,6 @@ export const completeMessage = (ws: WebSocket) => (id: string) => {
     }),
   );
 };
-/*export const resultMessage =
-  (ws: WebSocket) => (message: string, id: string) => {
-    ws.send(
-      JSON.stringify({
-        message,
-        id,
-        action: Action.ResultMessage,
-      }),
-    );
-  };
-*/
 export const notification =
   (ws: WebSocket) => (message: string, type: string) => {
     ws.send(
