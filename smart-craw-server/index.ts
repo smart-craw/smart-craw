@@ -17,6 +17,7 @@ import {
   routeExecuteBot,
   routeExecuteLlm,
   routeGetAllBots,
+  routeStopBot,
 } from "./routes/router.ts";
 
 const wss = new WebSocketServer({ port: 8080 });
@@ -35,6 +36,9 @@ wss.on("connection", function connection(ws) {
         break;
       case "/bot/execute":
         routeExecuteBot(input as BotIdInput, ws);
+        break;
+      case "/bot/stop":
+        routeStopBot(input as BotIdInput);
         break;
       case "/bot/all":
         routeGetAllBots(ws);

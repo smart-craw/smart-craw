@@ -1,3 +1,4 @@
+import { createContext } from "react";
 export type Approval = {
   toolName: string;
   //id: string;
@@ -26,39 +27,50 @@ export type Bots = {
   bots: Bot[];
 };
 
+export const botAction = {
+  SET: "set",
+  ADDED: "added",
+  APPROVAL: "approval",
+  ACTIONED: "actioned",
+  DELETED: "deleted",
+  STARTED: "started",
+  FINISHED: "finished",
+} as const;
+
 export type BotAction = (Bot | Bots | ApprovalA | Executing) & { type: string };
 
+export const BotContext = createContext<Bot[] | null>(null);
 export function botReducer(bots: Bot[], action: BotAction) {
   const { type, ...rest } = action;
   switch (type) {
-    case "set": {
+    case botAction.SET: {
       const { bots } = rest as Bots;
       return bots;
     }
-    case "added": {
+    case botAction.ADDED: {
       const { name, id, description, instructions, approval } = rest as Bot;
       return [
         ...bots,
         { name, id, description, instructions, approval, isExecuting: false },
       ];
     }
-    case "approval": {
+    case botAction.APPROVAL: {
       const { id, approval } = rest as ApprovalA;
       return bots.map((v) => (v.id === id ? { ...v, approval } : v));
     }
-    case "actioned": {
+    case botAction.ACTIONED: {
       const { id } = rest as ApprovalA;
       return bots.map((v) => (v.id === id ? { ...v, approval: null } : v));
     }
-    case "deleted": {
+    case botAction.DELETED: {
       const { id } = rest as Bot;
       return bots.filter((t) => t.id !== id);
     }
-    case "started": {
+    case botAction.STARTED: {
       const { id } = rest as Executing;
       return bots.map((v) => (v.id === id ? { ...v, isExecuting: true } : v));
     }
-    case "finished": {
+    case botAction.FINISHED: {
       const { id } = rest as Executing;
       return bots.map((v) => (v.id === id ? { ...v, isExecuting: false } : v));
     }

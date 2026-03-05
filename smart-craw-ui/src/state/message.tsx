@@ -1,9 +1,11 @@
+import { createContext } from "react";
 export type Message = {
   reasoning: string;
   message: string;
   partialReasoning: boolean; //true if reasoning isn't finished
   partialMessage: boolean;
   type: string; //user, assistant
+  timestamp: Date | null;
 };
 
 export type MessagePayload = {
@@ -21,11 +23,15 @@ export type MessageState = Record<string, Message[]>;
 export type MessageAction = (MessagePayload | MessageComplete) & {
   type: string;
 };
-
+export const MessageContext = createContext<MessageState | null>(null);
+export const messageAction = {
+  ADDED: "added",
+  FINISHED: "finished",
+} as const;
 export function messageReducer(messages: MessageState, action: MessageAction) {
   const { type, ...rest } = action;
   switch (type) {
-    case "added": {
+    case messageAction.ADDED: {
       const { id, message, messageType } = rest as MessagePayload;
       const messagesForBot = messages[id];
 
@@ -41,6 +47,7 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
                 partialReasoning: true,
                 partialMessage: true,
                 type: messageType,
+                timestamp: null,
               },
             ],
           };
@@ -59,6 +66,7 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
                 partialReasoning: false,
                 partialMessage: true,
                 type: lastMessage.type,
+                timestamp: null,
               },
             ],
           };
@@ -80,6 +88,7 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
                     partialReasoning: true,
                     partialMessage: true,
                     type: lastMessage.type,
+                    timestamp: null,
                   },
                 ],
               }
@@ -94,13 +103,14 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
                     partialReasoning: lastMessage.partialReasoning,
                     partialMessage: true,
                     type: lastMessage.type,
+                    timestamp: null,
                   },
                 ],
               };
         }
       }
     }
-    case "complete": {
+    case messageAction.FINISHED: {
       const { id } = rest as MessageComplete;
       const messagesForBot = messages[id];
       const lastMessage = messagesForBot[messagesForBot.length - 1];
@@ -115,6 +125,7 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
             partialReasoning: lastMessage.partialReasoning,
             partialMessage: false,
             type: lastMessage.type,
+            timestamp: new Date(),
           },
         ],
       };

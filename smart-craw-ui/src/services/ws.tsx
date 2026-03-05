@@ -1,8 +1,9 @@
 import type { Dispatch } from "react";
-//import type { Approval, ApprovalAction } from "../state/approval";
+import { botAction } from "../state/bot";
 import type { Bot, Bots, BotAction } from "../state/bot";
+import { notificationAction } from "../state/notification";
 import type { Notification, NotificationAction } from "../state/notification";
-import type { MessageAction } from "../state/message";
+import { messageAction, type MessageAction } from "../state/message";
 const Action = {
   CreateBot: "createbot",
   GetBots: "getbots",
@@ -51,11 +52,7 @@ export function connectWs(
   const ws = new WebSocket(url);
   ws.onopen = () => {
     console.log("connected");
-    ws.send(
-      JSON.stringify({
-        path: "/bot/all",
-      }),
-    );
+    getBots(ws);
   };
   ws.onmessage = (event) => {
     const { action, ...rest } = JSON.parse(event.data) as
@@ -68,7 +65,7 @@ export function connectWs(
       case Action.CreateBot: {
         const { name, id, description, instructions } = rest as Bot;
         botDispatch({
-          type: "added",
+          type: botAction.ADDED,
           name,
           id,
           description,
@@ -80,21 +77,25 @@ export function connectWs(
       case Action.GetBots: {
         const { bots } = rest as Bots;
         botDispatch({
-          type: "set",
+          type: botAction.SET,
           bots,
         });
         break;
       }
       case Action.Approval: {
         const { toolName, id, input } = rest as ApprovalResponse;
-        botDispatch({ type: "approval", id, approval: { toolName, input } });
+        botDispatch({
+          type: botAction.APPROVAL,
+          id,
+          approval: { toolName, input },
+        });
         break;
       }
       case Action.AssistantMessage: {
         const { id, message } = rest as MessageResponse;
         console.log(message);
         messageDispatch({
-          type: "added",
+          type: messageAction.ADDED,
           id,
           message,
           messageType: "assistant",
@@ -104,21 +105,93 @@ export function connectWs(
       case Action.CompleteMessage: {
         const { id } = rest as MessageResponse;
         messageDispatch({
-          type: "completed",
+          type: messageAction.FINISHED,
           id,
         });
         botDispatch({
-          type: "finished",
+          type: botAction.FINISHED,
           id,
         });
         break;
       }
       case Action.Notification: {
         const { notificationType, message } = rest as Notification;
-        notificationDispatch({ type: "added", notificationType, message });
+        notificationDispatch({
+          type: notificationAction.ADDED,
+          notificationType,
+          message,
+        });
         break;
       }
     }
   };
   return ws;
+}
+
+export function createBot(
+  ws: WebSocket,
+  name: string,
+  description: string,
+  instructions: string,
+) {
+  ws.send(
+    JSON.stringify({
+      path: "/bot/create",
+      input: { description, instructions, name },
+    }),
+  );
+}
+
+export function executeBot(ws: WebSocket, id: string) {
+  ws.send(
+    JSON.stringify({
+      path: "/bot/execute",
+      input: { id },
+    }),
+  );
+}
+
+export function stopBot(ws: WebSocket, id: string) {
+  ws.send(
+    JSON.stringify({
+      path: "/bot/stop",
+      input: { id },
+    }),
+  );
+}
+
+export function getBots(ws: WebSocket) {
+  ws.send(
+    JSON.stringify({
+      path: "/bot/all",
+    }),
+  );
+}
+
+//TODO fix mcpConfigs
+export function executeLlm(ws: WebSocket, id: string, mcpConfigs: any) {
+  ws.send(
+    JSON.stringify({
+      path: "/llm/execute",
+      input: { id, mcpConfigs },
+    }),
+  );
+}
+
+export function converseLlm(ws: WebSocket, id: string, message: string) {
+  ws.send(
+    JSON.stringify({
+      path: "/llm/converse",
+      input: { id, message },
+    }),
+  );
+}
+
+export function sendApproval(ws: WebSocket, id: string, toolName: string) {
+  ws.send(
+    JSON.stringify({
+      path: "/tool/approval",
+      input: { approved: true, toolName, id },
+    }),
+  );
 }

@@ -1,23 +1,25 @@
 import React from "react";
 import { Modal, Form, Input } from "antd";
 
-export type BotCreateModal = {
+type BotCreateModal = {
   name: string;
   description: string;
   instructions: string;
 };
 interface Props {
   isOpen: boolean;
-  onCreate: (v: BotCreateModal) => void;
+  onCreate: (name: string, description: string, instructions: string) => void;
   onCancel: () => void;
 }
 const ModalCreateBot: React.FC<Props> = ({ isOpen, onCreate, onCancel }) => {
   const [form] = Form.useForm();
   //const [formValues, setFormValues] = useState<FieldType>();
-  const onFormSubmit = (values: BotCreateModal) => {
-    console.log("Received values of form: ", values);
-    //setFormValues(values);
-    onCreate(values);
+  const onFormSubmit = ({
+    name,
+    description,
+    instructions,
+  }: BotCreateModal) => {
+    onCreate(name, description, instructions);
   };
   return (
     <>

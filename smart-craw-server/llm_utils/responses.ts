@@ -4,7 +4,8 @@ import type {
   NotificationHookInput,
   PermissionResult,
 } from "@anthropic-ai/claude-agent-sdk";
-
+//this induces side effects.  TODO pass this into the functions that need it for "pure" functions
+import { insertMessage } from "../db_utils/use_db.ts";
 type Block = {
   type: string;
   text: string;
@@ -25,6 +26,7 @@ export async function handleLLMResponse(
       console.log("full message");
       console.log(text);
       cbComplete(id);
+      insertMessage.run(/*message information */);
       //cbAssistance(text, id);
     }
     if (msg.type === "stream_event") {

@@ -5,13 +5,17 @@ export type Notification = {
 
 export type NotificationAction = Notification & { type: string };
 const MAX_NOTIFICATIONS = 100; //keep to some realistic number
+export const notificationAction = {
+  ADDED: "added",
+  DISMISSED: "dismissed",
+} as const;
 export function notificationReducer(
   notifications: Notification[],
   action: NotificationAction,
 ) {
   const { type, ...rest } = action;
   switch (type) {
-    case "added": {
+    case notificationAction.ADDED: {
       const { message, notificationType } = rest;
       const newNotifications = [
         ...notifications,
@@ -19,7 +23,7 @@ export function notificationReducer(
       ];
       return newNotifications.slice(-MAX_NOTIFICATIONS);
     }
-    case "dismissed": {
+    case notificationAction.DISMISSED: {
       const { message, notificationType } = rest;
       return notifications.filter(
         (v) => v.message !== message && v.notificationType !== notificationType,

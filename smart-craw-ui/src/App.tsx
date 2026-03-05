@@ -1,19 +1,29 @@
 import { useReducer, createContext, useState } from "react";
 //import reactLogo from "./assets/react.svg";
 //import viteLogo from "/vite.svg";
-import "./App.css";
-import { connectWs } from "./services/ws";
-import { botReducer } from "./state/bot";
+//import "./index.css";
+
+import {
+  connectWs,
+  createBot,
+  executeBot,
+  sendApproval,
+  stopBot,
+} from "./services/ws";
+import { botReducer, BotContext, botAction } from "./state/bot";
 import { notificationReducer } from "./state/notification";
 //import { approvalReducer } from "./state/approval";
-import { messageReducer } from "./state/message";
+import { messageReducer, MessageContext } from "./state/message";
 import BotList from "./components/BotList";
-import type { BotCreateModal } from "./components/ModalCreateBot";
 import ModalCreateBot from "./components/ModalCreateBot";
-import { Button } from "antd";
+import { Button, Col, Row, Layout, Card } from "antd";
+import ModalListMessages from "./components/ModalListMessages";
 const WsContext = createContext<WebSocket | null>(null);
+const { Content, Header } = Layout;
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [botState, botDispatch] = useReducer(botReducer, []);
   const [messageState, messageDispatch] = useReducer(messageReducer, {});
   const [notificationState, notificationDispatch] = useReducer(
@@ -30,55 +40,78 @@ function App() {
     //approvalDispatch,
   );
   const onConfirm = (id: string, toolName: string) => () => {
-    ws.send(
-      JSON.stringify({
-        path: "/tool/approval",
-        input: { approved: true, toolName, id },
-      }),
-    );
+    sendApproval(ws, id, toolName);
     return botDispatch({
       id,
       approval: null,
-      type: "actioned",
+      type: botAction.ACTIONED,
     });
   };
-  const onCreate = ({ description, instructions, name }: BotCreateModal) => {
-    ws.send(
-      JSON.stringify({
-        path: "/bot/create",
-        input: { description, instructions, name },
-      }),
-    );
+  const onCreate = (
+    name: string,
+    description: string,
+    instructions: string,
+  ) => {
+    createBot(ws, name, description, instructions);
     setIsModalOpen(false);
   };
   const toggleModal = () => setIsModalOpen((v) => !v);
   const execute = (id: string) => () => {
-    botDispatch({ type: "started", id });
-    ws.send(
-      JSON.stringify({
-        path: "/bot/execute",
-        input: { id },
-      }),
-    );
+    botDispatch({ type: botAction.STARTED, id });
+    executeBot(ws, id);
   };
-  //todo, actually implement the backend of this
   const stopExecute = (id: string) => () => {
-    botDispatch({ type: "finished", id });
+    stopBot(ws, id);
+    botDispatch({ type: botAction.FINISHED, id });
   };
+  const selectedBot = botState.find((v) => v.id === selectedId);
   return (
     <WsContext value={ws}>
-      <Button onClick={toggleModal}>Add New</Button>
-      <ModalCreateBot
-        isOpen={isModalOpen}
-        onCreate={onCreate}
-        onCancel={toggleModal}
-      />
-      <BotList
-        onConfirm={onConfirm}
-        execute={execute}
-        stopExecute={stopExecute}
-        data={botState}
-      />
+      <BotContext value={botState}>
+        <MessageContext value={messageState}>
+          <Layout style={{ minHeight: "100vh" }}>
+            <Header style={{ display: "flex", alignItems: "center" }}>
+              <div className="demo-logo" />
+            </Header>
+            <Content style={{ padding: "5px 48px" }}>
+              <ModalListMessages
+                isOpen={isMessagesOpen}
+                onCancel={() => {
+                  setIsMessagesOpen(false);
+                  setSelectedId(null);
+                }}
+                messages={selectedId ? messageState[selectedId] : []}
+                botName={selectedBot ? selectedBot.name : ""}
+              />
+              <ModalCreateBot
+                isOpen={isModalOpen}
+                onCreate={onCreate}
+                onCancel={toggleModal}
+              />
+              <Row>
+                <Col span={16}>
+                  <Card title="Bot inventory">
+                    <Button onClick={toggleModal}>Add New</Button>
+                    <BotList
+                      onConfirm={onConfirm}
+                      execute={execute}
+                      stopExecute={stopExecute}
+                      onDelete={(id: string) => () => {
+                        botDispatch({ type: botAction.DELETED, id });
+                      }}
+                      onShowMessage={(id: string) => () => {
+                        setSelectedId(id);
+                        setIsMessagesOpen(true);
+                      }}
+                      data={botState}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+            </Content>
+          </Layout>
+        </MessageContext>
+      </BotContext>
     </WsContext>
   );
 }

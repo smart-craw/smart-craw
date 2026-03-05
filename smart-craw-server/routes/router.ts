@@ -1,3 +1,4 @@
+//this induces side effects.  TODO pass this into the functions that need it for "pure" functions
 import { getBot, insertBot, getBots } from "../db_utils/use_db.ts";
 import { botExecute, createBot } from "../llm_utils/bots.ts";
 import { instructLlm } from "../llm_utils/llm.ts";
@@ -11,24 +12,26 @@ import type {
   CreateBotInput,
   ExecuteLLMInput,
 } from "../models.ts";
+import type { Query } from "@anthropic-ai/claude-agent-sdk";
 const Action = {
   CreateBot: "createbot",
   Approval: "approval",
   AssistantMessage: "assistantmessage",
   CompleteMessage: "completemessage",
-  //ResultMessage: "resultmessage",
   Notification: "notification",
   GetBots: "getbots",
 } as const;
 
-//this is mutable "global" state.  Be careful
+//this is mutable "global" state.  TODO pass this into the functions that need it for "pure" functions
 export const pendingApprovals = new Map<string, (approved: boolean) => void>();
+const holdQueries = new Map<string, Query>();
 export const routeCreateBot = (
   { description, name, instructions }: CreateBotInput,
   ws: WebSocket,
 ) => {
   const bot = createBot(name, description, instructions, undefined);
   const botDefinition = bot.definition[bot.name];
+
   insertBot.run(
     bot.id,
     botDefinition.description,
@@ -63,13 +66,12 @@ export const routeGetAllBots = (ws: WebSocket) => {
 export const routeExecuteBot = ({ id }: BotIdInput, ws: WebSocket) => {
   const { name, description, instructions } = getBot.get(id) as CreateBotInput;
   const bot = createBot(name, description, instructions, id);
-  console.log("GOTHERE");
-  console.log(bot);
   const query = botExecute(
     bot,
     approvalWebsocket(bot.id, ws),
     notification(ws),
   );
+  holdQueries.set(id, query);
   handleLLMResponse(query, id, assistantMessage(ws), completeMessage(ws));
 };
 
@@ -104,6 +106,15 @@ export const routeApproval = ({ approved, id }: ApprovalInput) => {
   if (resolve) {
     resolve(approved);
     pendingApprovals.delete(id);
+  } else {
+    console.warn(`No pending approval found for bot id: ${id}`);
+  }
+};
+export const routeStopBot = ({ id }: BotIdInput) => {
+  const query = holdQueries.get(id);
+  if (query) {
+    query.close();
+    holdQueries.delete(id);
   } else {
     console.warn(`No pending approval found for bot id: ${id}`);
   }
