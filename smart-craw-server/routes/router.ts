@@ -1,5 +1,3 @@
-//this induces side effects.  TODO pass this into the functions that need it for "pure" functions
-import { getBot, insertBot, getBots, getMessages } from "../db_utils/use_db.ts";
 import { botExecute, createBot } from "../llm_utils/bots.ts";
 import { instructLlm } from "../llm_utils/llm.ts";
 import { handleLLMResponse } from "../llm_utils/responses.ts";
@@ -12,12 +10,14 @@ import type {
   ConverseInput,
   CreateBotInput,
   ExecuteLLMInput,
+  MessageOutput,
 } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
 
 const Action = {
   CreateBot: "createbot",
-  Approval: "approval",
+  ApprovalRequest: "approvalrequest",
+  ApprovalActioned: "approvalactioned",
   AssistantMessage: "assistantmessage",
   CompleteMessage: "completemessage",
   Notification: "notification",
@@ -51,7 +51,14 @@ export const routeCreateBot = (
   //return ;
 };
 
-export const routeGetAllBots = (ws: WebSocket) => {
+export const routeRemoveBot = (
+  { id }: BotIdInput,
+  removeBot: (id: string) => void,
+) => {
+  removeBot(id);
+};
+
+export const routeGetAllBots = (ws: WebSocket, getBots: () => BotOutput[]) => {
   //might want to get cron as well
   const bots = getBots();
   ws.send(
@@ -61,7 +68,11 @@ export const routeGetAllBots = (ws: WebSocket) => {
     }),
   );
 };
-export const routeGetMessages = ({ id }: BotIdInput, ws: WebSocket) => {
+export const routeGetMessages = (
+  { id }: BotIdInput,
+  ws: WebSocket,
+  getMessages: (id: string) => MessageOutput[],
+) => {
   const messages = getMessages(id);
   ws.send(
     JSON.stringify({
@@ -100,6 +111,7 @@ export const routeExecuteLlm = (
   { id, mcpConfigs }: ExecuteLLMInput,
   ws: WebSocket,
   wsm: WebSocketMessageQueue,
+  getBots: () => BotOutput[],
   insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
@@ -135,11 +147,22 @@ export const routeConversation = (
 
 export const routeApproval = (
   { approved, id }: ApprovalInput,
+  ws: WebSocket,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
+  console.log(pendingApprovals);
   const resolve = pendingApprovals.get(id);
   if (resolve) {
     resolve(approved);
+    console.log("sending approved message");
+    console.log(approved);
+    ws.send(
+      JSON.stringify({
+        id,
+        approved,
+        action: Action.ApprovalActioned,
+      }),
+    );
     pendingApprovals.delete(id);
   } else {
     console.warn(`No pending approval found for bot id: ${id}`);
@@ -154,7 +177,7 @@ export const routeStopBot = (
     query.close();
     holdQueries.delete(id);
   } else {
-    console.warn(`No pending approval found for bot id: ${id}`);
+    console.warn(`No Query found for bot id: ${id}`);
   }
 };
 
@@ -166,12 +189,13 @@ export const approvalWebsocket =
     pendingApprovals: Map<string, (approved: boolean) => void>,
   ) =>
   async (toolName: string, input: any) => {
+    console.log("got to approval websocket");
     ws.send(
       JSON.stringify({
         toolName,
         id,
         input,
-        action: Action.Approval,
+        action: Action.ApprovalRequest,
       }),
     );
     return new Promise<boolean>((resolve) => {

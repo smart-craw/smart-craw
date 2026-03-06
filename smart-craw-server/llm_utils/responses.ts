@@ -17,21 +17,42 @@ export async function handleLLMResponse(
   insertMessage: (id: string, message: string, reasoning: string) => void,
 ) {
   for await (const msg of query) {
-    if (msg.type === "assistant") {
-      const text = msg.message.content
-        .filter((block: Block) => block.type === "text")
-        .map((block: Block) => block.text)
-        .join("");
-      cbComplete(id);
-      const [reasoning, message] = text.split("</think>");
-      insertMessage(id, message, reasoning.replace("<think>", ""));
-    }
-    if (msg.type === "stream_event") {
-      const { event } = msg;
-      if (event.type === "content_block_delta") {
-        if (event.delta.type === "text_delta") {
-          cbAssistance(event.delta.text, id);
+    switch (msg.type) {
+      case "assistant": {
+        const text = msg.message.content
+          .filter((block: Block) => block.type === "text")
+          .map((block: Block) => block.text)
+          .join("");
+        cbComplete(id);
+        const [reasoning, message] = text.split("</think>");
+        insertMessage(id, message || "", reasoning.replace("<think>", ""));
+        break;
+      }
+      case "stream_event": {
+        const { event } = msg;
+        if (event.type === "content_block_delta") {
+          if (event.delta.type === "text_delta") {
+            cbAssistance(event.delta.text, id);
+          } /*else {
+            console.log("not text delta");
+            console.log(msg);
+          }
+        } else {
+          console.log("not block delta");
+          console.log(msg);*/
         }
+        break;
+      }
+      case "result": {
+        const { result } = msg;
+        cbComplete(id);
+        const [reasoning, message] = result.split("</think>");
+        insertMessage(id, message || "", reasoning.replace("<think>", ""));
+        break;
+      }
+      default: {
+        console.log("uncaught type");
+        console.log(msg);
       }
     }
   }
@@ -59,10 +80,13 @@ export const approvalWrapper = (
     toolName: string,
     input: any,
   ): Promise<PermissionResult> {
+    console.log("got to approval callback");
+    console.log(toolName);
+    console.log(input);
     const isApproved = await approvalCb(toolName, input);
 
     return isApproved
-      ? { behavior: "allow" }
+      ? { behavior: "allow", updatedInput: input }
       : { behavior: "deny", message: "Tool use denied" };
   };
 };

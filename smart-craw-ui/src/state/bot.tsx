@@ -1,7 +1,6 @@
 import { createContext } from "react";
 export type Approval = {
   toolName: string;
-  //id: string;
   input: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
 export type Bot = {
@@ -13,9 +12,14 @@ export type Bot = {
   isExecuting: boolean;
 };
 
-type ApprovalA = {
+type ApprovalResponse = {
   id: string;
   approval: Approval | null;
+};
+
+type ApprovalAction = {
+  id: string;
+  approval: boolean;
 };
 
 type Executing = {
@@ -37,7 +41,13 @@ export const botAction = {
   FINISHED: "finished",
 } as const;
 
-export type BotAction = (Bot | Bots | ApprovalA | Executing) & { type: string };
+export type BotAction = (
+  | Bot
+  | Bots
+  | ApprovalResponse
+  | ApprovalAction
+  | Executing
+) & { type: string };
 
 export const BotContext = createContext<Bot[] | null>(null);
 export function botReducer(bots: Bot[], action: BotAction) {
@@ -55,12 +65,16 @@ export function botReducer(bots: Bot[], action: BotAction) {
       ];
     }
     case botAction.APPROVAL: {
-      const { id, approval } = rest as ApprovalA;
+      const { id, approval } = rest as ApprovalAction;
       return bots.map((v) => (v.id === id ? { ...v, approval } : v));
     }
     case botAction.ACTIONED: {
-      const { id } = rest as ApprovalA;
-      return bots.map((v) => (v.id === id ? { ...v, approval: null } : v));
+      //if approval given, we are back to "isExecuting"
+      const { id, approval } = rest as ApprovalResponse;
+      console.log("actioned", approval);
+      return bots.map((v) =>
+        v.id === id ? { ...v, approval: null, isExecuting: approval } : v,
+      );
     }
     case botAction.DELETED: {
       const { id } = rest as Bot;

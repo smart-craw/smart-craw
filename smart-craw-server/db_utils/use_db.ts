@@ -53,6 +53,9 @@ export const insertMessage = (
   message: string,
   reasoning: string,
 ) => {
+  console.log("inserting message");
+  console.log(message);
+  console.log(reasoning);
   insertMessageDb.run(uuidv4(), botId, message, reasoning);
 };
 

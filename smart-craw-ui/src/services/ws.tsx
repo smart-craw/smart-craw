@@ -11,7 +11,8 @@ import {
 const Action = {
   CreateBot: "createbot",
   GetBots: "getbots",
-  Approval: "approval",
+  ApprovalRequest: "approvalrequest",
+  ApprovalActioned: "approvalactioned",
   AssistantMessage: "assistantmessage",
   CompleteMessage: "completemessage",
   Notification: "notification",
@@ -45,6 +46,11 @@ type ApprovalResponse = {
   input: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   action: (typeof Action)[keyof typeof Action];
 };
+type ApprovalActioned = {
+  id: string;
+  approved: boolean;
+  action: (typeof Action)[keyof typeof Action];
+};
 type NotificationResponse = Notification & {
   action: (typeof Action)[keyof typeof Action];
 };
@@ -68,6 +74,7 @@ export function connectWs(
       | CreateBotResponse
       | GetBotsResponse
       | ApprovalResponse
+      | ApprovalActioned
       | NotificationResponse
       | MessageResponse
       | GetMessagesResponse;
@@ -92,12 +99,23 @@ export function connectWs(
         });
         break;
       }
-      case Action.Approval: {
+      case Action.ApprovalRequest: {
         const { toolName, id, input } = rest as ApprovalResponse;
+        console.log("Got approval request");
         botDispatch({
           type: botAction.APPROVAL,
           id,
           approval: { toolName, input },
+        });
+        break;
+      }
+      case Action.ApprovalActioned: {
+        const { id, approved } = rest as ApprovalActioned;
+        console.log("Got approval action");
+        botDispatch({
+          type: botAction.ACTIONED,
+          id,
+          approval: approved,
         });
         break;
       }
@@ -157,6 +175,15 @@ export function createBot(
     JSON.stringify({
       path: "/bot/create",
       input: { description, instructions, name },
+    }),
+  );
+}
+
+export function removeBot(ws: WebSocket, id: string) {
+  ws.send(
+    JSON.stringify({
+      path: "/bot/remove",
+      input: { id },
     }),
   );
 }

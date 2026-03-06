@@ -8,10 +8,12 @@ import type {
   WebSocketInput,
 } from "./models.ts";
 import {
-  getBot,
   insertBot,
+  getBot,
   getBots,
   insertMessage,
+  removeBot,
+  getMessages,
 } from "./db_utils/use_db.ts";
 
 //put this behind an nginx proxy
@@ -24,14 +26,16 @@ import {
   routeExecuteLlm,
   routeGetAllBots,
   routeGetMessages,
+  routeRemoveBot,
   routeStopBot,
 } from "./routes/router.ts";
 import type { Query } from "@anthropic-ai/claude-agent-sdk";
 const wss = new WebSocketServer({ port: 8080 });
-//this is mutable "global" state.
-export const pendingApprovals = new Map<string, (approved: boolean) => void>();
-const holdQueries = new Map<string, Query>();
+
 wss.on("connection", function connection(ws) {
+  //this is mutable state.
+  const pendingApprovals = new Map<string, (approved: boolean) => void>();
+  const holdQueries = new Map<string, Query>();
   const messageQueue = new WebSocketMessageQueue();
   ws.on("error", (err) => {
     console.error(err);
@@ -53,20 +57,24 @@ wss.on("connection", function connection(ws) {
           pendingApprovals,
         );
         break;
+      case "/bot/remove":
+        routeRemoveBot(input as BotIdInput, removeBot);
+        break;
       case "/bot/stop":
         routeStopBot(input as BotIdInput, holdQueries);
         break;
       case "/bot/messages":
-        routeGetMessages(input as BotIdInput, ws);
+        routeGetMessages(input as BotIdInput, ws, getMessages);
         break;
       case "/bot/all":
-        routeGetAllBots(ws);
+        routeGetAllBots(ws, getBots);
         break;
       case "/llm/execute":
         routeExecuteLlm(
           input as ExecuteLLMInput,
           ws,
           messageQueue,
+          getBots,
           insertMessage,
           holdQueries,
           pendingApprovals,
@@ -76,7 +84,9 @@ wss.on("connection", function connection(ws) {
         routeConversation(input as ConverseInput, messageQueue);
         break;
       case "/tool/approval":
-        routeApproval(input as ApprovalInput, pendingApprovals);
+        console.log(pendingApprovals);
+        console.log(input);
+        routeApproval(input as ApprovalInput, ws, pendingApprovals);
         break;
     }
     console.log("received: %s", data);

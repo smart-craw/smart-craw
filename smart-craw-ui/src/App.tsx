@@ -8,6 +8,7 @@ import {
   createBot,
   executeBot,
   getMessages,
+  removeBot,
   sendApproval,
   stopBot,
 } from "./services/ws";
@@ -71,7 +72,6 @@ function App() {
       getMessages(ws, selectedId);
     }
   }, [selectedId, ws, messageState]);
-  console.log(messageState);
   return (
     <WsContext value={ws}>
       <BotContext value={botState}>
@@ -104,6 +104,7 @@ function App() {
                       execute={execute}
                       stopExecute={stopExecute}
                       onDelete={(id: string) => () => {
+                        removeBot(ws, id);
                         botDispatch({ type: botAction.DELETED, id });
                       }}
                       onShowMessage={(id: string) => () => {
