@@ -1,8 +1,4 @@
 import { useReducer, createContext, useState, useEffect } from "react";
-//import reactLogo from "./assets/react.svg";
-//import viteLogo from "/vite.svg";
-//import "./index.css";
-
 import {
   connectWs,
   createBot,
@@ -14,11 +10,10 @@ import {
 } from "./services/ws";
 import { botReducer, BotContext, botAction } from "./state/bot";
 import { notificationReducer } from "./state/notification";
-//import { approvalReducer } from "./state/approval";
 import { messageReducer, MessageContext } from "./state/message";
 import BotList from "./components/BotList";
 import ModalCreateBot from "./components/ModalCreateBot";
-import { Button, Col, Row, Layout, Card } from "antd";
+import { Button, Col, Row, Layout, Card, notification } from "antd";
 import ModalListMessages from "./components/ModalListMessages";
 const WsContext = createContext<WebSocket | null>(null);
 const { Content, Header } = Layout;
@@ -30,8 +25,23 @@ function App() {
   const [messageState, messageDispatch] = useReducer(messageReducer, {});
   const [notificationState, notificationDispatch] = useReducer(
     notificationReducer,
-    [],
+    null,
   );
+
+  const [api, contextHolder] = notification.useNotification({
+    stack: {
+      threshold: 3,
+    },
+  });
+  useEffect(() => {
+    if (notificationState !== null) {
+      api.open({
+        title: notificationState?.notificationType,
+        description: notificationState?.message,
+        duration: false,
+      });
+    }
+  }, [notificationState, api]);
 
   //const [approvalState, approvalDispatch] = useReducer(approvalReducer, []);
   //put dispatches here
@@ -45,7 +55,7 @@ function App() {
     sendApproval(ws, id, toolName);
     return botDispatch({
       id,
-      approval: null,
+      approval: true,
       type: botAction.ACTIONED,
     });
   };
@@ -76,6 +86,7 @@ function App() {
     <WsContext value={ws}>
       <BotContext value={botState}>
         <MessageContext value={messageState}>
+          {contextHolder}
           <Layout style={{ minHeight: "100vh" }}>
             <Header style={{ display: "flex", alignItems: "center" }}>
               <div className="demo-logo" />

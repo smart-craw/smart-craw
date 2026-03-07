@@ -1,63 +1,6 @@
-import { List, Popconfirm, Button } from "antd";
+import { List, Popconfirm, Button, Badge } from "antd";
 
 import type { Bot } from "../state/bot";
-
-/*function setColumns(
-  onConfirm: (id: string, toolName: string) => () => void,
-  execute: (id: string) => () => void,
-  stopExecute: (id: string) => () => void,
-  onShowMessage: (id: string) => () => void,
-): TableProps<Bot>["columns"] {
-  return [
-    {
-      title: "Id",
-      dataIndex: "id",
-      key: "id",
-      //render: (text) => <a>{text}</a>,
-    },
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      //on click, render modal with model messages (use a table that can expand for the Reasoning CoT)
-      render: (text, { id }) => <a onClick={onShowMessage(id)}>{text}</a>,
-    },
-    {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
-    },
-    {
-      title: "Approval",
-      key: "approval",
-      render: (_, { id, approval }) =>
-        approval && (
-          <Popconfirm
-            placement="top"
-            title={approval.toolName}
-            description={JSON.stringify(approval.input)}
-            okText="Yes"
-            cancelText="No"
-            onConfirm={onConfirm(id, approval.toolName)}
-          >
-            <Button>Approval</Button>
-          </Popconfirm>
-        ),
-    },
-    {
-      title: "Action",
-      key: "action",
-      render: (_, row) =>
-        row.isExecuting ? (
-          <Button danger loading onClick={stopExecute(row.id)}>
-            Stop
-          </Button>
-        ) : (
-          <Button onClick={execute(row.id)}>Run</Button>
-        ),
-    },
-  ];
-}*/
 
 interface Props {
   data: Bot[];
@@ -67,9 +10,24 @@ interface Props {
   onDelete: (id: string) => () => void;
   onShowMessage: (id: string) => () => void;
 }
-/*const defaultExpandable: ExpandableConfig<Bot> = {
-  expandedRowRender: (record: Bot) => <p>{record.instructions}</p>,
-};*/
+const ButtonOption = {
+  Approval: "approval",
+  Stop: "stop",
+  Run: "run",
+} as const;
+
+function stopRunApproval(
+  approval: boolean,
+  isExecuting: boolean,
+): (typeof ButtonOption)[keyof typeof ButtonOption] {
+  if (approval) {
+    return ButtonOption.Approval;
+  } else if (isExecuting) {
+    return ButtonOption.Stop;
+  } else {
+    return ButtonOption.Run;
+  }
+}
 const BotList: React.FC<Props> = ({
   data,
   onConfirm,
@@ -78,13 +36,7 @@ const BotList: React.FC<Props> = ({
   onDelete,
   onShowMessage,
 }: Props) => (
-  /*<Table<Bot>
-    expandable={defaultExpandable}
-    columns={setColumns(onConfirm, execute, stopExecute, onShowMessage)}
-    dataSource={data.map((v) => ({ ...v, key: v.id }))}
-  />*/
   <List
-    //loading={initLoading}
     itemLayout="horizontal"
     dataSource={data}
     renderItem={({
@@ -94,43 +46,59 @@ const BotList: React.FC<Props> = ({
       name,
       instructions,
       description,
-    }) => (
-      <List.Item
-        key={id}
-        actions={[
-          approval && (
+    }) => {
+      const buttonType = stopRunApproval(approval !== undefined, isExecuting);
+      let button;
+      console.log(approval);
+      switch (buttonType) {
+        case ButtonOption.Approval: {
+          button = (
             <Popconfirm
               placement="top"
-              title={approval.toolName}
-              description={JSON.stringify(approval.input)}
+              title={approval!.toolName}
+              description={JSON.stringify(approval!.input)}
               okText="Yes"
               cancelText="No"
-              onConfirm={onConfirm(id, approval.toolName)}
+              onConfirm={onConfirm(id, approval!.toolName)}
             >
-              <Button>Approval</Button>
+              <Badge count={approval ? 1 : 0}>
+                <Button>Approval</Button>
+              </Badge>
             </Popconfirm>
-          ),
-          isExecuting ? (
+          );
+          break;
+        }
+        case ButtonOption.Stop: {
+          button = (
             <Button danger loading onClick={stopExecute(id)}>
               Stop
             </Button>
-          ) : (
+          );
+          break;
+        }
+        case ButtonOption.Run: {
+          button = (
             <Button type="primary" onClick={execute(id)}>
               Run
             </Button>
-          ),
-          <Button onClick={onDelete(id)}>Delete</Button>,
-        ]}
-      >
-        <List.Item.Meta
-          //avatar={<Avatar src={item.avatar} />}
-          title={<a onClick={onShowMessage(id)}>{name}</a>}
-          description={instructions}
-        />
+          );
+          break;
+        }
+      }
+      return (
+        <List.Item
+          key={id}
+          actions={[button, <Button onClick={onDelete(id)}>Delete</Button>]}
+        >
+          <List.Item.Meta
+            title={<a onClick={onShowMessage(id)}>{name}</a>}
+            description={instructions}
+          />
 
-        <div>{description}</div>
-      </List.Item>
-    )}
+          <div>{description}</div>
+        </List.Item>
+      );
+    }}
   />
 );
 export default BotList;

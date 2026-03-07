@@ -8,18 +8,18 @@ export type Bot = {
   id: string;
   description: string;
   instructions: string;
-  approval: Approval | null;
+  approval: Approval | undefined;
   isExecuting: boolean;
 };
 
 type ApprovalResponse = {
   id: string;
-  approval: Approval | null;
+  approval: boolean;
 };
 
 type ApprovalAction = {
   id: string;
-  approval: boolean;
+  approval: Approval;
 };
 
 type Executing = {
@@ -73,7 +73,7 @@ export function botReducer(bots: Bot[], action: BotAction) {
       const { id, approval } = rest as ApprovalResponse;
       console.log("actioned", approval);
       return bots.map((v) =>
-        v.id === id ? { ...v, approval: null, isExecuting: approval } : v,
+        v.id === id ? { ...v, approval: undefined, isExecuting: approval } : v,
       );
     }
     case botAction.DELETED: {

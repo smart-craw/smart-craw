@@ -6,6 +6,7 @@ type MessageOutput = {
   reasoning: string;
   timestamp: Date | string | null;
 };
+
 export type MessagesOutput = {
   messages: MessageOutput[];
   id: string; //bot id

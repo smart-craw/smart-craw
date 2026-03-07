@@ -153,6 +153,8 @@ export function connectWs(
       }
       case Action.Notification: {
         const { notificationType, message } = rest as Notification;
+        console.log("got notification");
+        console.log(message);
         notificationDispatch({
           type: notificationAction.ADDED,
           notificationType,
