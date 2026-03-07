@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, type Dispatch } from "react";
 
 //maps to MessageOutput on server
 type MessageFromServer = {
@@ -43,7 +43,15 @@ export type MessageAction = (
 ) & {
   type: string;
 };
-export const MessageContext = createContext<MessageState | null>(null);
+
+type MessageValueDispatch = {
+  value: MessageState;
+  dispatch: Dispatch<MessageAction> | null;
+};
+export const MessageContext = createContext<MessageValueDispatch>({
+  value: {},
+  dispatch: (_value: MessageAction) => {},
+});
 export const messageAction = {
   ADDED: "added",
   FINISHED: "finished",

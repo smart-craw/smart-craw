@@ -105,7 +105,8 @@ export function connectWs(
         botDispatch({
           type: botAction.APPROVAL,
           id,
-          approval: { toolName, input },
+          toolName,
+          input,
         });
         break;
       }
@@ -135,7 +136,6 @@ export function connectWs(
           type: messageAction.ADDED,
           id,
           message,
-          //messageType: "assistant",
         });
         break;
       }

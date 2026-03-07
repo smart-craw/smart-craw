@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, type Dispatch } from "react";
 type Approval = {
   toolName: string;
   input: any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -51,7 +51,14 @@ export type BotAction = (
   | Executing
 ) & { type: string };
 
-export const BotContext = createContext<Bot[] | null>(null);
+type BotValueDispatch = {
+  value: Bot[];
+  dispatch: Dispatch<BotAction>;
+};
+export const BotContext = createContext<BotValueDispatch>({
+  value: [],
+  dispatch: (_value: BotAction) => {},
+});
 export function botReducer(bots: Bot[], action: BotAction) {
   const { type, ...rest } = action;
   switch (type) {
