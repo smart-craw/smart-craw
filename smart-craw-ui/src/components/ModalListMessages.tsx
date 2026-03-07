@@ -26,7 +26,7 @@ const ModalListMessages = ({ isOpen, onCancel, messages, botName }: Props) => {
         renderItem={(message) => (
           <List.Item key={message.id}>
             <List.Item.Meta
-              title={`${botName}-${message.timestamp?.toISOString()}`}
+              title={`${botName}-${message.timestamp.toISOString()}`}
               description={message.reasoning}
             />
             <div>{message.message}</div>

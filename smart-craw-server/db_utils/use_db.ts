@@ -1,6 +1,6 @@
 "use strict";
 import { DatabaseSync } from "node:sqlite";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "node:crypto";
 import type { BotOutput, MessageOutput } from "../models.ts";
 const database = new DatabaseSync("bots.db");
 
@@ -56,7 +56,7 @@ export const insertMessage = (
   console.log("inserting message");
   console.log(message);
   console.log(reasoning);
-  insertMessageDb.run(uuidv4(), botId, message, reasoning);
+  insertMessageDb.run(randomUUID(), botId, message, reasoning);
 };
 
 export const getMessages = (id: string) => {

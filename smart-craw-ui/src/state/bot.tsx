@@ -1,25 +1,27 @@
 import { createContext } from "react";
-export type Approval = {
+type Approval = {
   toolName: string;
   input: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
+
+//App-side Bot definition
 export type Bot = {
   name: string;
   id: string;
   description: string;
   instructions: string;
-  approval: Approval | undefined;
+  approval?: Approval;
   isExecuting: boolean;
 };
 
-type ApprovalResponse = {
+export type ApprovalRequestedFromServer = Approval & {
   id: string;
-  approval: boolean;
 };
 
-type ApprovalAction = {
+// this is from server OR from client ("optimistically" updated client side)
+export type ApprovalActioned = {
   id: string;
-  approval: Approval;
+  approved: boolean;
 };
 
 type Executing = {
@@ -44,8 +46,8 @@ export const botAction = {
 export type BotAction = (
   | Bot
   | Bots
-  | ApprovalResponse
-  | ApprovalAction
+  | ApprovalRequestedFromServer
+  | ApprovalActioned
   | Executing
 ) & { type: string };
 
@@ -65,15 +67,17 @@ export function botReducer(bots: Bot[], action: BotAction) {
       ];
     }
     case botAction.APPROVAL: {
-      const { id, approval } = rest as ApprovalAction;
-      return bots.map((v) => (v.id === id ? { ...v, approval } : v));
+      const { id, toolName, input } = rest as ApprovalRequestedFromServer;
+      return bots.map((v) =>
+        v.id === id ? { ...v, approval: { toolName, input } } : v,
+      );
     }
     case botAction.ACTIONED: {
-      //if approval given, we are back to "isExecuting"
-      const { id, approval } = rest as ApprovalResponse;
-      console.log("actioned", approval);
+      //if approved, we are back to "isExecuting"
+      const { id, approved } = rest as ApprovalActioned;
+      console.log("actioned", approved);
       return bots.map((v) =>
-        v.id === id ? { ...v, approval: undefined, isExecuting: approval } : v,
+        v.id === id ? { ...v, approval: undefined, isExecuting: approved } : v,
       );
     }
     case botAction.DELETED: {

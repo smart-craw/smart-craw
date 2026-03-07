@@ -55,7 +55,7 @@ function App() {
     sendApproval(ws, id, toolName);
     return botDispatch({
       id,
-      approval: true,
+      approved: true,
       type: botAction.ACTIONED,
     });
   };

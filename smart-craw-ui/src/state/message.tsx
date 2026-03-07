@@ -1,39 +1,45 @@
 import { createContext } from "react";
 
-type MessageOutput = {
+//maps to MessageOutput on server
+type MessageFromServer = {
   id: string; //message id
   message: string;
   reasoning: string;
-  timestamp: Date | string | null;
+  timestamp: string;
 };
 
-export type MessagesOutput = {
-  messages: MessageOutput[];
+//for use "in app", gets translated from MessageFromServer
+export type Message = {
+  id: string; //message id
+  message: string;
+  reasoning: string;
+  timestamp: Date;
+  partialReasoning: boolean; //true if reasoning isn't finished
+  partialMessage: boolean;
+};
+
+//used by ws service
+export type MessagesFromServer = {
+  messages: MessageFromServer[];
   id: string; //bot id
 };
 
-export type Message = MessageOutput & {
-  partialReasoning: boolean; //true if reasoning isn't finished
-  partialMessage: boolean;
-  type: string; //user, assistant
-};
-
+//used by ws service
 export type MessagePayload = {
-  id: string;
+  id: string; //bot id
   message: string;
-  messageType: string;
 };
 
 type MessageComplete = {
   id: string;
 };
 
-export type MessageState = Record<string, Message[]>;
+type MessageState = Record<string, Message[]>;
 
 export type MessageAction = (
   | MessagePayload
   | MessageComplete
-  | MessagesOutput
+  | MessagesFromServer
 ) & {
   type: string;
 };
@@ -54,40 +60,41 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
   const { type, ...rest } = action;
   switch (type) {
     case messageAction.SET: {
-      const { id, messages: messagesById } = rest as MessagesOutput;
+      const { id, messages: messagesById } = rest as MessagesFromServer;
       console.log(messagesById);
       return {
         ...messages,
         [id]: messagesById.map(
-          ({ id, message, reasoning, timestamp }: MessageOutput) => ({
+          ({ id, message, reasoning, timestamp }: MessageFromServer) => ({
             id,
             message,
             reasoning,
             timestamp: dateUtcConvertor(timestamp as string),
             partialReasoning: false,
             partialMessage: false,
-            type: "assistant",
           }),
         ),
       };
     }
     case messageAction.ADDED: {
-      const { id, message, messageType } = rest as MessagePayload;
-      const messagesForBot = messages[id];
+      const { id: botId, message } = rest as MessagePayload;
+      const messagesForBot = messages[botId];
 
       switch (message) {
         case "<think>": {
+          const id = window.crypto.randomUUID(); //temporary, gets overwritten once written to backend DB
+          //first inputs
           return {
             ...messages,
-            [id]: [
+            [botId]: [
               ...(messagesForBot || []),
               {
+                id,
                 message: "",
                 reasoning: "",
                 partialReasoning: true,
                 partialMessage: true,
-                type: messageType,
-                timestamp: null,
+                timestamp: new Date(), //gets overwitten once written to backend DB
               },
             ],
           };
@@ -95,18 +102,19 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
         case "</think>": {
           //not first time, grab latest message to "manipulate"
           const lastMessage = messagesForBot[messagesForBot.length - 1];
-          const allButLast = (messages[id] || []).slice(0, -1);
+          const allButLast = (messages[botId] || []).slice(0, -1);
+          const { id, reasoning, timestamp } = lastMessage;
           return {
             ...messages,
-            [id]: [
+            [botId]: [
               ...allButLast,
               {
+                id,
                 message: "",
-                reasoning: lastMessage.reasoning,
+                reasoning: reasoning,
                 partialReasoning: false,
                 partialMessage: true,
-                type: lastMessage.type,
-                timestamp: null,
+                timestamp,
               },
             ],
           };
@@ -114,36 +122,43 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
         default: {
           //not first time, grab latest message to "manipulate"
           const lastMessage = messagesForBot[messagesForBot.length - 1];
-          const allButLast = (messages[id] || []).slice(0, -1);
+          const allButLast = (messages[botId] || []).slice(0, -1);
+          const {
+            id,
+            reasoning,
+            timestamp,
+            message: currentMessage,
+            partialReasoning,
+          } = lastMessage;
 
           return lastMessage.partialReasoning
             ? {
                 //reasoning is not done, continue putting in reasoning
                 ...messages,
-                [id]: [
+                [botId]: [
                   ...allButLast,
                   {
-                    message: lastMessage.message,
-                    reasoning: lastMessage.reasoning + message,
+                    id,
+                    message: currentMessage,
+                    reasoning: reasoning + message,
                     partialReasoning: true,
                     partialMessage: true,
-                    type: lastMessage.type,
-                    timestamp: null,
+                    timestamp,
                   },
                 ],
               }
             : {
                 //reasoning is done, do normal message
                 ...messages,
-                [id]: [
+                [botId]: [
                   ...allButLast,
                   {
-                    message: lastMessage.message + message,
-                    reasoning: lastMessage.reasoning,
-                    partialReasoning: lastMessage.partialReasoning,
+                    id,
+                    message: currentMessage + message,
+                    reasoning: reasoning,
+                    partialReasoning: partialReasoning,
                     partialMessage: true,
-                    type: lastMessage.type,
-                    timestamp: null,
+                    timestamp,
                   },
                 ],
               };
@@ -151,21 +166,23 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
       }
     }
     case messageAction.FINISHED: {
-      const { id } = rest as MessageComplete;
-      const messagesForBot = messages[id];
+      const { id: botId } = rest as MessageComplete;
+      const messagesForBot = messages[botId];
       const lastMessage = messagesForBot[messagesForBot.length - 1];
-      const allButLast = (messages[id] || []).slice(0, -1);
+      const allButLast = (messages[botId] || []).slice(0, -1);
+      const { id, message, reasoning, partialReasoning, timestamp } =
+        lastMessage;
       return {
         ...messages,
-        [id]: [
+        [botId]: [
           ...allButLast,
           {
-            message: lastMessage.message,
-            reasoning: lastMessage.reasoning,
-            partialReasoning: lastMessage.partialReasoning,
+            id,
+            message,
+            reasoning,
+            partialReasoning,
             partialMessage: false,
-            type: lastMessage.type,
-            timestamp: new Date(),
+            timestamp,
           },
         ],
       };

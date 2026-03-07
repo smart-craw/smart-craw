@@ -1,13 +1,22 @@
 import type { Dispatch } from "react";
 import { botAction } from "../state/bot";
-import type { Bot, Bots, BotAction } from "../state/bot";
+import type {
+  Bot,
+  Bots,
+  BotAction,
+  ApprovalRequestedFromServer,
+  ApprovalActioned,
+} from "../state/bot";
 import { notificationAction } from "../state/notification";
 import type { Notification, NotificationAction } from "../state/notification";
 import {
   messageAction,
   type MessageAction,
-  type MessagesOutput,
+  type MessagesFromServer,
+  type MessagePayload,
 } from "../state/message";
+import type { McpConfigs } from "./types";
+
 const Action = {
   CreateBot: "createbot",
   GetBots: "getbots",
@@ -19,47 +28,38 @@ const Action = {
   GetMessages: "getmessages",
 } as const;
 
+type ActionType = (typeof Action)[keyof typeof Action];
+
 type CreateBotResponse = Bot & {
-  action: (typeof Action)[keyof typeof Action];
+  action: ActionType;
 };
 
 type GetBotsResponse = Bots & {
-  action: (typeof Action)[keyof typeof Action];
+  action: ActionType;
 };
 
-type GetMessagesResponse = MessagesOutput & {
-  action: (typeof Action)[keyof typeof Action];
+type GetMessagesResponse = MessagesFromServer & {
+  action: ActionType;
 };
 
-type MessageResponse = {
-  message: string;
-  id: string;
-  action: (typeof Action)[keyof typeof Action];
+type MessageResponse = MessagePayload & {
+  action: ActionType;
 };
 
-/*type ApprovalResponse = Approval & {
-  action: (typeof Action)[keyof typeof Action];
-};*/
-type ApprovalResponse = {
-  toolName: string;
-  id: string;
-  input: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  action: (typeof Action)[keyof typeof Action];
+type ApprovalResponse = ApprovalRequestedFromServer & {
+  action: ActionType;
 };
-type ApprovalActioned = {
-  id: string;
-  approved: boolean;
-  action: (typeof Action)[keyof typeof Action];
+type ApprovalActionedResponse = ApprovalActioned & {
+  action: ActionType;
 };
 type NotificationResponse = Notification & {
-  action: (typeof Action)[keyof typeof Action];
+  action: ActionType;
 };
 
 export function connectWs(
   botDispatch: Dispatch<BotAction>,
   messageDispatch: Dispatch<MessageAction>,
   notificationDispatch: Dispatch<NotificationAction>,
-  //approvalDispatch: Dispatch<ApprovalAction>,
 ): WebSocket {
   const url = new URL(`/ws`, window.location.href);
   //handles https and wss too since both end in s
@@ -74,7 +74,7 @@ export function connectWs(
       | CreateBotResponse
       | GetBotsResponse
       | ApprovalResponse
-      | ApprovalActioned
+      | ApprovalActionedResponse
       | NotificationResponse
       | MessageResponse
       | GetMessagesResponse;
@@ -87,7 +87,7 @@ export function connectWs(
           id,
           description,
           instructions,
-          approval: null,
+          approval: undefined,
         });
         break;
       }
@@ -100,7 +100,7 @@ export function connectWs(
         break;
       }
       case Action.ApprovalRequest: {
-        const { toolName, id, input } = rest as ApprovalResponse;
+        const { toolName, id, input } = rest as ApprovalRequestedFromServer;
         console.log("Got approval request");
         botDispatch({
           type: botAction.APPROVAL,
@@ -115,12 +115,12 @@ export function connectWs(
         botDispatch({
           type: botAction.ACTIONED,
           id,
-          approval: approved,
+          approved,
         });
         break;
       }
       case Action.GetMessages: {
-        const { id, messages } = rest as GetMessagesResponse;
+        const { id, messages } = rest as MessagesFromServer;
         messageDispatch({
           type: messageAction.SET,
           id,
@@ -129,13 +129,13 @@ export function connectWs(
         break;
       }
       case Action.AssistantMessage: {
-        const { id, message } = rest as MessageResponse;
+        const { id, message } = rest as MessagePayload;
         console.log(message);
         messageDispatch({
           type: messageAction.ADDED,
           id,
           message,
-          messageType: "assistant",
+          //messageType: "assistant",
         });
         break;
       }
@@ -225,8 +225,7 @@ export function getMessages(ws: WebSocket, id: string) {
   );
 }
 
-//TODO fix mcpConfigs
-export function executeLlm(ws: WebSocket, id: string, mcpConfigs: any) {
+export function executeLlm(ws: WebSocket, id: string, mcpConfigs: McpConfigs) {
   ws.send(
     JSON.stringify({
       path: "/llm/execute",
