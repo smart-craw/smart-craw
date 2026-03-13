@@ -2,6 +2,7 @@ import { botExecute, createBot } from "../llm_utils/bots.ts";
 import { instructLlm } from "../llm_utils/llm.ts";
 import { handleLLMResponse } from "../llm_utils/responses.ts";
 import { WebSocketMessageQueue } from "../llm_utils/ws.ts";
+import { v4 as uuidv4 } from "uuid";
 import WebSocket from "ws";
 import type {
   ApprovalInput,
@@ -20,10 +21,18 @@ const Action = {
   ApprovalActioned: "approvalactioned",
   AssistantMessage: "assistantmessage",
   CompleteMessage: "completemessage",
+  CompleteLlmMessage: "completellmmessage",
   Notification: "notification",
   GetBots: "getbots",
   GetMessages: "getmessages",
+  LlmInstantiate: "llminstantiate",
 } as const;
+
+const Assistant = {
+  Llm: "llm",
+  Bot: "bot",
+};
+type AssistantType = (typeof Assistant)[keyof typeof Assistant];
 
 export const routeCreateBot = (
   { description, name, instructions }: CreateBotInput,
@@ -94,7 +103,7 @@ export const routeExecuteBot = (
   const bot = createBot(name, description, instructions, id);
   const query = botExecute(
     bot,
-    approvalWebsocket(bot.id, ws, pendingApprovals),
+    approvalWebsocket(bot.id, ws, Assistant.Bot, pendingApprovals),
     notification(ws),
   );
   holdQueries.set(id, query);
@@ -102,13 +111,12 @@ export const routeExecuteBot = (
     query,
     id,
     assistantMessage(ws),
-    completeMessage(ws),
-    insertMessage,
+    completeMessage(ws, insertMessage),
   );
 };
 
 export const routeExecuteLlm = (
-  { id, mcpConfigs }: ExecuteLLMInput,
+  { mcpConfigs }: ExecuteLLMInput,
   ws: WebSocket,
   wsm: WebSocketMessageQueue,
   getBots: () => BotOutput[],
@@ -116,25 +124,27 @@ export const routeExecuteLlm = (
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
+  const id = uuidv4();
   const bots = getBots().map(
     ({ name, description, instructions, id }: BotOutput) => {
       return createBot(name, description, instructions, id);
     },
   );
   const query = instructLlm(
+    id,
     mcpConfigs, // mcpServers
     bots,
-    approvalWebsocket(id, ws, pendingApprovals),
+    approvalWebsocket(id, ws, Assistant.Llm, pendingApprovals),
     notification(ws),
     wsm,
   );
   holdQueries.set(id, query);
-  handleLLMResponse(
-    query,
-    id,
-    assistantMessage(ws),
-    completeMessage(ws),
-    insertMessage,
+  handleLLMResponse(query, id, assistantMessage(ws), completeLlmMessage(ws));
+  ws.send(
+    JSON.stringify({
+      id,
+      action: Action.LlmInstantiate,
+    }),
   );
 };
 
@@ -142,12 +152,14 @@ export const routeConversation = (
   { message }: ConverseInput,
   wsm: WebSocketMessageQueue,
 ) => {
+  console.log(message);
   wsm.enqueue(message);
 };
 
-export const routeApproval = (
+const routeApproval = (
   { approved, id }: ApprovalInput,
   ws: WebSocket,
+  assistantType: AssistantType,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
   console.log(pendingApprovals);
@@ -160,6 +172,7 @@ export const routeApproval = (
       JSON.stringify({
         id,
         approved,
+        assistantType,
         action: Action.ApprovalActioned,
       }),
     );
@@ -167,6 +180,20 @@ export const routeApproval = (
   } else {
     console.warn(`No pending approval found for bot id: ${id}`);
   }
+};
+export const routeBotApproval = (
+  input: ApprovalInput,
+  ws: WebSocket,
+  pendingApprovals: Map<string, (approved: boolean) => void>,
+) => {
+  routeApproval(input, ws, Assistant.Bot, pendingApprovals);
+};
+export const routeLlmApproval = (
+  input: ApprovalInput,
+  ws: WebSocket,
+  pendingApprovals: Map<string, (approved: boolean) => void>,
+) => {
+  routeApproval(input, ws, Assistant.Llm, pendingApprovals);
 };
 export const routeStopBot = (
   { id }: BotIdInput,
@@ -186,6 +213,7 @@ export const approvalWebsocket =
   (
     id: string,
     ws: WebSocket,
+    assistantType: AssistantType,
     pendingApprovals: Map<string, (approved: boolean) => void>,
   ) =>
   async (toolName: string, input: any) => {
@@ -195,6 +223,7 @@ export const approvalWebsocket =
         toolName,
         id,
         input,
+        assistantType,
         action: Action.ApprovalRequest,
       }),
     );
@@ -214,20 +243,38 @@ export const assistantMessage =
     );
   };
 
-export const completeMessage = (ws: WebSocket) => (id: string) => {
-  ws.send(
-    JSON.stringify({
-      id,
-      action: Action.CompleteMessage,
-    }),
-  );
-};
+export const completeMessage =
+  (
+    ws: WebSocket,
+    insertMessage: (id: string, message: string, reasoning: string) => void,
+  ) =>
+  (id: string, message: string, reasoning: string) => {
+    ws.send(
+      JSON.stringify({
+        id,
+        action: Action.CompleteMessage,
+      }),
+    );
+    insertMessage(id, message, reasoning);
+  };
+
+export const completeLlmMessage =
+  (ws: WebSocket) => (id: string, message: string, reasoning: string) => {
+    ws.send(
+      JSON.stringify({
+        id,
+        message,
+        reasoning,
+        action: Action.CompleteLlmMessage,
+      }),
+    );
+  };
 export const notification =
-  (ws: WebSocket) => (message: string, type: string) => {
+  (ws: WebSocket) => (message: string, notificationType: string) => {
     ws.send(
       JSON.stringify({
         message,
-        type,
+        notificationType,
         action: Action.Notification,
       }),
     );

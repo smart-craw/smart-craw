@@ -3,51 +3,54 @@ import type {
   HookCallback,
   NotificationHookInput,
   PermissionResult,
+  PermissionRequestHookInput,
+  PostToolUseFailureHookInput,
 } from "@anthropic-ai/claude-agent-sdk";
 
-type Block = {
-  type: string;
-  text: string;
-};
+interface SplitReasoning {
+  reasoning: string;
+  message: string;
+}
+//exported for testing
+export function handleMessage(text: string): SplitReasoning {
+  if (text.includes("</think>")) {
+    const [reasoning, message] = text.split("</think>");
+    return {
+      reasoning: reasoning.replace("<think>", "").trim(),
+      message: (message || "").trim(),
+    };
+  } else {
+    //not a reasoning model
+    return {
+      reasoning: "",
+      message: text.trim(),
+    };
+  }
+}
+
 export async function handleLLMResponse(
   query: Query,
   id: string, //just bot id?  What about "normal" llm?
-  cbAssistance: (msg: string, id: string) => void,
-  cbComplete: (id: string) => void,
-  insertMessage: (id: string, message: string, reasoning: string) => void,
+  onStream: (msg: string, id: string) => void,
+  //onComplete: (id: string) => void,
+  onComplete: (id: string, message: string, reasoning: string) => void,
 ) {
   for await (const msg of query) {
     switch (msg.type) {
-      case "assistant": {
-        const text = msg.message.content
-          .filter((block: Block) => block.type === "text")
-          .map((block: Block) => block.text)
-          .join("");
-        cbComplete(id);
-        const [reasoning, message] = text.split("</think>");
-        insertMessage(id, message || "", reasoning.replace("<think>", ""));
-        break;
-      }
+      //"result" always fires, so no need to action "assistant" type
       case "stream_event": {
         const { event } = msg;
         if (event.type === "content_block_delta") {
           if (event.delta.type === "text_delta") {
-            cbAssistance(event.delta.text, id);
-          } /*else {
-            console.log("not text delta");
-            console.log(msg);
+            onStream(event.delta.text, id);
           }
-        } else {
-          console.log("not block delta");
-          console.log(msg);*/
         }
         break;
       }
       case "result": {
         const { result } = msg;
-        cbComplete(id);
-        const [reasoning, message] = result.split("</think>");
-        insertMessage(id, message || "", reasoning.replace("<think>", ""));
+        const { message, reasoning } = handleMessage(result);
+        onComplete(id, message, reasoning);
         break;
       }
       default: {
@@ -63,11 +66,30 @@ export const notificationWrapper = (
 ) => {
   const notificationHandler: HookCallback = async (
     input,
-    toolUseID,
-    { signal },
+    _toolUseID,
+    //{ signal },
   ) => {
-    const notification = input as NotificationHookInput;
-    notificationCb(notification.message, notification.notification_type);
+    switch (input.hook_event_name) {
+      case "PermissionRequest": {
+        const notification = input as PermissionRequestHookInput;
+        notificationCb(
+          JSON.stringify(notification.permission_suggestions) || "",
+          "Permission Request",
+        );
+        break;
+      }
+      case "PostToolUseFailure": {
+        const notification = input as PostToolUseFailureHookInput;
+        notificationCb(notification.error, "Tool Error");
+        break;
+      }
+      default: {
+        const notification = input as NotificationHookInput;
+        console.log("notification recevied", notification);
+        notificationCb(notification.message, notification.notification_type);
+      }
+    }
+
     return {};
   };
   return notificationHandler;

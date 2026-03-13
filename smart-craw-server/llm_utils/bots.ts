@@ -5,6 +5,11 @@ import {
 } from "@anthropic-ai/claude-agent-sdk";
 import { v4 as uuidv4 } from "uuid";
 import { approvalWrapper, notificationWrapper } from "./responses.ts";
+import {
+  autoApproveWriteMemory,
+  createPath,
+  writeOwnKnowledge,
+} from "./memory.ts";
 
 export type BotDefinition = {
   definition: Record<string, AgentDefinition>;
@@ -42,22 +47,35 @@ export function botExecute(
   approvalCb: (toolName: string, input: any) => Promise<boolean>,
   notificationCb: (message: string, type: string) => void,
 ): Query {
+  const path = createPath(bot.id, bot.name);
+  console.log(path);
   const queryResult = query({
     prompt: bot.definition[bot.name].prompt,
     options: {
-      /*mcpServers: {
-        "claude-code-docs": {
-          type: "http",
-          url: "https://code.claude.com/docs/mcp",
-        },
-      },*/
-      //allowedTools: ["mcp__claude-code-docs__*"],
+      systemPrompt: {
+        type: "preset",
+        preset: "claude_code",
+        append: writeOwnKnowledge(path),
+      },
       tools: { type: "preset", preset: "claude_code" },
       canUseTool: approvalWrapper(approvalCb),
       hooks: {
         Notification: [{ hooks: [notificationWrapper(notificationCb)] }],
+        PostToolUseFailure: [
+          {
+            hooks: [notificationWrapper(notificationCb)],
+          },
+        ],
+        PreToolUse: [
+          { matcher: "Write|Edit", hooks: [autoApproveWriteMemory(path)] },
+        ],
+        PermissionRequest: [
+          {
+            hooks: [notificationWrapper(notificationCb)],
+          },
+        ],
       },
-      includePartialMessages: true, //doesn't seem to do much?
+      includePartialMessages: true,
       model: "hf.co/Qwen/Qwen3-4B-GGUF:latest",
       env: {
         ...process.env,

@@ -85,12 +85,13 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
       };
     }
     case messageAction.ADDED: {
+      //TODO how to handle none-reasoning models??
       const { id: botId, message } = rest as MessagePayload;
       const messagesForBot = messages[botId];
 
       switch (message) {
         case "<think>": {
-          const id = window.crypto.randomUUID(); //temporary, gets overwritten once written to backend DB
+          const id = window.crypto.randomUUID(); //gets overwritten once written to backend DB
           //first inputs
           return {
             ...messages,
@@ -129,6 +130,7 @@ export function messageReducer(messages: MessageState, action: MessageAction) {
         }
         default: {
           //not first time, grab latest message to "manipulate"
+          // NB if not a reasoning model it WILL hit here first
           const lastMessage = messagesForBot[messagesForBot.length - 1];
           const allButLast = (messages[botId] || []).slice(0, -1);
           const {

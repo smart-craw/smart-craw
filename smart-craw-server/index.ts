@@ -19,7 +19,8 @@ import {
 //put this behind an nginx proxy
 import { WebSocketServer } from "ws";
 import {
-  routeApproval,
+  routeBotApproval,
+  routeLlmApproval,
   routeConversation,
   routeCreateBot,
   routeExecuteBot,
@@ -69,7 +70,7 @@ wss.on("connection", function connection(ws) {
       case "/bot/all":
         routeGetAllBots(ws, getBots);
         break;
-      case "/llm/execute":
+      case "/llm/instantiate":
         routeExecuteLlm(
           input as ExecuteLLMInput,
           ws,
@@ -80,13 +81,19 @@ wss.on("connection", function connection(ws) {
           pendingApprovals,
         );
         break;
+
       case "/llm/converse":
         routeConversation(input as ConverseInput, messageQueue);
         break;
-      case "/tool/approval":
+      case "/bot/approval":
         console.log(pendingApprovals);
         console.log(input);
-        routeApproval(input as ApprovalInput, ws, pendingApprovals);
+        routeBotApproval(input as ApprovalInput, ws, pendingApprovals);
+        break;
+      case "/llm/approval":
+        console.log(pendingApprovals);
+        console.log(input);
+        routeLlmApproval(input as ApprovalInput, ws, pendingApprovals);
         break;
     }
     console.log("received: %s", data);

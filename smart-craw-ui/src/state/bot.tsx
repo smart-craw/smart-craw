@@ -1,8 +1,9 @@
 import { createContext, type Dispatch } from "react";
-type Approval = {
-  toolName: string;
-  input: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-};
+import type {
+  Approval,
+  ApprovalActioned,
+  ApprovalRequestedFromServer,
+} from "../services/types";
 
 //App-side Bot definition
 export type Bot = {
@@ -12,16 +13,6 @@ export type Bot = {
   instructions: string;
   approval?: Approval;
   isExecuting: boolean;
-};
-
-export type ApprovalRequestedFromServer = Approval & {
-  id: string;
-};
-
-// this is from server OR from client ("optimistically" updated client side)
-export type ApprovalActioned = {
-  id: string;
-  approved: boolean;
 };
 
 type Executing = {
@@ -42,14 +33,14 @@ export const botAction = {
   STARTED: "started",
   FINISHED: "finished",
 } as const;
-
+type BotActionType = (typeof botAction)[keyof typeof botAction];
 export type BotAction = (
   | Bot
   | Bots
   | ApprovalRequestedFromServer
   | ApprovalActioned
   | Executing
-) & { type: string };
+) & { type: BotActionType };
 
 type BotValueDispatch = {
   value: Bot[];

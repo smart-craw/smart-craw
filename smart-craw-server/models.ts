@@ -32,7 +32,7 @@ export type ApprovalInput = {
 };
 
 export type ExecuteLLMInput = {
-  id: string;
+  //id: string;
   mcpConfigs: McpServerConfig[];
 };
 

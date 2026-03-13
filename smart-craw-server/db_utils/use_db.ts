@@ -24,7 +24,7 @@ const insertMessageDb = database.prepare(
 );
 
 const getMessagesDb = database.prepare(
-  "SELECT id, message, reasoning, timestamp FROM bot_messages where bot_id=?",
+  "SELECT id, message, reasoning, timestamp FROM bot_messages where bot_id=? ORDER BY timestamp DESC",
 );
 
 export const insertBot = (
@@ -60,14 +60,6 @@ export const insertMessage = (
 };
 
 export const getMessages = (id: string) => {
+  // @ts-expect-error - type definition bug with .all() positional arguments
   return getMessagesDb.all(id) as MessageOutput[];
 };
-
-// Execute the prepared statement with bound values.
-/*insertBot.run(1, "hello");
-insertBot.run(2, "world");*/
-// Create a prepared statement to read data from the database.
-/*const query = database.prepare("SELECT * FROM data ORDER BY key");
-// Execute the prepared statement and log the result set.
-console.log(query.all());*/
-// Prints: [ { key: 1, value: 'hello' }, { key: 2, value: 'world' } ]

@@ -1,12 +1,7 @@
 import type { Dispatch } from "react";
 import { botAction } from "../state/bot";
-import type {
-  Bot,
-  Bots,
-  BotAction,
-  ApprovalRequestedFromServer,
-  ApprovalActioned,
-} from "../state/bot";
+
+import type { Bot, Bots, BotAction } from "../state/bot";
 import { notificationAction } from "../state/notification";
 import type { Notification, NotificationAction } from "../state/notification";
 import {
@@ -15,7 +10,12 @@ import {
   type MessagesFromServer,
   type MessagePayload,
 } from "../state/message";
-import type { McpConfigs } from "./types";
+import type {
+  McpConfig,
+  ApprovalActioned,
+  ApprovalRequestedFromServer,
+} from "./types";
+import { llmAction, type LlmAction } from "../state/llm";
 
 const Action = {
   CreateBot: "createbot",
@@ -24,12 +24,18 @@ const Action = {
   ApprovalActioned: "approvalactioned",
   AssistantMessage: "assistantmessage",
   CompleteMessage: "completemessage",
+  CompleteLlmMessage: "completellmmessage",
   Notification: "notification",
   GetMessages: "getmessages",
+  LlmInstantiate: "llminstantiate",
 } as const;
 
 type ActionType = (typeof Action)[keyof typeof Action];
-
+const Assistant = {
+  Llm: "llm",
+  Bot: "bot",
+};
+type AssistantType = (typeof Assistant)[keyof typeof Assistant];
 type CreateBotResponse = Bot & {
   action: ActionType;
 };
@@ -46,7 +52,15 @@ type MessageResponse = MessagePayload & {
   action: ActionType;
 };
 
+type MessageLlmResponse = {
+  id: string;
+  message: string;
+  reasoning: string;
+  action: ActionType;
+};
+
 type ApprovalResponse = ApprovalRequestedFromServer & {
+  assistantType: AssistantType;
   action: ActionType;
 };
 type ApprovalActionedResponse = ApprovalActioned & {
@@ -60,6 +74,7 @@ export function connectWs(
   botDispatch: Dispatch<BotAction>,
   messageDispatch: Dispatch<MessageAction>,
   notificationDispatch: Dispatch<NotificationAction>,
+  llmDispatch: Dispatch<LlmAction>,
 ): WebSocket {
   const url = new URL(`/ws`, window.location.href);
   //handles https and wss too since both end in s
@@ -68,6 +83,8 @@ export function connectWs(
   ws.onopen = () => {
     console.log("connected");
     getBots(ws);
+    //TODO, add ability to create mcpConfigs
+    executeLlm(ws, []);
   };
   ws.onmessage = (event) => {
     const { action, ...rest } = JSON.parse(event.data) as
@@ -100,24 +117,59 @@ export function connectWs(
         break;
       }
       case Action.ApprovalRequest: {
-        const { toolName, id, input } = rest as ApprovalRequestedFromServer;
+        const { toolName, id, input, assistantType } =
+          rest as ApprovalRequestedFromServer & {
+            assistantType: AssistantType;
+          };
         console.log("Got approval request");
-        botDispatch({
-          type: botAction.APPROVAL,
-          id,
-          toolName,
-          input,
-        });
+        console.log(assistantType);
+        switch (assistantType) {
+          case Assistant.Llm: {
+            llmDispatch({
+              type: llmAction.APPROVAL,
+              id,
+              toolName,
+              input,
+            });
+            break;
+          }
+          case Assistant.Bot: {
+            botDispatch({
+              type: botAction.APPROVAL,
+              id,
+              toolName,
+              input,
+            });
+            break;
+          }
+        }
+
         break;
       }
       case Action.ApprovalActioned: {
-        const { id, approved } = rest as ApprovalActioned;
+        const { id, approved, assistantType } = rest as ApprovalActioned & {
+          assistantType: AssistantType;
+        };
         console.log("Got approval action");
-        botDispatch({
-          type: botAction.ACTIONED,
-          id,
-          approved,
-        });
+        console.log(assistantType);
+        switch (assistantType) {
+          case Assistant.Llm: {
+            llmDispatch({
+              type: llmAction.ACTIONED,
+              id,
+              approved,
+            });
+            break;
+          }
+          case Assistant.Bot: {
+            botDispatch({
+              type: botAction.ACTIONED,
+              id,
+              approved,
+            });
+            break;
+          }
+        }
         break;
       }
       case Action.GetMessages: {
@@ -151,9 +203,32 @@ export function connectWs(
         });
         break;
       }
+      case Action.CompleteLlmMessage: {
+        const { id, message } = rest as MessageLlmResponse;
+        llmDispatch({
+          type: llmAction.FINISHED,
+          result: message,
+          id,
+        });
+        break;
+      }
+      case Action.LlmInstantiate: {
+        const { id } = rest as MessageResponse;
+        console.log("instantiated llm", id);
+        llmDispatch({
+          type: llmAction.SET,
+          id,
+          instructions: "",
+          isExecuting: false,
+          result: "",
+        });
+        break;
+      }
       case Action.Notification: {
-        const { notificationType, message } = rest as Notification;
         console.log("got notification");
+        console.log(rest);
+        const { notificationType, message } = rest as Notification;
+        //console.log("got notification");
         console.log(message);
         notificationDispatch({
           type: notificationAction.ADDED,
@@ -225,11 +300,11 @@ export function getMessages(ws: WebSocket, id: string) {
   );
 }
 
-export function executeLlm(ws: WebSocket, id: string, mcpConfigs: McpConfigs) {
+export function executeLlm(ws: WebSocket, mcpConfigs: McpConfig[]) {
   ws.send(
     JSON.stringify({
-      path: "/llm/execute",
-      input: { id, mcpConfigs },
+      path: "/llm/instantiate",
+      input: { mcpConfigs },
     }),
   );
 }
@@ -243,10 +318,19 @@ export function converseLlm(ws: WebSocket, id: string, message: string) {
   );
 }
 
-export function sendApproval(ws: WebSocket, id: string, toolName: string) {
+export function sendBotApproval(ws: WebSocket, id: string, toolName: string) {
   ws.send(
     JSON.stringify({
-      path: "/tool/approval",
+      path: "/bot/approval",
+      input: { approved: true, toolName, id },
+    }),
+  );
+}
+
+export function sendLlmApproval(ws: WebSocket, id: string, toolName: string) {
+  ws.send(
+    JSON.stringify({
+      path: "/llm/approval",
       input: { approved: true, toolName, id },
     }),
   );

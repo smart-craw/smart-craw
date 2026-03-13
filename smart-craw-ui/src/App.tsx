@@ -7,7 +7,10 @@ import BotList from "./components/BotList";
 import ModalCreateBot from "./components/ModalCreateBot";
 import { Button, Col, Row, Layout, Card, notification } from "antd";
 import { WsContext } from "./state/ws";
+import MainChat from "./components/MainChat";
+import { LlmContext, llmReducer, dummyLlm } from "./state/llm";
 const { Content, Header } = Layout;
+
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [botState, botDispatch] = useReducer(botReducer, []);
@@ -16,6 +19,7 @@ function App() {
     notificationReducer,
     null,
   );
+  const [llmState, llmDispatch] = useReducer(llmReducer, dummyLlm);
 
   const [api, contextHolder] = notification.useNotification({
     stack: {
@@ -32,7 +36,12 @@ function App() {
     }
   }, [notificationState, api]);
 
-  const ws = connectWs(botDispatch, messageDispatch, notificationDispatch);
+  const ws = connectWs(
+    botDispatch,
+    messageDispatch,
+    notificationDispatch,
+    llmDispatch,
+  );
 
   const onCreate = (
     name: string,
@@ -50,27 +59,32 @@ function App() {
         <MessageContext
           value={{ value: messageState, dispatch: messageDispatch }}
         >
-          {contextHolder}
-          <Layout style={{ minHeight: "100vh" }}>
-            <Header style={{ display: "flex", alignItems: "center" }}>
-              <div className="demo-logo" />
-            </Header>
-            <Content style={{ padding: "5px 48px" }}>
-              <ModalCreateBot
-                isOpen={isModalOpen}
-                onCreate={onCreate}
-                onCancel={toggleModal}
-              />
-              <Row>
-                <Col span={16}>
-                  <Card title="Bot inventory">
-                    <Button onClick={toggleModal}>Add New</Button>
-                    <BotList />
-                  </Card>
-                </Col>
-              </Row>
-            </Content>
-          </Layout>
+          <LlmContext value={{ value: llmState, dispatch: llmDispatch }}>
+            {contextHolder}
+            <Layout style={{ minHeight: "100vh" }}>
+              <Header style={{ display: "flex", alignItems: "center" }}>
+                <div className="demo-logo" />
+              </Header>
+              <Content style={{ padding: "5px 48px" }}>
+                <ModalCreateBot
+                  isOpen={isModalOpen}
+                  onCreate={onCreate}
+                  onCancel={toggleModal}
+                />
+                <Row gutter={8}>
+                  <Col xs={24} sm={16}>
+                    <Card title="Bot inventory">
+                      <Button onClick={toggleModal}>Add New</Button>
+                      <BotList />
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <MainChat />
+                  </Col>
+                </Row>
+              </Content>
+            </Layout>
+          </LlmContext>
         </MessageContext>
       </BotContext>
     </WsContext>
