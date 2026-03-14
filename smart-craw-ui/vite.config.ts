@@ -1,5 +1,7 @@
-import { defineConfig } from "vite";
+/// <reference types="vite" />
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import { playwright } from "@vitest/browser-playwright";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -22,12 +24,15 @@ export default defineConfig({
   },
   test: {
     browser: {
-      provider: "playwright", // or 'webdriverio'
       enabled: true,
-      // at least one instance is required
-      instances: [{ browser: "chromium" }],
       headless: true,
-      viewport: { width: 1920, height: 1080 },
+      provider: playwright(),
+      instances: [{ browser: "chromium" }],
+    },
+    //setupFiles: ["./src/tests/setup.ts"],
+    //globals: true,
+    coverage: {
+      include: ["src"],
     },
   },
 });

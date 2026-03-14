@@ -1,8 +1,7 @@
 import { List, Button, Card } from "antd";
 
-import { botAction, BotContext } from "../state/bot";
-import { useContext, useState } from "react";
-import { WsContext } from "../state/ws";
+import { useState } from "react";
+import { useAppStore } from "../state/store";
 import {
   executeBot,
   getMessages,
@@ -23,28 +22,29 @@ type Props = {
 };
 
 const BotList: React.FC<Props> = ({ onCreateBot }: Props) => {
-  const { value: data, dispatch: botDispatch } = useContext(BotContext);
-  const ws = useContext(WsContext)!;
+  const data = useAppStore((state) => state.bots);
+  const ws = useAppStore((state) => state.ws)!;
+  const actionBotApproval = useAppStore((state) => state.actionBotApproval);
+  const startBot = useAppStore((state) => state.startBot);
+  const finishBot = useAppStore((state) => state.finishBot);
+  const deleteBot = useAppStore((state) => state.deleteBot);
+
   //
   const onConfirm = (id: string, toolName: string) => () => {
     sendBotApproval(ws, id, toolName);
-    return botDispatch({
-      id,
-      approved: true,
-      type: botAction.ACTIONED,
-    });
+    return actionBotApproval(id, true);
   };
   const execute = (id: string) => () => {
-    botDispatch({ type: botAction.STARTED, id });
+    startBot(id);
     executeBot(ws, id);
   };
   const stopExecute = (id: string) => () => {
     stopBot(ws, id);
-    botDispatch({ type: botAction.FINISHED, id });
+    finishBot(id);
   };
   const onDelete = (id: string) => () => {
     removeBot(ws, id);
-    botDispatch({ type: botAction.DELETED, id });
+    deleteBot(id);
   };
   const [selectedBot, setSelectedBot] = useState<LocalBot | null>(null);
   //

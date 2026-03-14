@@ -1,6 +1,5 @@
-import { type Bot } from "../state/bot";
+import { type Bot, type Llm } from "../state/store";
 import { Popconfirm, Button, Badge } from "antd";
-import type { Llm } from "../state/llm";
 export const ButtonOption = {
   Approval: "approval",
   Stop: "stop",

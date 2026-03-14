@@ -1,7 +1,7 @@
 "use strict";
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
-import type { BotOutput, MessageOutput } from "../models.ts";
+import type { BotOutput, MessageOutput } from "../../shared/models.ts";
 const database = new DatabaseSync("bots.db");
 
 // Create a prepared statement to insert data into the database.
@@ -33,19 +33,37 @@ export const insertBot = (
   description: string,
   instructions: string,
 ) => {
-  insertBotDb.run(id, name, description, instructions);
+  try {
+    insertBotDb.run(id, name, description, instructions);
+  } catch (error) {
+    console.error(`Error inserting bot ${id}:`, error);
+  }
 };
 
-export const getBot = (id: string) => {
-  return getBotDb.get(id) as BotOutput;
+export const getBot = (id: string): BotOutput | undefined => {
+  try {
+    return getBotDb.get(id) as BotOutput;
+  } catch (error) {
+    console.error(`Error getting bot ${id}:`, error);
+    return undefined;
+  }
 };
 
-export const getBots = () => {
-  return getBotsDb.all() as BotOutput[];
+export const getBots = (): BotOutput[] => {
+  try {
+    return getBotsDb.all() as BotOutput[];
+  } catch (error) {
+    console.error("Error getting bots:", error);
+    return [];
+  }
 };
 
 export const removeBot = (id: string) => {
-  removeBotDb.run(id);
+  try {
+    removeBotDb.run(id);
+  } catch (error) {
+    console.error(`Error removing bot ${id}:`, error);
+  }
 };
 
 export const insertMessage = (
@@ -56,10 +74,18 @@ export const insertMessage = (
   console.log("inserting message");
   console.log(message);
   console.log(reasoning);
-  insertMessageDb.run(randomUUID(), botId, message, reasoning);
+  try {
+    insertMessageDb.run(randomUUID(), botId, message, reasoning);
+  } catch (error) {
+    console.error(`Error inserting message for bot ${botId}:`, error);
+  }
 };
 
-export const getMessages = (id: string) => {
-  // @ts-expect-error - type definition bug with .all() positional arguments
-  return getMessagesDb.all(id) as MessageOutput[];
+export const getMessages = (id: string): MessageOutput[] => {
+  try {
+    return getMessagesDb.all(id) as MessageOutput[];
+  } catch (error) {
+    console.error(`Error getting messages for bot ${id}:`, error);
+    return [];
+  }
 };

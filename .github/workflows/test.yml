@@ -1,0 +1,44 @@
+on: push
+
+jobs:
+  run_ui_tests:
+    name: Run UI tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./smart-craw-ui
+    env:
+      NODE_OPTIONS: "--max_old_space_size=4096"
+      VITEST_SEGFAULT_RETRY: "5"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.1.0"
+      - name: install deps
+        run: |
+          npm ci
+          npx playwright install
+      - name: run tests
+        run: npm run test -- --coverage .
+      - name: compile
+        run: npm run build
+  run_server_tests:
+    name: Run server tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./smart-craw-server
+    env:
+      NODE_OPTIONS: "--max_old_space_size=4096"
+      VITEST_SEGFAULT_RETRY: "5"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.1.0"
+      - name: install deps
+        run: |
+          npm ci
+      - name: run tests
+        run: npm run test -- --coverage .

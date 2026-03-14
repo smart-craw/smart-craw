@@ -20,12 +20,13 @@
   "type": "module",
   "main": "index.ts",
   "scripts": {
-    "test": "npm run test",
+    "test": "vitest",
     "init_db": "node db_utils/create_db.ts",
     "start": "node index.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.62",
+    "dotenv": "^17.3.1",
     "uuid": "^13.0.0",
     "ws": "^8.19.0"
   },
@@ -33,6 +34,8 @@
     "@types/node": "^25.3.3",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.18.1",
-    "typescript": "^5.9.3"
+    "@vitest/coverage-v8": "^4.1.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
   }
 }

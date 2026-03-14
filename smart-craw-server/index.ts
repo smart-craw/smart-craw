@@ -1,12 +1,12 @@
+import "dotenv/config";
 import { WebSocketMessageQueue } from "./llm_utils/ws.ts";
 import type {
   ApprovalInput,
   BotIdInput,
   ConverseInput,
   CreateBotInput,
-  ExecuteLLMInput,
-  WebSocketInput,
-} from "./models.ts";
+} from "../shared/models.ts";
+import { type ExecuteLLMInputServer, type WebSocketInputServer } from "./models.ts";
 import {
   insertBot,
   getBot,
@@ -33,17 +33,17 @@ import {
 import type { Query } from "@anthropic-ai/claude-agent-sdk";
 const wss = new WebSocketServer({ port: 8080 });
 
+const pendingApprovals = new Map<string, (approved: boolean) => void>();
+const holdQueries = new Map<string, Query>();
+
 wss.on("connection", function connection(ws) {
-  //this is mutable state.
-  const pendingApprovals = new Map<string, (approved: boolean) => void>();
-  const holdQueries = new Map<string, Query>();
   const messageQueue = new WebSocketMessageQueue();
   ws.on("error", (err) => {
     console.error(err);
     messageQueue.close();
   });
   ws.on("message", function message(data) {
-    const { path, input } = JSON.parse(data.toString()) as WebSocketInput;
+    const { path, input } = JSON.parse(data.toString()) as WebSocketInputServer;
     switch (path) {
       case "/bot/create":
         routeCreateBot(input as CreateBotInput, ws, insertBot);
@@ -72,7 +72,7 @@ wss.on("connection", function connection(ws) {
         break;
       case "/llm/instantiate":
         routeExecuteLlm(
-          input as ExecuteLLMInput,
+          input as ExecuteLLMInputServer,
           ws,
           messageQueue,
           getBots,

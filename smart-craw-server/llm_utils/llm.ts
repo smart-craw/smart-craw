@@ -81,9 +81,9 @@ export function instructLlm(
       model: "hf.co/Qwen/Qwen3-4B-GGUF:latest",
       env: {
         ...process.env,
-        ANTHROPIC_BASE_URL: "http://localhost:11434",
-        ANTHROPIC_AUTH_TOKEN: "ollama",
-        ANTHROPIC_API_KEY: "sk-local-dummy", // Needs a placeholder string
+        ANTHROPIC_BASE_URL: process.env.ANTHROPIC_BASE_URL || "http://localhost:11434",
+        ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN || "ollama",
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "sk-local-dummy",
       },
     },
   });
