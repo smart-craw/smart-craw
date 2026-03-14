@@ -1,4 +1,6 @@
-# Get Smart!  Its not Claw, its Craw!
+# SmartCraw
+
+## Get Smart!  Its not Claw, its Craw!
 
 Want to access your bots from anywhere?  Want to easily stop them if they are going haywire?  Want to easily schedule them?  Want infinite composibility that won't catch an infinite loop?
 
