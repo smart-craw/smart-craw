@@ -1,4 +1,5 @@
-import { defineConfig } from "vite";
+/// <reference types="vite" />
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 // https://vite.dev/config/
@@ -18,16 +19,6 @@ export default defineConfig({
         ws: true,
         rewrite: (path: string) => path,
       },
-    },
-  },
-  test: {
-    browser: {
-      provider: "playwright", // or 'webdriverio'
-      enabled: true,
-      // at least one instance is required
-      instances: [{ browser: "chromium" }],
-      headless: true,
-      viewport: { width: 1920, height: 1080 },
     },
   },
 });

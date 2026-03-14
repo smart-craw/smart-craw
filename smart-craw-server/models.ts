@@ -1,52 +1,13 @@
 import { type McpServerConfig } from "@anthropic-ai/claude-agent-sdk";
+export * from "../shared/models.ts";
+import { type McpConfig } from "../shared/models.ts";
 
-export type CreateBotInput = {
-  description: string;
-  instructions: string;
-  name: string;
-  id?: string;
-};
-
-export type BotOutput = {
-  description: string;
-  instructions: string;
-  name: string;
-  id: string;
-};
-
-export type MessageOutput = {
-  id: string; //message id
-  message: string;
-  reasoning: string;
-  timestamp: Date;
-};
-
-export type BotIdInput = {
-  id: string;
-};
-
-export type ApprovalInput = {
-  approved: boolean;
-  toolName: string;
-  id: string;
-};
-
-export type ExecuteLLMInput = {
-  //id: string;
+export type ExecuteLLMInputServer = {
   mcpConfigs: McpServerConfig[];
 };
 
-export type ConverseInput = {
-  id: string;
-  message: string;
+export type WebSocketInputServer = {
+  path: string;
+  input: any; // Allow the server router to narrow types
 };
 
-export type WebSocketInput = {
-  path: string;
-  input:
-    | CreateBotInput
-    | BotIdInput
-    | ApprovalInput
-    | ExecuteLLMInput
-    | ConverseInput; //plus more in the future
-};

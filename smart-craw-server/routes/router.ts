@@ -10,29 +10,15 @@ import type {
   BotOutput,
   ConverseInput,
   CreateBotInput,
-  ExecuteLLMInput,
   MessageOutput,
-} from "../models.ts";
+  ActionType,
+  AssistantType,
+} from "../../shared/models.ts";
+import { Action, Assistant } from "../../shared/models.ts";
+import { type ExecuteLLMInputServer } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
 
-const Action = {
-  CreateBot: "createbot",
-  ApprovalRequest: "approvalrequest",
-  ApprovalActioned: "approvalactioned",
-  AssistantMessage: "assistantmessage",
-  CompleteMessage: "completemessage",
-  CompleteLlmMessage: "completellmmessage",
-  Notification: "notification",
-  GetBots: "getbots",
-  GetMessages: "getmessages",
-  LlmInstantiate: "llminstantiate",
-} as const;
 
-const Assistant = {
-  Llm: "llm",
-  Bot: "bot",
-};
-type AssistantType = (typeof Assistant)[keyof typeof Assistant];
 
 export const routeCreateBot = (
   { description, name, instructions }: CreateBotInput,
@@ -94,12 +80,17 @@ export const routeGetMessages = (
 export const routeExecuteBot = (
   { id }: BotIdInput,
   ws: WebSocket,
-  getBot: (id: string) => CreateBotInput,
+  getBot: (id: string) => CreateBotInput | undefined,
   insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
-  const { name, description, instructions } = getBot(id);
+  const botDef = getBot(id);
+  if (!botDef) {
+    console.error(`Execution failed: bot ${id} not found`);
+    return;
+  }
+  const { name, description, instructions } = botDef;
   const bot = createBot(name, description, instructions, id);
   const query = botExecute(
     bot,
@@ -116,7 +107,7 @@ export const routeExecuteBot = (
 };
 
 export const routeExecuteLlm = (
-  { mcpConfigs }: ExecuteLLMInput,
+  { mcpConfigs }: ExecuteLLMInputServer,
   ws: WebSocket,
   wsm: WebSocketMessageQueue,
   getBots: () => BotOutput[],

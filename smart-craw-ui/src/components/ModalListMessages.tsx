@@ -1,6 +1,5 @@
 import { List, Modal, Button } from "antd";
-import { MessageContext } from "../state/message";
-import { useContext } from "react";
+import { useAppStore } from "../state/store";
 
 interface Props {
   isOpen: boolean;
@@ -9,7 +8,7 @@ interface Props {
   botId: string;
 }
 const ModalListMessages = ({ isOpen, onCancel, botName, botId }: Props) => {
-  const { value: messagesByBot } = useContext(MessageContext);
+  const messagesByBot = useAppStore((state) => state.messages);
   const messages = messagesByBot[botId] || [];
 
   return (

@@ -1,51 +1,37 @@
-import type { Dispatch } from "react";
-import { botAction } from "../state/bot";
-
-import type { Bot, Bots, BotAction } from "../state/bot";
-import { notificationAction } from "../state/notification";
-import type { Notification, NotificationAction } from "../state/notification";
+import { useAppStore } from "../state/store";
+import type { Bot, Notification } from "../state/store";
 import {
-  messageAction,
-  type MessageAction,
-  type MessagesFromServer,
-  type MessagePayload,
-} from "../state/message";
-import type {
-  McpConfig,
-  ApprovalActioned,
-  ApprovalRequestedFromServer,
-} from "./types";
-import { llmAction, type LlmAction } from "../state/llm";
+  Action,
+  type ActionType,
+  Assistant,
+  type AssistantType,
+  type ApprovalActioned,
+  type ApprovalRequestedFromServer,
+  type McpConfig,
+  type MessageOutput,
+} from "../../../shared/models.ts";
 
-const Action = {
-  CreateBot: "createbot",
-  GetBots: "getbots",
-  ApprovalRequest: "approvalrequest",
-  ApprovalActioned: "approvalactioned",
-  AssistantMessage: "assistantmessage",
-  CompleteMessage: "completemessage",
-  CompleteLlmMessage: "completellmmessage",
-  Notification: "notification",
-  GetMessages: "getmessages",
-  LlmInstantiate: "llminstantiate",
-} as const;
-
-type ActionType = (typeof Action)[keyof typeof Action];
-const Assistant = {
-  Llm: "llm",
-  Bot: "bot",
-};
-type AssistantType = (typeof Assistant)[keyof typeof Assistant];
 type CreateBotResponse = Bot & {
   action: ActionType;
 };
 
-type GetBotsResponse = Bots & {
+type GetBotsResponse = {
+  bots: Bot[];
   action: ActionType;
+};
+
+type MessagesFromServer = {
+  id: string;
+  messages: MessageOutput[];
 };
 
 type GetMessagesResponse = MessagesFromServer & {
   action: ActionType;
+};
+
+type MessagePayload = {
+  id: string;
+  message: string;
 };
 
 type MessageResponse = MessagePayload & {
@@ -70,12 +56,7 @@ type NotificationResponse = Notification & {
   action: ActionType;
 };
 
-export function connectWs(
-  botDispatch: Dispatch<BotAction>,
-  messageDispatch: Dispatch<MessageAction>,
-  notificationDispatch: Dispatch<NotificationAction>,
-  llmDispatch: Dispatch<LlmAction>,
-): WebSocket {
+export function connectWs(): WebSocket {
   const url = new URL(`/ws`, window.location.href);
   //handles https and wss too since both end in s
   url.protocol = url.protocol.replace("http", "ws");
@@ -87,6 +68,7 @@ export function connectWs(
     executeLlm(ws, []);
   };
   ws.onmessage = (event) => {
+    const store = useAppStore.getState();
     const { action, ...rest } = JSON.parse(event.data) as
       | CreateBotResponse
       | GetBotsResponse
@@ -98,75 +80,47 @@ export function connectWs(
     switch (action) {
       case Action.CreateBot: {
         const { name, id, description, instructions } = rest as Bot;
-        botDispatch({
-          type: botAction.ADDED,
+        store.addBot({
           name,
           id,
           description,
           instructions,
-          approval: undefined,
+          isExecuting: false,
         });
         break;
       }
       case Action.GetBots: {
-        const { bots } = rest as Bots;
-        botDispatch({
-          type: botAction.SET,
-          bots,
-        });
+        const { bots } = rest as GetBotsResponse;
+        store.setBots(bots);
         break;
       }
       case Action.ApprovalRequest: {
-        const { toolName, id, input, assistantType } =
-          rest as ApprovalRequestedFromServer & {
-            assistantType: AssistantType;
-          };
-        console.log("Got approval request");
-        console.log(assistantType);
+        const { toolName, id, input, assistantType } = rest as ApprovalResponse;
+        console.log("Got approval request", assistantType);
         switch (assistantType) {
           case Assistant.Llm: {
-            llmDispatch({
-              type: llmAction.APPROVAL,
-              id,
-              toolName,
-              input,
-            });
+            store.setLlmApproval(id, toolName, input);
             break;
           }
           case Assistant.Bot: {
-            botDispatch({
-              type: botAction.APPROVAL,
-              id,
-              toolName,
-              input,
-            });
+            store.setBotApproval(id, toolName, input);
             break;
           }
         }
-
         break;
       }
       case Action.ApprovalActioned: {
         const { id, approved, assistantType } = rest as ApprovalActioned & {
           assistantType: AssistantType;
         };
-        console.log("Got approval action");
-        console.log(assistantType);
+        console.log("Got approval action", assistantType);
         switch (assistantType) {
           case Assistant.Llm: {
-            llmDispatch({
-              type: llmAction.ACTIONED,
-              id,
-              approved,
-            });
+            store.actionLlmApproval(approved);
             break;
           }
           case Assistant.Bot: {
-            botDispatch({
-              type: botAction.ACTIONED,
-              id,
-              approved,
-            });
+            store.actionBotApproval(id, approved);
             break;
           }
         }
@@ -174,48 +128,29 @@ export function connectWs(
       }
       case Action.GetMessages: {
         const { id, messages } = rest as MessagesFromServer;
-        messageDispatch({
-          type: messageAction.SET,
-          id,
-          messages,
-        });
+        store.setMessages(id, messages);
         break;
       }
       case Action.AssistantMessage: {
         const { id, message } = rest as MessagePayload;
-        messageDispatch({
-          type: messageAction.ADDED,
-          id,
-          message,
-        });
+        store.addMessage(id, message);
         break;
       }
       case Action.CompleteMessage: {
         const { id } = rest as MessageResponse;
-        messageDispatch({
-          type: messageAction.FINISHED,
-          id,
-        });
-        botDispatch({
-          type: botAction.FINISHED,
-          id,
-        });
+        store.finishMessage(id);
+        store.finishBot(id);
         break;
       }
       case Action.CompleteLlmMessage: {
-        const { id, message } = rest as MessageLlmResponse;
-        llmDispatch({
-          type: llmAction.FINISHED,
-          result: message,
-          id,
-        });
+        const { message } = rest as MessageLlmResponse;
+        store.finishLlm(message);
         break;
       }
       case Action.LlmInstantiate: {
         const { id } = rest as MessageResponse;
         console.log("instantiated llm", id);
-        llmDispatch({
-          type: llmAction.SET,
+        store.setLlm({
           id,
           instructions: "",
           isExecuting: false,
@@ -224,16 +159,9 @@ export function connectWs(
         break;
       }
       case Action.Notification: {
-        console.log("got notification");
-        console.log(rest);
         const { notificationType, message } = rest as Notification;
-        //console.log("got notification");
         console.log(message);
-        notificationDispatch({
-          type: notificationAction.ADDED,
-          notificationType,
-          message,
-        });
+        store.setNotification({ notificationType, message });
         break;
       }
     }
