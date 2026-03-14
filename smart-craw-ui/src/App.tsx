@@ -53,7 +53,6 @@ function App() {
       theme={{
         components: {
           Collapse: {
-            //borderlessContentPadding: 0,
             headerPadding: 0,
           },
         },
