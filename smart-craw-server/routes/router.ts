@@ -147,7 +147,7 @@ export const routeConversation = (
   wsm.enqueue(message);
 };
 
-const routeApproval = (
+export const routeApproval = (
   { approved, id }: ApprovalInput,
   ws: WebSocket,
   assistantType: AssistantType,
