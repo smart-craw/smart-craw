@@ -183,7 +183,6 @@ export function connectWs(
       }
       case Action.AssistantMessage: {
         const { id, message } = rest as MessagePayload;
-        console.log(message);
         messageDispatch({
           type: messageAction.ADDED,
           id,

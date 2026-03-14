@@ -1,4 +1,4 @@
-import { List, Button } from "antd";
+import { List, Button, Card } from "antd";
 
 import { botAction, BotContext } from "../state/bot";
 import { useContext, useState } from "react";
@@ -18,9 +18,14 @@ type LocalBot = {
   id: string;
 };
 
-const BotList: React.FC = () => {
+type Props = {
+  onCreateBot: () => void;
+};
+
+const BotList: React.FC<Props> = ({ onCreateBot }: Props) => {
   const { value: data, dispatch: botDispatch } = useContext(BotContext);
   const ws = useContext(WsContext)!;
+  //
   const onConfirm = (id: string, toolName: string) => () => {
     sendBotApproval(ws, id, toolName);
     return botDispatch({
@@ -42,9 +47,10 @@ const BotList: React.FC = () => {
     botDispatch({ type: botAction.DELETED, id });
   };
   const [selectedBot, setSelectedBot] = useState<LocalBot | null>(null);
-
+  //
   return (
-    <>
+    <Card title="Bot Inventory">
+      <Button onClick={onCreateBot}>Add New</Button>
       <List
         itemLayout="horizontal"
         dataSource={data}
@@ -98,7 +104,7 @@ const BotList: React.FC = () => {
         botName={selectedBot?.name || ""}
         botId={selectedBot?.id || ""}
       />
-    </>
+    </Card>
   );
 };
 export default BotList;
