@@ -3,7 +3,7 @@ import { instructLlm } from "../llm_utils/llm.ts";
 import { handleLLMResponse } from "../llm_utils/responses.ts";
 import { WebSocketMessageQueue } from "../llm_utils/ws.ts";
 import { v4 as uuidv4 } from "uuid";
-import WebSocket from "ws";
+import nodeCron from "node-cron";
 import type {
   ApprovalInput,
   BotIdInput,
@@ -11,30 +11,53 @@ import type {
   ConverseInput,
   CreateBotInput,
   MessageOutput,
-  ActionType,
   AssistantType,
 } from "../../shared/models.ts";
 import { Action, Assistant } from "../../shared/models.ts";
 import { type ExecuteLLMInputServer } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
 
-
-
 export const routeCreateBot = (
-  { description, name, instructions }: CreateBotInput,
-  ws: WebSocket,
+  { description, name, instructions, cron }: CreateBotInput,
+  sendToClient: (message: string) => void,
   insertBot: (
     id: string,
     name: string,
     description: string,
     instructions: string,
   ) => void,
+  insertBotCron: (id: string, cron: string) => void,
+  insertMessage: (id: string, message: string, reasoning: string) => void,
+  holdQueries: Map<string, Query>,
+  pendingApprovals: Map<string, (approved: boolean) => void>,
+  scheduledBots: Map<string, nodeCron.ScheduledTask>,
 ) => {
   const bot = createBot(name, description, instructions, undefined);
   const botDefinition = bot.definition[bot.name];
 
   insertBot(bot.id, bot.name, botDefinition.description, botDefinition.prompt);
-  ws.send(
+  if (cron) {
+    insertBotCron(bot.id, cron);
+    scheduledBots.set(
+      bot.id,
+      nodeCron.schedule(cron!, () => {
+        executeBot(
+          {
+            id: bot.id,
+            instructions: botDefinition.prompt,
+            description: botDefinition.description,
+            name: bot.name,
+            cron,
+          },
+          sendToClient,
+          insertMessage,
+          holdQueries,
+          pendingApprovals,
+        );
+      }),
+    );
+  }
+  sendToClient(
     JSON.stringify({
       id: bot.id,
       name,
@@ -43,20 +66,24 @@ export const routeCreateBot = (
       action: Action.CreateBot,
     }),
   );
-  //return ;
 };
 
 export const routeRemoveBot = (
   { id }: BotIdInput,
   removeBot: (id: string) => void,
+  scheduledBots: Map<string, nodeCron.ScheduledTask>,
 ) => {
   removeBot(id);
+  scheduledBots.delete(id);
 };
 
-export const routeGetAllBots = (ws: WebSocket, getBots: () => BotOutput[]) => {
+export const routeGetAllBots = (
+  sendToClient: (message: string) => void,
+  getBots: () => BotOutput[],
+) => {
   //might want to get cron as well
   const bots = getBots();
-  ws.send(
+  sendToClient(
     JSON.stringify({
       bots,
       action: Action.GetBots,
@@ -65,11 +92,11 @@ export const routeGetAllBots = (ws: WebSocket, getBots: () => BotOutput[]) => {
 };
 export const routeGetMessages = (
   { id }: BotIdInput,
-  ws: WebSocket,
+  sendToClient: (message: string) => void,
   getMessages: (id: string) => MessageOutput[],
 ) => {
   const messages = getMessages(id);
-  ws.send(
+  sendToClient(
     JSON.stringify({
       id,
       messages,
@@ -77,10 +104,39 @@ export const routeGetMessages = (
     }),
   );
 };
+export const executeBot = (
+  botFromDb: BotOutput,
+  sendToClient: (message: string) => void,
+  insertMessage: (id: string, message: string, reasoning: string) => void,
+  holdQueries: Map<string, Query>,
+  pendingApprovals: Map<string, (approved: boolean) => void>,
+) => {
+  const { name, description, instructions, id } = botFromDb;
+  //tell client things started
+  sendToClient(
+    JSON.stringify({
+      action: Action.ExecutionStarted,
+      id,
+    }),
+  );
+  const bot = createBot(name, description, instructions, id);
+  const query = botExecute(
+    bot,
+    approvalWebsocket(bot.id, sendToClient, Assistant.Bot, pendingApprovals),
+    notification(sendToClient),
+  );
+  holdQueries.set(id, query);
+  handleLLMResponse(
+    query,
+    id,
+    assistantMessage(sendToClient),
+    completeMessage(sendToClient, insertMessage),
+  );
+};
 export const routeExecuteBot = (
   { id }: BotIdInput,
-  ws: WebSocket,
-  getBot: (id: string) => CreateBotInput | undefined,
+  sendToClient: (message: string) => void,
+  getBot: (id: string) => BotOutput | undefined,
   insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
@@ -90,28 +146,36 @@ export const routeExecuteBot = (
     console.error(`Execution failed: bot ${id} not found`);
     return;
   }
-  const { name, description, instructions } = botDef;
+  executeBot(
+    botDef,
+    sendToClient,
+    insertMessage,
+    holdQueries,
+    pendingApprovals,
+  );
+
+  /*const { name, description, instructions } = botDef;
   const bot = createBot(name, description, instructions, id);
   const query = botExecute(
     bot,
-    approvalWebsocket(bot.id, ws, Assistant.Bot, pendingApprovals),
-    notification(ws),
+    approvalWebsocket(bot.id, sendToClient, Assistant.Bot, pendingApprovals),
+    notification(sendToClient),
   );
   holdQueries.set(id, query);
   handleLLMResponse(
     query,
     id,
-    assistantMessage(ws),
-    completeMessage(ws, insertMessage),
-  );
+    assistantMessage(sendToClient),
+    completeMessage(sendToClient, insertMessage),
+    );*/
 };
 
 export const routeExecuteLlm = (
   { mcpConfigs }: ExecuteLLMInputServer,
-  ws: WebSocket,
+  sendToClient: (message: string) => void,
   wsm: WebSocketMessageQueue,
   getBots: () => BotOutput[],
-  insertMessage: (id: string, message: string, reasoning: string) => void,
+  //insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
@@ -125,13 +189,18 @@ export const routeExecuteLlm = (
     id,
     mcpConfigs, // mcpServers
     bots,
-    approvalWebsocket(id, ws, Assistant.Llm, pendingApprovals),
-    notification(ws),
+    approvalWebsocket(id, sendToClient, Assistant.Llm, pendingApprovals),
+    notification(sendToClient),
     wsm,
   );
   holdQueries.set(id, query);
-  handleLLMResponse(query, id, assistantMessage(ws), completeLlmMessage(ws));
-  ws.send(
+  handleLLMResponse(
+    query,
+    id,
+    assistantMessage(sendToClient),
+    completeLlmMessage(sendToClient),
+  );
+  sendToClient(
     JSON.stringify({
       id,
       action: Action.LlmInstantiate,
@@ -149,7 +218,7 @@ export const routeConversation = (
 
 export const routeApproval = (
   { approved, id }: ApprovalInput,
-  ws: WebSocket,
+  sendToClient: (message: string) => void,
   assistantType: AssistantType,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
@@ -159,7 +228,7 @@ export const routeApproval = (
     resolve(approved);
     console.log("sending approved message");
     console.log(approved);
-    ws.send(
+    sendToClient(
       JSON.stringify({
         id,
         approved,
@@ -174,17 +243,17 @@ export const routeApproval = (
 };
 export const routeBotApproval = (
   input: ApprovalInput,
-  ws: WebSocket,
+  sendToClient: (message: string) => void,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
-  routeApproval(input, ws, Assistant.Bot, pendingApprovals);
+  routeApproval(input, sendToClient, Assistant.Bot, pendingApprovals);
 };
 export const routeLlmApproval = (
   input: ApprovalInput,
-  ws: WebSocket,
+  sendToClient: (message: string) => void,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
-  routeApproval(input, ws, Assistant.Llm, pendingApprovals);
+  routeApproval(input, sendToClient, Assistant.Llm, pendingApprovals);
 };
 export const routeStopBot = (
   { id }: BotIdInput,
@@ -203,13 +272,13 @@ export const routeStopBot = (
 export const approvalWebsocket =
   (
     id: string,
-    ws: WebSocket,
+    sendToClient: (message: string) => void,
     assistantType: AssistantType,
     pendingApprovals: Map<string, (approved: boolean) => void>,
   ) =>
   async (toolName: string, input: any) => {
     console.log("got to approval websocket");
-    ws.send(
+    sendToClient(
       JSON.stringify({
         toolName,
         id,
@@ -224,8 +293,9 @@ export const approvalWebsocket =
   };
 
 export const assistantMessage =
-  (ws: WebSocket) => (message: string, id: string) => {
-    ws.send(
+  (sendToClient: (message: string) => void) =>
+  (message: string, id: string) => {
+    sendToClient(
       JSON.stringify({
         message,
         id,
@@ -236,11 +306,11 @@ export const assistantMessage =
 
 export const completeMessage =
   (
-    ws: WebSocket,
+    sendToClient: (message: string) => void,
     insertMessage: (id: string, message: string, reasoning: string) => void,
   ) =>
   (id: string, message: string, reasoning: string) => {
-    ws.send(
+    sendToClient(
       JSON.stringify({
         id,
         action: Action.CompleteMessage,
@@ -250,8 +320,9 @@ export const completeMessage =
   };
 
 export const completeLlmMessage =
-  (ws: WebSocket) => (id: string, message: string, reasoning: string) => {
-    ws.send(
+  (sendToClient: (message: string) => void) =>
+  (id: string, message: string, reasoning: string) => {
+    sendToClient(
       JSON.stringify({
         id,
         message,
@@ -261,8 +332,9 @@ export const completeLlmMessage =
     );
   };
 export const notification =
-  (ws: WebSocket) => (message: string, notificationType: string) => {
-    ws.send(
+  (sendToClient: (message: string) => void) =>
+  (message: string, notificationType: string) => {
+    sendToClient(
       JSON.stringify({
         message,
         notificationType,

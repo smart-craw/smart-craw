@@ -1,26 +1,34 @@
-import React from "react";
+import React, { useState } from "react";
 import { Modal, Form, Input } from "antd";
-
+import { isValidCron } from "cron-validator";
 type BotCreateModal = {
   name: string;
   description: string;
   instructions: string;
+  cron?: string;
 };
 interface Props {
   isOpen: boolean;
-  onCreate: (name: string, description: string, instructions: string) => void;
+  onCreate: (
+    name: string,
+    description: string,
+    instructions: string,
+    cron?: string,
+  ) => void;
   onCancel: () => void;
 }
 const ModalCreateBot: React.FC<Props> = ({ isOpen, onCreate, onCancel }) => {
   const [form] = Form.useForm();
-  //const [formValues, setFormValues] = useState<FieldType>();
   const onFormSubmit = ({
     name,
     description,
     instructions,
+    cron,
   }: BotCreateModal) => {
-    onCreate(name, description, instructions);
+    onCreate(name, description, instructions, cron);
   };
+  const [cron, setCron] = useState("");
+  const isValid = isValidCron(cron);
   return (
     <>
       <Modal
@@ -79,6 +87,23 @@ const ModalCreateBot: React.FC<Props> = ({ isOpen, onCreate, onCancel }) => {
           ]}
         >
           <Input type="textarea" />
+        </Form.Item>
+        <Form.Item
+          name="cron"
+          label="Cron schedule (optional)"
+          validateStatus={isValid ? "success" : "error"}
+          help={"Enter valid cron"}
+          rules={[
+            {
+              required: false,
+              message: "Only required if you want to schedule",
+            },
+          ]}
+        >
+          <Input
+            value={cron}
+            onChange={(e) => setCron(e.currentTarget.value)}
+          />
         </Form.Item>
       </Modal>
     </>

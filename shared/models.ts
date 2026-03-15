@@ -9,6 +9,7 @@ export const Action = {
   GetBots: "getbots",
   GetMessages: "getmessages",
   LlmInstantiate: "llminstantiate",
+  ExecutionStarted: "executionstarted",
 } as const;
 
 export type ActionType = (typeof Action)[keyof typeof Action];
@@ -25,6 +26,7 @@ export type CreateBotInput = {
   instructions: string;
   name: string;
   id?: string;
+  cron?: string;
 };
 
 export type BotOutput = {
@@ -32,6 +34,7 @@ export type BotOutput = {
   instructions: string;
   name: string;
   id: string;
+  cron?: string;
 };
 
 export type MessageOutput = {
