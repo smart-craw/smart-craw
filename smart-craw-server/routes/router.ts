@@ -74,6 +74,7 @@ export const routeRemoveBot = (
   scheduledBots: Map<string, nodeCron.ScheduledTask>,
 ) => {
   removeBot(id);
+  scheduledBots.get(id)?.destroy(); //destroy job before removing from state
   scheduledBots.delete(id);
 };
 
