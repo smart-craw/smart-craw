@@ -6,7 +6,10 @@ import type {
   ConverseInput,
   CreateBotInput,
 } from "../shared/models.ts";
-import { type ExecuteLLMInputServer, type WebSocketInputServer } from "./models.ts";
+import {
+  type ExecuteLLMInputServer,
+  type WebSocketInputServer,
+} from "./models.ts";
 import {
   insertBot,
   getBot,
@@ -31,13 +34,38 @@ import {
   routeStopBot,
 } from "./routes/router.ts";
 import type { Query } from "@anthropic-ai/claude-agent-sdk";
+import nodeCron from "node-cron";
+import { startScheduler } from "./llm_utils/schedule.ts";
 const wss = new WebSocketServer({ port: 8080 });
 
+//Global state
 const pendingApprovals = new Map<string, (approved: boolean) => void>();
 const holdQueries = new Map<string, Query>();
 
+const writeAllClients = (wss: WebSocketServer) => (message: string) => {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+};
+
+const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
+  Object.entries(
+    startScheduler(
+      writeAllClients(wss),
+      getBots,
+      insertMessage,
+      holdQueries,
+      pendingApprovals,
+    ),
+  ),
+);
+
+//pass wss to anything that writes back, and write back to ALL
+// TODO add ability to edit bot
 wss.on("connection", function connection(ws) {
-  const messageQueue = new WebSocketMessageQueue();
+  const messageQueue = new WebSocketMessageQueue(); //one per connection currently
   ws.on("error", (err) => {
     console.error(err);
     messageQueue.close();
@@ -46,12 +74,20 @@ wss.on("connection", function connection(ws) {
     const { path, input } = JSON.parse(data.toString()) as WebSocketInputServer;
     switch (path) {
       case "/bot/create":
-        routeCreateBot(input as CreateBotInput, ws, insertBot);
+        routeCreateBot(
+          input as CreateBotInput,
+          writeAllClients(wss),
+          insertBot,
+          insertMessage,
+          holdQueries,
+          pendingApprovals,
+          scheduledBots,
+        );
         break;
       case "/bot/execute":
         routeExecuteBot(
           input as BotIdInput,
-          ws,
+          writeAllClients(wss),
           getBot,
           insertMessage,
           holdQueries,
@@ -59,24 +95,28 @@ wss.on("connection", function connection(ws) {
         );
         break;
       case "/bot/remove":
-        routeRemoveBot(input as BotIdInput, removeBot);
+        routeRemoveBot(input as BotIdInput, removeBot, scheduledBots);
         break;
       case "/bot/stop":
         routeStopBot(input as BotIdInput, holdQueries);
         break;
       case "/bot/messages":
-        routeGetMessages(input as BotIdInput, ws, getMessages);
+        routeGetMessages(
+          input as BotIdInput,
+          writeAllClients(wss),
+          getMessages,
+        );
         break;
       case "/bot/all":
-        routeGetAllBots(ws, getBots);
+        routeGetAllBots(writeAllClients(wss), getBots);
         break;
       case "/llm/instantiate":
         routeExecuteLlm(
           input as ExecuteLLMInputServer,
-          ws,
+          writeAllClients(wss),
           messageQueue,
           getBots,
-          insertMessage,
+          //insertMessage,
           holdQueries,
           pendingApprovals,
         );
@@ -88,12 +128,20 @@ wss.on("connection", function connection(ws) {
       case "/bot/approval":
         console.log(pendingApprovals);
         console.log(input);
-        routeBotApproval(input as ApprovalInput, ws, pendingApprovals);
+        routeBotApproval(
+          input as ApprovalInput,
+          writeAllClients(wss),
+          pendingApprovals,
+        );
         break;
       case "/llm/approval":
         console.log(pendingApprovals);
         console.log(input);
-        routeLlmApproval(input as ApprovalInput, ws, pendingApprovals);
+        routeLlmApproval(
+          input as ApprovalInput,
+          writeAllClients(wss),
+          pendingApprovals,
+        );
         break;
     }
     console.log("received: %s", data);

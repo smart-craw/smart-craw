@@ -14,13 +14,17 @@ const getBotDb = database.prepare(
 );
 
 const getBotsDb = database.prepare(
-  "SELECT id, description, name, instructions from bots where deleted=0",
+  "SELECT bots.id, description, name, instructions, cron from bots left join bot_schedule on bots.id=bot_schedule.id",
 );
 
 const removeBotDb = database.prepare("DELETE from bots where id=?");
 
 const insertMessageDb = database.prepare(
   "INSERT INTO bot_messages (id, bot_id, message, reasoning) VALUES (?, ?, ?, ?)",
+);
+
+const insertCronDb = database.prepare(
+  "INSERT INTO bot_schedule (id, cron) VALUES (?, ?)",
 );
 
 const getMessagesDb = database.prepare(
@@ -37,6 +41,14 @@ export const insertBot = (
     insertBotDb.run(id, name, description, instructions);
   } catch (error) {
     console.error(`Error inserting bot ${id}:`, error);
+  }
+};
+
+export const insertBotCron = (id: string, cron: string) => {
+  try {
+    insertCronDb.run(id, cron);
+  } catch (error) {
+    console.error(`Error inserting cron into ${id}:`, error);
   }
 };
 

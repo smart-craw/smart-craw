@@ -175,11 +175,12 @@ export function createBot(
   name: string,
   description: string,
   instructions: string,
+  cron?: string,
 ) {
   ws.send(
     JSON.stringify({
       path: "/bot/create",
-      input: { description, instructions, name },
+      input: { description, instructions, name, cron },
     }),
   );
 }

@@ -25,6 +25,7 @@ export type CreateBotInput = {
   instructions: string;
   name: string;
   id?: string;
+  cron?: string;
 };
 
 export type BotOutput = {
@@ -32,6 +33,7 @@ export type BotOutput = {
   instructions: string;
   name: string;
   id: string;
+  cron?: string;
 };
 
 export type MessageOutput = {

@@ -40,9 +40,10 @@ function App() {
     name: string,
     description: string,
     instructions: string,
+    cron?: string,
   ) => {
     if (ws) {
-      createBot(ws, name, description, instructions);
+      createBot(ws, name, description, instructions, cron);
       setIsModalOpen(false);
     }
   };
