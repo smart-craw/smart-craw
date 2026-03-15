@@ -51,7 +51,7 @@ const BotList: React.FC<Props> = ({ onCreateBot }: Props) => {
   };
   const [selectedBot, setSelectedBot] = useState<LocalBot | null>(null);
   const editModal = (id: string) => () => {
-    console.log("got here");
+    console.log("got here with id", id);
   };
   return (
     <Card title="Bot Inventory">
