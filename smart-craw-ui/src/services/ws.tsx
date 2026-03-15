@@ -56,6 +56,11 @@ type NotificationResponse = Notification & {
   action: ActionType;
 };
 
+type ExecutionResponse = {
+  id: string;
+  action: ActionType;
+};
+
 export function connectWs(): WebSocket {
   console.log("this is the url", window.location.href);
   const url = new URL(`/ws`, window.location.href);
@@ -77,7 +82,8 @@ export function connectWs(): WebSocket {
       | ApprovalActionedResponse
       | NotificationResponse
       | MessageResponse
-      | GetMessagesResponse;
+      | GetMessagesResponse
+      | ExecutionResponse;
     switch (action) {
       case Action.CreateBot: {
         const { name, id, description, instructions } = rest as Bot;
@@ -141,6 +147,12 @@ export function connectWs(): WebSocket {
         const { id } = rest as MessageResponse;
         store.finishMessage(id);
         store.finishBot(id);
+        break;
+      }
+      case Action.ExecutionStarted: {
+        console.log("execution started");
+        const { id } = rest as ExecutionResponse;
+        store.startBot(id);
         break;
       }
       case Action.CompleteLlmMessage: {

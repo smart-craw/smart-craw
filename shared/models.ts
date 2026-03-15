@@ -9,6 +9,7 @@ export const Action = {
   GetBots: "getbots",
   GetMessages: "getmessages",
   LlmInstantiate: "llminstantiate",
+  ExecutionStarted: "executionstarted",
 } as const;
 
 export type ActionType = (typeof Action)[keyof typeof Action];

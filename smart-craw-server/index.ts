@@ -17,6 +17,7 @@ import {
   insertMessage,
   removeBot,
   getMessages,
+  insertBotCron,
 } from "./db_utils/use_db.ts";
 
 //put this behind an nginx proxy
@@ -78,6 +79,7 @@ wss.on("connection", function connection(ws) {
           input as CreateBotInput,
           writeAllClients(wss),
           insertBot,
+          insertBotCron,
           insertMessage,
           holdQueries,
           pendingApprovals,

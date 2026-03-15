@@ -16,7 +16,6 @@ import type {
 import { Action, Assistant } from "../../shared/models.ts";
 import { type ExecuteLLMInputServer } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
-import { insertBotCron } from "../db_utils/use_db.ts";
 
 export const routeCreateBot = (
   { description, name, instructions, cron }: CreateBotInput,
@@ -27,6 +26,7 @@ export const routeCreateBot = (
     description: string,
     instructions: string,
   ) => void,
+  insertBotCron: (id: string, cron: string) => void,
   insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
@@ -112,6 +112,13 @@ export const executeBot = (
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
   const { name, description, instructions, id } = botFromDb;
+  //tell client things started
+  sendToClient(
+    JSON.stringify({
+      action: Action.ExecutionStarted,
+      id,
+    }),
+  );
   const bot = createBot(name, description, instructions, id);
   const query = botExecute(
     bot,

@@ -22,26 +22,6 @@ export const startScheduler = (
             holdQueries,
             pendingApprovals,
           );
-          //createBot is super cheap, no need to "cache" it
-          /*const bot = createBot(name, description, instructions, id);
-          console.log("running scheduled bot ", id);
-          const query = botExecute(
-            bot,
-            approvalWebsocket(
-              bot.id,
-              sendToClient,
-              Assistant.Bot,
-              pendingApprovals,
-            ),
-            notification(sendToClient),
-          );
-          holdQueries.set(id, query);
-          handleLLMResponse(
-            query,
-            id,
-            assistantMessage(sendToClient),
-            completeMessage(sendToClient, insertMessage),
-            );*/
         }),
       };
     })
