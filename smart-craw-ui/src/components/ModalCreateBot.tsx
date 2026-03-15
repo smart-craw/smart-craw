@@ -91,8 +91,8 @@ const ModalCreateBot: React.FC<Props> = ({ isOpen, onCreate, onCancel }) => {
         <Form.Item
           name="cron"
           label="Cron schedule (optional)"
-          validateStatus={isValid ? "success" : "error"}
-          help={"Enter valid cron"}
+          validateStatus={isValid || cron === "" ? "success" : "error"}
+          help={isValid || cron === "" ? "" : "Enter valid cron"}
           rules={[
             {
               required: false,

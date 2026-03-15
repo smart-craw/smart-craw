@@ -1,3 +1,4 @@
+import { LoadingOutlined } from "@ant-design/icons";
 import { type Bot, type Llm } from "../state/store";
 import { Popconfirm, Button, Badge } from "antd";
 export const ButtonOption = {
@@ -55,7 +56,11 @@ const LlmActionButton = ({
     }
     case ButtonOption.Stop: {
       button = (
-        <Button danger loading onClick={stopExecute(id)}>
+        <Button
+          danger
+          icon={<LoadingOutlined spin />}
+          onClick={stopExecute(id)}
+        >
           Stop
         </Button>
       );

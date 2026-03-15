@@ -8,6 +8,7 @@ export type Bot = {
   instructions: string;
   approval?: Approval;
   isExecuting: boolean;
+  cron?: string;
 };
 
 export type Message = {
