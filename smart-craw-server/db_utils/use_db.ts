@@ -6,7 +6,14 @@ const database = new DatabaseSync("bots.db");
 
 // Create a prepared statement to insert data into the database.
 const insertBotDb = database.prepare(
-  "INSERT INTO bots (id,  name, description, instructions, deleted) VALUES (?, ?, ?, ?, 0)",
+  `
+INSERT INTO bots (id,  name, description, instructions, deleted)
+VALUES (?, ?, ?, ?, 0) ON CONFLICT (id) DO UPDATE
+SET name=?,
+description=?,
+instructions=?,
+deleted=0
+`,
 );
 
 const getBotDb = database.prepare(
@@ -24,7 +31,11 @@ const insertMessageDb = database.prepare(
 );
 
 const insertCronDb = database.prepare(
-  "INSERT INTO bot_schedule (id, cron) VALUES (?, ?)",
+  `
+INSERT INTO bot_schedule (id, cron)
+VALUES (?, ?) ON CONFLICT (id) DO UPDATE
+set cron=?
+`,
 );
 
 const getMessagesDb = database.prepare(
@@ -38,7 +49,15 @@ export const insertBot = (
   instructions: string,
 ) => {
   try {
-    insertBotDb.run(id, name, description, instructions);
+    insertBotDb.run(
+      id,
+      name,
+      description,
+      instructions,
+      name,
+      description,
+      instructions,
+    );
   } catch (error) {
     console.error(`Error inserting bot ${id}:`, error);
   }
@@ -46,7 +65,7 @@ export const insertBot = (
 
 export const insertBotCron = (id: string, cron: string) => {
   try {
-    insertCronDb.run(id, cron);
+    insertCronDb.run(id, cron, cron);
   } catch (error) {
     console.error(`Error inserting cron into ${id}:`, error);
   }

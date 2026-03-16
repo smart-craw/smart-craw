@@ -1,5 +1,6 @@
 export const Action = {
   CreateBot: "createbot",
+  UpdateBot: "updatebot",
   ApprovalRequest: "approvalrequest",
   ApprovalActioned: "approvalactioned",
   AssistantMessage: "assistantmessage",

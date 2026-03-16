@@ -47,7 +47,7 @@ export type AppState = {
 
   // Actions
   setWs: (ws: WebSocket | null) => void;
-
+  setBot: (bot: Bot) => void;
   setBots: (bots: Bot[]) => void;
   addBot: (bot: Bot) => void;
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,7 +85,12 @@ export const useAppStore = create<AppState>((set) => ({
   ws: null,
 
   setWs: (ws) => set({ ws }),
-
+  setBot: ({ id, description, name, instructions, cron }) =>
+    set((state) => ({
+      bots: state.bots.map((v) =>
+        v.id === id ? { ...v, description, name, instructions, cron } : v,
+      ),
+    })),
   setBots: (bots) => set({ bots }),
   addBot: (bot) =>
     set((state) => ({ bots: [...state.bots, { ...bot, isExecuting: false }] })),

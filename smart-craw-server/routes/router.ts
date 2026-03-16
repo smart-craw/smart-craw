@@ -18,7 +18,7 @@ import { type ExecuteLLMInputServer } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
 
 export const routeCreateBot = (
-  { description, name, instructions, cron }: CreateBotInput,
+  { id, description, name, instructions, cron }: CreateBotInput,
   sendToClient: (message: string) => void,
   insertBot: (
     id: string,
@@ -32,7 +32,8 @@ export const routeCreateBot = (
   pendingApprovals: Map<string, (approved: boolean) => void>,
   scheduledBots: Map<string, nodeCron.ScheduledTask>,
 ) => {
-  const bot = createBot(name, description, instructions, undefined);
+  const newBot = id === undefined;
+  const bot = createBot(name, description, instructions, id);
   const botDefinition = bot.definition[bot.name];
 
   insertBot(bot.id, bot.name, botDefinition.description, botDefinition.prompt);
@@ -64,7 +65,7 @@ export const routeCreateBot = (
       description,
       instructions,
       cron,
-      action: Action.CreateBot,
+      action: newBot ? Action.CreateBot : Action.UpdateBot,
     }),
   );
 };
