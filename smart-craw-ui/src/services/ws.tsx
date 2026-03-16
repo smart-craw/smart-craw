@@ -86,12 +86,13 @@ export function connectWs(): WebSocket {
       | ExecutionResponse;
     switch (action) {
       case Action.CreateBot: {
-        const { name, id, description, instructions } = rest as Bot;
+        const { name, id, description, instructions, cron } = rest as Bot;
         store.addBot({
           name,
           id,
           description,
           instructions,
+          cron,
           isExecuting: false,
         });
         break;

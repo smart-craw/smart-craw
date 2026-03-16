@@ -63,6 +63,7 @@ export const routeCreateBot = (
       name,
       description,
       instructions,
+      cron,
       action: Action.CreateBot,
     }),
   );
@@ -74,6 +75,7 @@ export const routeRemoveBot = (
   scheduledBots: Map<string, nodeCron.ScheduledTask>,
 ) => {
   removeBot(id);
+  scheduledBots.get(id)?.destroy(); //destroy job before removing from state
   scheduledBots.delete(id);
 };
 
@@ -153,21 +155,6 @@ export const routeExecuteBot = (
     holdQueries,
     pendingApprovals,
   );
-
-  /*const { name, description, instructions } = botDef;
-  const bot = createBot(name, description, instructions, id);
-  const query = botExecute(
-    bot,
-    approvalWebsocket(bot.id, sendToClient, Assistant.Bot, pendingApprovals),
-    notification(sendToClient),
-  );
-  holdQueries.set(id, query);
-  handleLLMResponse(
-    query,
-    id,
-    assistantMessage(sendToClient),
-    completeMessage(sendToClient, insertMessage),
-    );*/
 };
 
 export const routeExecuteLlm = (
@@ -175,7 +162,6 @@ export const routeExecuteLlm = (
   sendToClient: (message: string) => void,
   wsm: WebSocketMessageQueue,
   getBots: () => BotOutput[],
-  //insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {

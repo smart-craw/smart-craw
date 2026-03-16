@@ -1,5 +1,5 @@
 import { List, Button, Card } from "antd";
-
+import cronstrue from "cronstrue";
 import { useState } from "react";
 import { useAppStore } from "../state/store";
 import {
@@ -11,6 +11,7 @@ import {
 } from "../services/ws";
 import ModalListMessages from "./ModalListMessages";
 import LlmActionButton from "./LlmAction";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 
 type LocalBot = {
   name: string;
@@ -20,7 +21,9 @@ type LocalBot = {
 type Props = {
   onCreateBot: () => void;
 };
-
+const lowerFirstLetter = (v: string) => {
+  return v ? v.charAt(0).toLowerCase() + v.slice(1) : v;
+};
 const BotList: React.FC<Props> = ({ onCreateBot }: Props) => {
   const data = useAppStore((state) => state.bots);
   const ws = useAppStore((state) => state.ws)!;
@@ -47,7 +50,9 @@ const BotList: React.FC<Props> = ({ onCreateBot }: Props) => {
     deleteBot(id);
   };
   const [selectedBot, setSelectedBot] = useState<LocalBot | null>(null);
-  //
+  const editModal = (id: string) => () => {
+    console.log("got here with id", id);
+  };
   return (
     <Card title="Bot Inventory">
       <Button onClick={onCreateBot}>Add New</Button>
@@ -61,6 +66,7 @@ const BotList: React.FC<Props> = ({ onCreateBot }: Props) => {
           name,
           instructions,
           description,
+          cron,
         }) => {
           return (
             <List.Item
@@ -74,7 +80,8 @@ const BotList: React.FC<Props> = ({ onCreateBot }: Props) => {
                   execute={execute}
                   stopExecute={stopExecute}
                 />,
-                <Button onClick={onDelete(id)}>Delete</Button>,
+                <Button onClick={onDelete(id)} icon={<DeleteOutlined />} />,
+                <Button onClick={editModal(id)} icon={<EditOutlined />} />,
               ]}
             >
               <List.Item.Meta
@@ -91,7 +98,12 @@ const BotList: React.FC<Props> = ({ onCreateBot }: Props) => {
                 description={instructions}
               />
 
-              <div>{description}</div>
+              <div>
+                {description}
+                {cron
+                  ? `. Runs ${lowerFirstLetter(cronstrue.toString(cron))}.`
+                  : ""}
+              </div>
             </List.Item>
           );
         }}
