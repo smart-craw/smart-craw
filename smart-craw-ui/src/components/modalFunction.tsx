@@ -27,6 +27,11 @@ export const showBotModal = (
       });
     };
     const isValid = isValidCron(cron || "");
+    const helpText = !isNotEmpty(cron)
+      ? ""
+      : isValid && isNotEmpty(cron)
+        ? cronstrue.toString(cron || "")
+        : "Enter valid cron";
     return (
       <Space orientation="vertical" style={{ width: "100%" }}>
         <div>
@@ -61,13 +66,7 @@ export const showBotModal = (
             value={cron}
             onChange={(e) => handleChange("cron", e.currentTarget.value)}
           />
-          <Text type="secondary">
-            {isValid && !isNotEmpty(cron)
-              ? ""
-              : isNotEmpty(cron)
-                ? cronstrue.toString(cron || "")
-                : "Enter valid cron"}
-          </Text>
+          <Text type="secondary">{helpText}</Text>
         </div>
       </Space>
     );
