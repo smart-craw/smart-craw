@@ -2,8 +2,9 @@ import { useState } from "react";
 import type { BotOutput } from "../../../shared/models";
 import { isValidCron } from "cron-validator";
 import cronstrue from "cronstrue";
-import { Modal, Input, Space, Typography } from "antd";
+import { Input, Space, Typography } from "antd";
 import ModalMessages from "./ModalMessages";
+import type { HookAPI } from "antd/es/modal/useModal";
 
 const { Text } = Typography;
 export const isNotEmpty = (v: string | undefined | null) => {
@@ -11,6 +12,7 @@ export const isNotEmpty = (v: string | undefined | null) => {
 };
 export const showBotModal = (
   title: string,
+  modal: HookAPI,
   defaultBot: BotOutput,
   isNew: boolean,
   onUpdate: (isNew: boolean, bot: BotOutput) => void,
@@ -71,7 +73,7 @@ export const showBotModal = (
       </Space>
     );
   };
-  return Modal.confirm({
+  return modal.confirm({
     title,
     icon: null,
     closable: true,
@@ -83,8 +85,8 @@ export const showBotModal = (
   });
 };
 
-export const showMessagesModal = (botId: string) => {
-  return Modal.confirm({
+export const showMessagesModal = (botId: string, modal: HookAPI) => {
+  return modal.confirm({
     title: "Messages",
     icon: null,
     closable: true,

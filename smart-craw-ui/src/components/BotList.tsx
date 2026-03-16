@@ -1,4 +1,4 @@
-import { List, Button, Card } from "antd";
+import { List, Button, Card, App } from "antd";
 import cronstrue from "cronstrue";
 import { useAppStore } from "../state/store";
 import {
@@ -54,7 +54,7 @@ const BotList: React.FC = () => {
     removeBot(ws, id);
     deleteBot(id);
   };
-
+  const { modal } = App.useApp();
   return (
     <>
       <Card title="Bot Inventory">
@@ -62,6 +62,7 @@ const BotList: React.FC = () => {
           onClick={() =>
             showBotModal(
               "Create Bot",
+              modal,
               {
                 id: "",
                 name: "",
@@ -105,6 +106,7 @@ const BotList: React.FC = () => {
                     onClick={() => {
                       showBotModal(
                         "Edit Bot",
+                        modal,
                         {
                           id,
                           name,
@@ -125,7 +127,7 @@ const BotList: React.FC = () => {
                     <a
                       onClick={() => {
                         getMessages(ws, id);
-                        showMessagesModal(id);
+                        showMessagesModal(id, modal);
                       }}
                     >
                       {name}
