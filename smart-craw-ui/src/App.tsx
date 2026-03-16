@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
-import { connectWs, createBot } from "./services/ws";
+import { useEffect } from "react";
+import { connectWs } from "./services/ws";
 import BotList from "./components/BotList";
-import ModalCreateBot from "./components/ModalCreateBot";
 import { Col, Row, Layout, notification, ConfigProvider } from "antd";
 import MainChat from "./components/MainChat";
 import { useAppStore } from "./state/store";
@@ -11,8 +10,6 @@ const { Content, Header } = Layout;
 function App() {
   const notificationState = useAppStore((state) => state.notification);
   const setWs = useAppStore((state) => state.setWs);
-  const ws = useAppStore((state) => state.ws);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [api, contextHolder] = notification.useNotification({
     stack: {
       threshold: 3,
@@ -36,19 +33,6 @@ function App() {
     };
   }, [setWs]);
 
-  const onCreate = (
-    name: string,
-    description: string,
-    instructions: string,
-    cron?: string,
-  ) => {
-    if (ws) {
-      createBot(ws, name, description, instructions, cron);
-      setIsModalOpen(false);
-    }
-  };
-  const toggleModal = () => setIsModalOpen((v) => !v);
-
   return (
     <ConfigProvider
       theme={{
@@ -65,14 +49,9 @@ function App() {
           <div className="demo-logo" />
         </Header>
         <Content style={{ padding: "5px 48px" }}>
-          <ModalCreateBot
-            isOpen={isModalOpen}
-            onCreate={onCreate}
-            onCancel={toggleModal}
-          />
           <Row gutter={8}>
             <Col xs={24} sm={16}>
-              <BotList onCreateBot={toggleModal} />
+              <BotList />
             </Col>
             <Col xs={24} sm={8}>
               <MainChat />

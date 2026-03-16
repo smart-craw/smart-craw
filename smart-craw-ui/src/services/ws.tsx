@@ -97,6 +97,18 @@ export function connectWs(): WebSocket {
         });
         break;
       }
+      case Action.UpdateBot: {
+        const { name, id, description, instructions, cron } = rest as Bot;
+        store.setBot({
+          name,
+          id,
+          description,
+          instructions,
+          cron,
+          isExecuting: false, //this is overriden
+        });
+        break;
+      }
       case Action.GetBots: {
         const { bots } = rest as GetBotsResponse;
         store.setBots(bots);
@@ -189,14 +201,31 @@ export function createBot(
   description: string,
   instructions: string,
   cron?: string,
+  id?: string,
 ) {
   ws.send(
     JSON.stringify({
       path: "/bot/create",
-      input: { description, instructions, name, cron },
+      input: { id, description, instructions, name, cron },
     }),
   );
 }
+/*
+export function updateBot(
+  ws: WebSocket,
+  id: string,
+  name: string,
+  description: string,
+  instructions: string,
+  cron?: string,
+) {
+  ws.send(
+    JSON.stringify({
+      path: "/bot/update",
+      input: { id, description, instructions, name, cron },
+    }),
+  );
+}*/
 
 export function removeBot(ws: WebSocket, id: string) {
   ws.send(

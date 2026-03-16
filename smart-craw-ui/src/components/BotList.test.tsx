@@ -2,7 +2,6 @@ import { render } from "vitest-browser-react";
 import { describe, it, expect, beforeEach } from "vitest";
 import BotList from "./BotList.tsx";
 import { useAppStore } from "../state/store.ts";
-//import { mockWs, worker } from "../tests/setup.ts";
 import { Action } from "../../../shared/models.ts";
 import { connectWs } from "../services/ws.tsx";
 import { ws } from "msw";
@@ -47,7 +46,7 @@ describe("BotList with MSW WebSocket integration", () => {
     const wsInstance = connectWs();
     useAppStore.getState().setWs(wsInstance);
 
-    const screen = await render(<BotList onCreateBot={() => {}} />);
+    const screen = await render(<BotList />);
 
     // Wait for the WS response to mutate Zustand and flow into React Component
     await expect.element(screen.getByText("MSW Mock Bot")).toBeInTheDocument();
