@@ -19,6 +19,9 @@ RUN npm ci --only=production
 USER node
 ENV STATIC_HTML_LOCATION="/app/dist"
 ENV DB_LOCATION="/app/db"
+ENV ANTHROPIC_BASE_URL="http://localhost:11434"
+ENV ANTHROPIC_AUTH_TOKEN="ollama"
+ENV ANTHROPIC_API_KEY="sk-local-dummy"
 RUN node db_utils/create_db.ts # create tables to start
 EXPOSE 8000
 CMD ["node", "index.ts"]
