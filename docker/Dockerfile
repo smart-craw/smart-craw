@@ -10,6 +10,7 @@ FROM node:24-alpine
 
 COPY --from=builder /app/smart-craw-ui/dist /app/dist/
 COPY smart-craw-server/ /app/smart-craw-server/
+COPY docker/script.sh /app/smart-craw-server/script.sh
 COPY shared/ /app/shared/
 RUN mkdir /app/db
 WORKDIR /app/smart-craw-server/
@@ -22,6 +23,6 @@ ENV DB_LOCATION="/app/db"
 ENV ANTHROPIC_BASE_URL="http://localhost:11434"
 ENV ANTHROPIC_AUTH_TOKEN="ollama"
 ENV ANTHROPIC_API_KEY="sk-local-dummy"
-RUN node db_utils/create_db.ts # create tables to start
 EXPOSE 8000
-CMD ["node", "index.ts"]
+ENTRYPOINT ["/bin/sh", "/app/smart-craw-server/script.sh"]
+CMD []

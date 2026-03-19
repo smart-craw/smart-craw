@@ -28,11 +28,11 @@ Store memories for later use:
 
 Run docker container, mounting current directory for the persistent storage and the memory directory for notes.  Works if you are locally hosting a model via Ollama.
 
-`docker run -p 8000:8000 -v $(pwd):/app/db -v $(pwd)/memory:/app/smart-craw-server/memory ghcr.io/smart-craw/smart-craw:v0.0.1`
+`docker run -p 8000:8000 -v $(pwd):/app/db -v $(pwd)/memory:/app/smart-craw-server/memory ghcr.io/smart-craw/smart-craw:v0.0.2`
 
 Run with remote or public LLM:
 
-`docker run -p 8000:8000 -e ANTHROPIC_BASE_URL=[yourllmurl] -e ANTHROPIC_AUTH_TOKEN=[yourauthtoken] -e ANTHROPIC_API_KEY=[yourapikey] -v $(pwd):/app/db -v $(pwd)/memory:/app/smart-craw-server/memory ghcr.io/smart-craw/smart-craw:v0.0.1`
+`docker run -p 8000:8000 -e ANTHROPIC_BASE_URL=[yourllmurl] -e ANTHROPIC_AUTH_TOKEN=[yourauthtoken] -e ANTHROPIC_API_KEY=[yourapikey] -v $(pwd):/app/db -v $(pwd)/memory:/app/smart-craw-server/memory ghcr.io/smart-craw/smart-craw:v0.0.2`
 
 
 ## Cautions
