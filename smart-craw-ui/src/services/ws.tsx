@@ -62,7 +62,6 @@ type ExecutionResponse = {
 };
 
 export function connectWs(): WebSocket {
-  console.log("this is the url", window.location.href);
   const url = new URL(`/ws`, window.location.href);
   //handles https and wss too since both end in s
   url.protocol = url.protocol.replace("http", "ws");

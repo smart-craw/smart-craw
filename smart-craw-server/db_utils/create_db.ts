@@ -1,6 +1,11 @@
 "use strict";
 import { DatabaseSync } from "node:sqlite";
-const database = new DatabaseSync("bots.db");
+import path from "path";
+const dbName = "bots.db";
+const dbPath = process.env.DB_LOCATION
+  ? path.join(process.env.DB_LOCATION, dbName)
+  : dbName;
+const database = new DatabaseSync(dbPath);
 
 // Execute SQL statements from strings.
 // id is a uuid
