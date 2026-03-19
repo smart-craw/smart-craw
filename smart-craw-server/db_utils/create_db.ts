@@ -1,10 +1,6 @@
 "use strict";
 import { DatabaseSync } from "node:sqlite";
-import path from "path";
-const dbName = "bots.db";
-const dbPath = process.env.DB_LOCATION
-  ? path.join(process.env.DB_LOCATION, dbName)
-  : dbName;
+import { dbPath } from "./location.ts";
 const database = new DatabaseSync(dbPath);
 
 // Execute SQL statements from strings.

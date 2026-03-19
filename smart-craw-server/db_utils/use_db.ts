@@ -2,7 +2,8 @@
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 import type { BotOutput, MessageOutput } from "../../shared/models.ts";
-const database = new DatabaseSync("bots.db");
+import { dbPath } from "./location.ts";
+const database = new DatabaseSync(dbPath);
 
 // Create a prepared statement to insert data into the database.
 const insertBotDb = database.prepare(
