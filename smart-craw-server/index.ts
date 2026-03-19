@@ -37,7 +37,25 @@ import {
 import type { Query } from "@anthropic-ai/claude-agent-sdk";
 import nodeCron from "node-cron";
 import { startScheduler } from "./llm_utils/schedule.ts";
-const wss = new WebSocketServer({ port: 8080 });
+import path from "path";
+import http from "http";
+import st from "st";
+const staticPath =
+  process.env.STATIC_HTML_LOCATION ||
+  path.join(import.meta.dirname, "../smart-craw-ui/dist");
+console.log(staticPath);
+const mount = st({
+  path: staticPath,
+  url: "/",
+  index: "index.html",
+});
+const port = 8000;
+const server = http
+  .createServer((req, res) => {
+    mount(req, res, () => res.end("this is not a static file"));
+  })
+  .listen(port);
+const wss = new WebSocketServer({ server });
 
 //Global state
 const pendingApprovals = new Map<string, (approved: boolean) => void>();
