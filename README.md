@@ -44,3 +44,8 @@ If you run this on a Raspberry Pi and access the UI "remotely" it is strongly re
 I may at some point set up authentication which would allow exposure to a wider array of (LAN) endpoints, but I still would urge caution and tight network restrictions.
 
 Under no circumstances should you host this on a cloud system or expose your ports outside of your LAN.
+
+
+## Screenshot
+
+![homepage](./docs/ui.png)
