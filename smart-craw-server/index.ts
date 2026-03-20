@@ -49,7 +49,7 @@ const mount = st({
   url: "/",
   index: "index.html",
 });
-const port = 8000;
+const port = process.env.PORT ? parseInt(process.env.PORT) : 8000;
 const server = http
   .createServer((req, res) => {
     mount(req, res, () => res.end("this is not a static file"));
@@ -82,7 +82,6 @@ const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
 );
 
 //pass wss to anything that writes back, and write back to ALL
-// TODO add ability to edit bot
 wss.on("connection", function connection(ws) {
   const messageQueue = new WebSocketMessageQueue(); //one per connection currently
   ws.on("error", (err) => {
@@ -136,7 +135,6 @@ wss.on("connection", function connection(ws) {
           writeAllClients(wss),
           messageQueue,
           getBots,
-          //insertMessage,
           holdQueries,
           pendingApprovals,
         );

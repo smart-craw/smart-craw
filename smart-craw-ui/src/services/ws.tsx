@@ -115,7 +115,6 @@ export function connectWs(): WebSocket {
       }
       case Action.ApprovalRequest: {
         const { toolName, id, input, assistantType } = rest as ApprovalResponse;
-        console.log("Got approval request", assistantType);
         switch (assistantType) {
           case Assistant.Llm: {
             store.setLlmApproval(id, toolName, input);
@@ -132,7 +131,6 @@ export function connectWs(): WebSocket {
         const { id, approved, assistantType } = rest as ApprovalActioned & {
           assistantType: AssistantType;
         };
-        console.log("Got approval action", assistantType);
         switch (assistantType) {
           case Assistant.Llm: {
             store.actionLlmApproval(approved);
@@ -162,7 +160,6 @@ export function connectWs(): WebSocket {
         break;
       }
       case Action.ExecutionStarted: {
-        console.log("execution started");
         const { id } = rest as ExecutionResponse;
         store.startBot(id);
         break;
@@ -174,7 +171,6 @@ export function connectWs(): WebSocket {
       }
       case Action.LlmInstantiate: {
         const { id } = rest as MessageResponse;
-        console.log("instantiated llm", id);
         store.setLlm({
           id,
           instructions: "",
@@ -185,7 +181,6 @@ export function connectWs(): WebSocket {
       }
       case Action.Notification: {
         const { notificationType, message } = rest as Notification;
-        console.log(message);
         store.setNotification({ notificationType, message });
         break;
       }
@@ -209,22 +204,6 @@ export function createBot(
     }),
   );
 }
-/*
-export function updateBot(
-  ws: WebSocket,
-  id: string,
-  name: string,
-  description: string,
-  instructions: string,
-  cron?: string,
-) {
-  ws.send(
-    JSON.stringify({
-      path: "/bot/update",
-      input: { id, description, instructions, name, cron },
-    }),
-  );
-}*/
 
 export function removeBot(ws: WebSocket, id: string) {
   ws.send(

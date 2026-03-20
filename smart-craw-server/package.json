@@ -22,7 +22,7 @@
   "scripts": {
     "test": "vitest",
     "init_db": "node db_utils/create_db.ts",
-    "start": "node index.ts"
+    "start": "PORT=8080 node index.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.62",
