@@ -2,8 +2,11 @@ import type {
   HookCallback,
   PreToolUseHookInput,
 } from "@anthropic-ai/claude-agent-sdk";
+import path from "path";
+export const memoryFolder =
+  process.env.MEMORY_LOCATION || path.join(process.cwd(), "memory");
 export function createPath(id: string, name: string) {
-  return `${process.cwd()}/memory/${name}-${id}.md`;
+  return path.join(memoryFolder, `${name}-${id}.md`);
 }
 export function writeOwnKnowledge(path: string) {
   return `You are a helpful and autonomous bot.

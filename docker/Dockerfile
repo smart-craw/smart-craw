@@ -18,11 +18,17 @@ RUN chown -R node:node /app
 RUN npm ci --only=production
 # Switch to the non-root user
 USER node
+# don't manually set...keep this default
 ENV STATIC_HTML_LOCATION="/app/dist"
+# don't manually set...keep this default
 ENV DB_LOCATION="/app/db"
+# don't manually set...keep this default
+ENV MEMORY_LOCATION="/app/smart-craw-server/memory"
 ENV ANTHROPIC_BASE_URL="http://host.docker.internal:11434"
 ENV ANTHROPIC_AUTH_TOKEN="ollama"
 ENV ANTHROPIC_API_KEY="sk-local-dummy"
+ENV LOG_LEVEL="info"
+
 EXPOSE 8000
 ENTRYPOINT ["/bin/sh", "/app/smart-craw-server/script.sh"]
 CMD []

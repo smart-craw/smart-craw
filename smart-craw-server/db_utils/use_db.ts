@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import type { BotOutput, MessageOutput } from "../../shared/models.ts";
 import { dbPath } from "./location.ts";
 const database = new DatabaseSync(dbPath);
+import { logger } from "../logging.ts";
 
 // Create a prepared statement to insert data into the database.
 const insertBotDb = database.prepare(
@@ -60,7 +61,7 @@ export const insertBot = (
       instructions,
     );
   } catch (error) {
-    console.error(`Error inserting bot ${id}:`, error);
+    logger.error(`Error inserting bot ${id}:`, error);
   }
 };
 
@@ -68,7 +69,7 @@ export const insertBotCron = (id: string, cron: string) => {
   try {
     insertCronDb.run(id, cron, cron);
   } catch (error) {
-    console.error(`Error inserting cron into ${id}:`, error);
+    logger.error(`Error inserting cron into ${id}:`, error);
   }
 };
 
@@ -76,7 +77,7 @@ export const getBot = (id: string): BotOutput | undefined => {
   try {
     return getBotDb.get(id) as BotOutput;
   } catch (error) {
-    console.error(`Error getting bot ${id}:`, error);
+    logger.error(`Error getting bot ${id}:`, error);
     return undefined;
   }
 };
@@ -85,7 +86,7 @@ export const getBots = (): BotOutput[] => {
   try {
     return getBotsDb.all() as BotOutput[];
   } catch (error) {
-    console.error("Error getting bots:", error);
+    logger.error("Error getting bots:", error);
     return [];
   }
 };
@@ -94,7 +95,7 @@ export const removeBot = (id: string) => {
   try {
     removeBotDb.run(id);
   } catch (error) {
-    console.error(`Error removing bot ${id}:`, error);
+    logger.error(`Error removing bot ${id}:`, error);
   }
 };
 
@@ -103,13 +104,10 @@ export const insertMessage = (
   message: string,
   reasoning: string,
 ) => {
-  console.log("inserting message");
-  console.log(message);
-  console.log(reasoning);
   try {
     insertMessageDb.run(randomUUID(), botId, message, reasoning);
   } catch (error) {
-    console.error(`Error inserting message for bot ${botId}:`, error);
+    logger.error(`Error inserting message for bot ${botId}:`, error);
   }
 };
 
@@ -117,7 +115,7 @@ export const getMessages = (id: string): MessageOutput[] => {
   try {
     return getMessagesDb.all(id) as MessageOutput[];
   } catch (error) {
-    console.error(`Error getting messages for bot ${id}:`, error);
+    logger.error(`Error getting messages for bot ${id}:`, error);
     return [];
   }
 };

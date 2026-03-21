@@ -28,6 +28,7 @@ import {
   insertMessage,
   getMessages,
 } from "./use_db.ts";
+import { logger } from "../logging.ts";
 
 describe("db_utils", () => {
   beforeEach(() => {
@@ -49,9 +50,7 @@ describe("db_utils", () => {
     });
 
     it("should catch errors and log them without crashing", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(logger, "error");
       mockRun.mockImplementationOnce(() => {
         throw new Error("DB Error");
       });
@@ -76,9 +75,7 @@ describe("db_utils", () => {
     });
 
     it("should handle errors and return undefined", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(logger, "error");
       mockGet.mockImplementationOnce(() => {
         throw new Error("DB Error");
       });
@@ -100,9 +97,7 @@ describe("db_utils", () => {
     });
 
     it("should return an empty array on error", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(logger, "error");
       mockAll.mockImplementationOnce(() => {
         throw new Error("DB Error");
       });
@@ -121,9 +116,7 @@ describe("db_utils", () => {
     });
 
     it("should catch errors", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(logger, "error");
       mockRun.mockImplementationOnce(() => {
         throw new Error("DB Error");
       });
@@ -137,9 +130,7 @@ describe("db_utils", () => {
 
   describe("insertMessage", () => {
     it("should execute run with random UUID", () => {
-      const consoleLogSpy = vi
-        .spyOn(console, "log")
-        .mockImplementation(() => {});
+      const consoleLogSpy = vi.spyOn(logger, "log");
       insertMessage("bot-1", "hello", "thinking");
 
       // The first arg is a UUID
@@ -153,12 +144,8 @@ describe("db_utils", () => {
     });
 
     it("should catch errors", () => {
-      const consoleLogSpy = vi
-        .spyOn(console, "log")
-        .mockImplementation(() => {});
-      const consoleErrSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleLogSpy = vi.spyOn(logger, "log");
+      const consoleErrSpy = vi.spyOn(logger, "error");
       mockRun.mockImplementationOnce(() => {
         throw new Error("DB Error");
       });
@@ -181,9 +168,7 @@ describe("db_utils", () => {
     });
 
     it("should return an empty array on error", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(logger, "error");
       mockAll.mockImplementationOnce(() => {
         throw new Error("DB Error");
       });
