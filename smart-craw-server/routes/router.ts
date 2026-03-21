@@ -222,7 +222,7 @@ export const routeApproval = (
     );
     pendingApprovals.delete(id);
   } else {
-    logger.info(`No pending approval found for bot id: ${id}`);
+    logger.warn(`No pending approval found for bot id: ${id}`);
   }
 };
 export const routeBotApproval = (
