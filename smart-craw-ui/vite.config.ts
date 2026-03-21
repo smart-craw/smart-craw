@@ -29,8 +29,6 @@ export default defineConfig({
       provider: playwright(),
       instances: [{ browser: "chromium" }],
     },
-    //setupFiles: ["./src/tests/setup.ts"],
-    //globals: true,
     coverage: {
       include: ["src"],
     },

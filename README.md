@@ -28,12 +28,17 @@ Store memories for later use:
 
 Run docker container, mounting current directory for the persistent storage and the memory directory for notes.  Works if you are locally hosting a model via Ollama.  `add-host` is optional Windows/Mac.
 
-`docker run -p 8000:8000 -v $(pwd):/app/db -v $(pwd)/memory:/app/smart-craw-server/memory --add-host=host.docker.internal:host-gateway  ghcr.io/smart-craw/smart-craw:v0.0.3`
+`docker run -p 8000:8000 -v $(pwd):/app/db -v $(pwd)/memory:/app/smart-craw-server/memory --add-host=host.docker.internal:host-gateway  ghcr.io/smart-craw/smart-craw:v0.0.4`
 
 Run with remote or public LLM:
 
-`docker run -p 8000:8000 -e ANTHROPIC_BASE_URL=[yourllmurl] -e ANTHROPIC_AUTH_TOKEN=[yourauthtoken] -e ANTHROPIC_API_KEY=[yourapikey] -v $(pwd):/app/db -v $(pwd)/memory:/app/smart-craw-server/memory --add-host=host.docker.internal:host-gateway ghcr.io/smart-craw/smart-craw:v0.0.3`
+`docker run -p 8000:8000 -e ANTHROPIC_BASE_URL=[yourllmurl] -e ANTHROPIC_AUTH_TOKEN=[yourauthtoken] -e ANTHROPIC_API_KEY=[yourapikey] -v $(pwd):/app/db -v $(pwd)/memory:/app/smart-craw-server/memory --add-host=host.docker.internal:host-gateway ghcr.io/smart-craw/smart-craw:v0.0.4`
 
+Full env variables:
+* ANTHROPIC_BASE_URL (defaults to "http://host.docker.internal:11434", local Ollama)
+* ANTHROPIC_AUTH_TOKEN (defaults to "ollama")
+* ANTHROPIC_API_KEY (defaults to "sk-local-dummy")
+* LOG_LEVEL (defaults to "info")
 
 ## Cautions
 

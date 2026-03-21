@@ -16,11 +16,6 @@ export type BotDefinition = {
   id: string;
   name: string;
 };
-///How do I want this to be configured?  Do I let people create bots from a UI?
-// How would I handle authentication to remote calls?
-//Do I just provide a pre-created set of bots?  And make sure people don't mix and match them dumbly?
-// Instead of each having its own mcp, have each be its own "subagent" (with only Claude tools available)
-//
 
 //model and tools are inhereted from parent
 export function createBot(
@@ -48,7 +43,6 @@ export function botExecute(
   notificationCb: (message: string, type: string) => void,
 ): Query {
   const path = createPath(bot.id, bot.name);
-  console.log(path);
   const queryResult = query({
     prompt: bot.definition[bot.name].prompt,
     options: {
@@ -79,7 +73,8 @@ export function botExecute(
       model: "hf.co/Qwen/Qwen3-4B-GGUF:latest",
       env: {
         ...process.env,
-        ANTHROPIC_BASE_URL: process.env.ANTHROPIC_BASE_URL || "http://localhost:11434",
+        ANTHROPIC_BASE_URL:
+          process.env.ANTHROPIC_BASE_URL || "http://localhost:11434",
         ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN || "ollama",
         ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "sk-local-dummy",
       },

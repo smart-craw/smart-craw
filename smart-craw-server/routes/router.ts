@@ -16,7 +16,7 @@ import type {
 import { Action, Assistant } from "../../shared/models.ts";
 import { type ExecuteLLMInputServer } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
-
+import { logger } from "../logging.ts";
 export const routeCreateBot = (
   { id, description, name, instructions, cron }: CreateBotInput,
   sendToClient: (message: string) => void,
@@ -35,9 +35,10 @@ export const routeCreateBot = (
   const newBot = id === undefined;
   const bot = createBot(name, description, instructions, id);
   const botDefinition = bot.definition[bot.name];
-
+  logger.info("Creating new bot", bot.id);
   insertBot(bot.id, bot.name, botDefinition.description, botDefinition.prompt);
   if (cron) {
+    logger.info("Scheduling bot", bot.id);
     insertBotCron(bot.id, cron);
     scheduledBots.set(
       bot.id,
@@ -84,7 +85,6 @@ export const routeGetAllBots = (
   sendToClient: (message: string) => void,
   getBots: () => BotOutput[],
 ) => {
-  //might want to get cron as well
   const bots = getBots();
   sendToClient(
     JSON.stringify({
@@ -123,6 +123,7 @@ export const executeBot = (
     }),
   );
   const bot = createBot(name, description, instructions, id);
+  logger.info("Bot", id, "executing");
   const query = botExecute(
     bot,
     approvalWebsocket(bot.id, sendToClient, Assistant.Bot, pendingApprovals),
@@ -146,7 +147,7 @@ export const routeExecuteBot = (
 ) => {
   const botDef = getBot(id);
   if (!botDef) {
-    console.error(`Execution failed: bot ${id} not found`);
+    logger.error(`Execution failed: bot ${id} not found`);
     return;
   }
   executeBot(
@@ -199,7 +200,6 @@ export const routeConversation = (
   { message }: ConverseInput,
   wsm: WebSocketMessageQueue,
 ) => {
-  console.log(message);
   wsm.enqueue(message);
 };
 
@@ -209,12 +209,9 @@ export const routeApproval = (
   assistantType: AssistantType,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
-  console.log(pendingApprovals);
   const resolve = pendingApprovals.get(id);
   if (resolve) {
     resolve(approved);
-    console.log("sending approved message");
-    console.log(approved);
     sendToClient(
       JSON.stringify({
         id,
@@ -225,7 +222,7 @@ export const routeApproval = (
     );
     pendingApprovals.delete(id);
   } else {
-    console.warn(`No pending approval found for bot id: ${id}`);
+    logger.info(`No pending approval found for bot id: ${id}`);
   }
 };
 export const routeBotApproval = (
@@ -251,7 +248,7 @@ export const routeStopBot = (
     query.close();
     holdQueries.delete(id);
   } else {
-    console.warn(`No Query found for bot id: ${id}`);
+    logger.warn(`No Query found for bot id: ${id}`);
   }
 };
 
@@ -264,7 +261,6 @@ export const approvalWebsocket =
     pendingApprovals: Map<string, (approved: boolean) => void>,
   ) =>
   async (toolName: string, input: any) => {
-    console.log("got to approval websocket");
     sendToClient(
       JSON.stringify({
         toolName,

@@ -6,6 +6,7 @@ import type {
   PermissionRequestHookInput,
   PostToolUseFailureHookInput,
 } from "@anthropic-ai/claude-agent-sdk";
+import { logger } from "../logging.ts";
 
 interface SplitReasoning {
   reasoning: string;
@@ -32,7 +33,6 @@ export async function handleLLMResponse(
   query: Query,
   id: string, //just bot id?  What about "normal" llm?
   onStream: (msg: string, id: string) => void,
-  //onComplete: (id: string) => void,
   onComplete: (id: string, message: string, reasoning: string) => void,
 ) {
   for await (const msg of query) {
@@ -54,8 +54,7 @@ export async function handleLLMResponse(
         break;
       }
       default: {
-        console.log("uncaught type");
-        console.log(msg);
+        logger.debug("uncaught type", msg);
       }
     }
   }
@@ -85,7 +84,7 @@ export const notificationWrapper = (
       }
       default: {
         const notification = input as NotificationHookInput;
-        console.log("notification recevied", notification);
+        logger.debug("notification received", notification);
         notificationCb(notification.message, notification.notification_type);
       }
     }
@@ -102,11 +101,8 @@ export const approvalWrapper = (
     toolName: string,
     input: any,
   ): Promise<PermissionResult> {
-    console.log("got to approval callback");
-    console.log(toolName);
-    console.log(input);
+    logger.debug("Approval called");
     const isApproved = await approvalCb(toolName, input);
-
     return isApproved
       ? { behavior: "allow", updatedInput: input }
       : { behavior: "deny", message: "Tool use denied" };

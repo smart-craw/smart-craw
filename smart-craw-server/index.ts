@@ -20,7 +20,6 @@ import {
   insertBotCron,
 } from "./db_utils/use_db.ts";
 
-//put this behind an nginx proxy
 import { WebSocketServer } from "ws";
 import {
   routeBotApproval,
@@ -40,10 +39,11 @@ import { startScheduler } from "./llm_utils/schedule.ts";
 import path from "path";
 import http from "http";
 import st from "st";
+import { logger } from "./logging.ts";
 const staticPath =
   process.env.STATIC_HTML_LOCATION ||
   path.join(import.meta.dirname, "../smart-craw-ui/dist");
-console.log(staticPath);
+logger.debug(staticPath);
 const mount = st({
   path: staticPath,
   url: "/",
@@ -83,9 +83,10 @@ const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
 
 //pass wss to anything that writes back, and write back to ALL
 wss.on("connection", function connection(ws) {
+  logger.info("Connection established");
   const messageQueue = new WebSocketMessageQueue(); //one per connection currently
   ws.on("error", (err) => {
-    console.error(err);
+    logger.error(err);
     messageQueue.close();
   });
   ws.on("message", function message(data) {
@@ -144,8 +145,6 @@ wss.on("connection", function connection(ws) {
         routeConversation(input as ConverseInput, messageQueue);
         break;
       case "/bot/approval":
-        console.log(pendingApprovals);
-        console.log(input);
         routeBotApproval(
           input as ApprovalInput,
           writeAllClients(wss),
@@ -153,8 +152,6 @@ wss.on("connection", function connection(ws) {
         );
         break;
       case "/llm/approval":
-        console.log(pendingApprovals);
-        console.log(input);
         routeLlmApproval(
           input as ApprovalInput,
           writeAllClients(wss),
@@ -162,10 +159,11 @@ wss.on("connection", function connection(ws) {
         );
         break;
     }
-    console.log("received: %s", data);
+    logger.debug(`received: ${data}`);
   });
 
   ws.on("close", () => {
+    logger.info("websocket closed");
     messageQueue.close();
   });
 });
