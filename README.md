@@ -1,5 +1,7 @@
 # SmartCraw
 
+![logo](./docs/smart_craw_chonky_crab.svg)
+
 ## Get Smart!  Its not Claw, its Craw!
 
 Want to access your bots from anywhere?  Want to easily stop them if they are going haywire?  Want to easily schedule them?
