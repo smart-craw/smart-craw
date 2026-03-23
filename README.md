@@ -1,4 +1,4 @@
-# SmartCraw
+# Smart Craw
 
 ![logo](./docs/smart_craw_chonky_crab.svg)
 
