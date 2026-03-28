@@ -141,7 +141,6 @@ wss.on("connection", function connection(ws) {
           input as ExecuteLLMInputServer,
           writeAllClients(wss),
           messageQueue,
-          getBots,
           holdQueries,
           pendingApprovals,
         );

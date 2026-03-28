@@ -168,20 +168,13 @@ export const routeExecuteLlm = (
   { mcpConfigs }: ExecuteLLMInputServer,
   sendToClient: (message: string) => void,
   wsm: WebSocketMessageQueue,
-  getBots: () => BotOutput[],
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
   const id = uuidv4();
-  const bots = getBots().map(
-    ({ name, description, instructions, id }: BotOutput) => {
-      return createBot(name, description, instructions, id);
-    },
-  );
   const query = instructLlm(
     id,
     mcpConfigs, // mcpServers
-    bots,
     approvalWebsocket(id, sendToClient, Assistant.Llm, pendingApprovals),
     notification(sendToClient),
     wsm,

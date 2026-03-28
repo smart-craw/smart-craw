@@ -5,11 +5,6 @@ import {
 } from "@anthropic-ai/claude-agent-sdk";
 import { v4 as uuidv4 } from "uuid";
 import { approvalWrapper, notificationWrapper } from "./responses.ts";
-/*import {
-  autoApproveWriteMemory,
-  createPath,
-  writeOwnKnowledge,
-} from "./memory.ts";*/
 
 export type BotDefinition = {
   definition: Record<string, AgentDefinition>;
@@ -42,17 +37,10 @@ export function botExecute(
   approvalCb: (toolName: string, input: any) => Promise<boolean>,
   notificationCb: (message: string, type: string) => void,
 ): Query {
-  //const path = createPath(bot.id, bot.name);
   const queryResult = query({
     prompt: bot.definition[bot.name].prompt,
     options: {
       cwd: bot.name, //folder path is directory, with own "memory"
-      //claude code automatically
-      /*systemPrompt: {
-        type: "preset",
-        preset: "claude_code",
-        append: writeOwnKnowledge(path),
-        },*/
       tools: { type: "preset", preset: "claude_code" },
       canUseTool: approvalWrapper(approvalCb),
       hooks: {
@@ -62,9 +50,6 @@ export function botExecute(
             hooks: [notificationWrapper(notificationCb)],
           },
         ],
-        /*PreToolUse: [
-          { matcher: "Write|Edit", hooks: [autoApproveWriteMemory(path)] },
-          ],*/
         PermissionRequest: [
           {
             hooks: [notificationWrapper(notificationCb)],
