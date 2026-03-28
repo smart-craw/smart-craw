@@ -1,6 +1,6 @@
 import { List } from "antd";
 import { useAppStore } from "../state/store";
-
+import { XMarkdown } from "@ant-design/x-markdown";
 const ModalMessages = ({ botId }: { botId: string }) => {
   const messagesByBot = useAppStore((state) => state.messages);
   const bots = useAppStore((state) => state.bots);
@@ -17,7 +17,7 @@ const ModalMessages = ({ botId }: { botId: string }) => {
             title={`${botName}-${message.timestamp.toISOString()}`}
             description={message.reasoning}
           />
-          <div>{message.message}</div>
+          <XMarkdown content={message.message} />
         </List.Item>
       )}
     />
