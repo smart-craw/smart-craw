@@ -40,6 +40,8 @@ import path from "path";
 import http from "http";
 import st from "st";
 import { logger } from "./logging.ts";
+import { createDirectoriesOnStart } from "./file_utils/startup.ts";
+import { manageBotFolder } from "./file_utils/bot_folder.ts";
 const staticPath =
   process.env.STATIC_HTML_LOCATION ||
   path.join(import.meta.dirname, "../smart-craw-ui/dist");
@@ -57,10 +59,6 @@ const server = http
   .listen(port);
 const wss = new WebSocketServer({ server });
 
-//Global state
-const pendingApprovals = new Map<string, (approved: boolean) => void>();
-const holdQueries = new Map<string, Query>();
-
 const writeAllClients = (wss: WebSocketServer) => (message: string) => {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
@@ -69,6 +67,12 @@ const writeAllClients = (wss: WebSocketServer) => (message: string) => {
   });
 };
 
+//async
+createDirectoriesOnStart(getBots);
+
+//Global state
+const pendingApprovals = new Map<string, (approved: boolean) => void>();
+const holdQueries = new Map<string, Query>();
 const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
   Object.entries(
     startScheduler(
@@ -84,6 +88,7 @@ const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
 //pass wss to anything that writes back, and write back to ALL
 wss.on("connection", function connection(ws) {
   logger.info("Connection established");
+  logger.info(`LLM server url: ${process.env.ANTHROPIC_BASE_URL}`);
   const messageQueue = new WebSocketMessageQueue(); //one per connection currently
   ws.on("error", (err) => {
     logger.error(err);
@@ -96,6 +101,7 @@ wss.on("connection", function connection(ws) {
         routeCreateBot(
           input as CreateBotInput,
           writeAllClients(wss),
+          manageBotFolder(getBot),
           insertBot,
           insertBotCron,
           insertMessage,

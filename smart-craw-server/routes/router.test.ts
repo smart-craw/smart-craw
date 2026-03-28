@@ -31,6 +31,7 @@ describe("Router", () => {
   describe("routeCreateBot", () => {
     it("should call insertBot and ws.send", () => {
       const sendToClientMock = vi.fn();
+      const manageBotFolder = vi.fn();
       const insertBotMock = vi.fn();
       const insertBotCronMock = vi.fn();
       const insertMessageMock = vi.fn();
@@ -40,6 +41,7 @@ describe("Router", () => {
       routeCreateBot(
         { name: "test-bot", description: "desc", instructions: "instr" } as any,
         sendToClientMock,
+        manageBotFolder,
         insertBotMock,
         insertBotCronMock,
         insertMessageMock,
@@ -55,6 +57,7 @@ describe("Router", () => {
         "prompt",
       );
       expect(sendToClientMock).toHaveBeenCalled();
+      expect(manageBotFolder).toHaveBeenCalled();
 
       const sentData = JSON.parse(sendToClientMock.mock.calls[0][0]);
       expect(sentData.action).toBe(Action.CreateBot);

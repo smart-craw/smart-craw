@@ -8,11 +8,11 @@ import {
 import { type BotDefinition } from "./bots.ts";
 import { WebSocketMessageQueue } from "./ws.ts";
 import { approvalWrapper, notificationWrapper } from "./responses.ts";
-import {
+/*import {
   autoApproveWriteMemory,
   createPath,
   writeOwnKnowledge,
-} from "./memory.ts";
+} from "./memory.ts";*/
 function convertMcpListToObject(
   mcpServers: McpServerConfig[],
 ): Record<string, McpServerConfig> {
@@ -30,7 +30,7 @@ function convertMcpListToObject(
 function convertAgentListToObject(
   bots: BotDefinition[],
 ): Record<string, AgentDefinition> {
-  return bots.reduce<Record<string, AgentDefinition>>((aggr, curr, index) => {
+  return bots.reduce<Record<string, AgentDefinition>>((aggr, curr) => {
     return {
       ...aggr,
       ...curr.definition,
@@ -46,21 +46,23 @@ export function instructLlm(
   notificationCb: (message: string, type: string) => void,
   mq: WebSocketMessageQueue,
 ): Query {
-  const path = createPath(id, "llm");
+  //const path = createPath(id, "llm");
   const q = query({
     prompt: mq,
     options: {
       tools: { type: "preset", preset: "claude_code" },
       mcpServers: convertMcpListToObject(mcpServers),
-      agents: convertAgentListToObject(bots),
-      permissionMode: "acceptEdits", //enables mcp servers to be viewed, but make sure this ONLY runs in docker
+      allowedTools: [
+        "mcp*", // All mcp
+      ],
+      agents: convertAgentListToObject(bots), //is this needed??
       canUseTool: approvalWrapper(approvalCb),
       sessionId: id,
-      systemPrompt: {
+      /*systemPrompt: {
         type: "preset",
         preset: "claude_code",
         append: writeOwnKnowledge(path),
-      },
+        },*/
       hooks: {
         Notification: [{ hooks: [notificationWrapper(notificationCb)] }],
         PostToolUseFailure: [
@@ -68,9 +70,9 @@ export function instructLlm(
             hooks: [notificationWrapper(notificationCb)],
           },
         ],
-        PreToolUse: [
+        /*PreToolUse: [
           { matcher: "Write|Edit", hooks: [autoApproveWriteMemory(path)] },
-        ],
+          ],*/
         PermissionRequest: [
           {
             hooks: [notificationWrapper(notificationCb)],
@@ -78,10 +80,11 @@ export function instructLlm(
         ],
       },
       includePartialMessages: true,
-      model: "hf.co/Qwen/Qwen3-4B-GGUF:latest",
+      model: process.env.MODEL || "hf.co/Qwen/Qwen3-4B-GGUF:latest",
       env: {
         ...process.env,
-        ANTHROPIC_BASE_URL: process.env.ANTHROPIC_BASE_URL || "http://localhost:11434",
+        ANTHROPIC_BASE_URL:
+          process.env.ANTHROPIC_BASE_URL || "http://localhost:11434",
         ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN || "ollama",
         ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "sk-local-dummy",
       },
