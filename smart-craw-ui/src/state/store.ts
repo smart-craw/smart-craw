@@ -70,7 +70,8 @@ export type AppState = {
 
   setNotification: (notification: Notification) => void;
 };
-
+const beginThink = "<think>";
+const endThink = "</think>";
 export const useAppStore = create<AppState>((set) => ({
   bots: [],
   messages: {},
@@ -142,8 +143,8 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => {
       const messages = state.messages;
       const messagesForBot = messages[botId] || [];
-
-      if (message === "<think>") {
+      //what happens if not a reasoning model?
+      if (message.startsWith(beginThink)) {
         const id = window.crypto.randomUUID();
         return {
           messages: {
@@ -153,7 +154,7 @@ export const useAppStore = create<AppState>((set) => ({
               {
                 id,
                 message: "",
-                reasoning: "",
+                reasoning: message.replace(beginThink, ""),
                 partialReasoning: true,
                 partialMessage: true,
                 timestamp: new Date(),
@@ -161,7 +162,7 @@ export const useAppStore = create<AppState>((set) => ({
             ],
           },
         };
-      } else if (message === "</think>") {
+      } else if (message.endsWith(endThink)) {
         const lastMessage = messagesForBot[messagesForBot.length - 1];
         const allButLast = messagesForBot.slice(0, -1);
         return {
@@ -169,7 +170,13 @@ export const useAppStore = create<AppState>((set) => ({
             ...messages,
             [botId]: [
               ...allButLast,
-              { ...lastMessage, partialReasoning: false, partialMessage: true },
+              {
+                ...lastMessage,
+                reasoning:
+                  lastMessage.reasoning + message.replace(endThink, ""),
+                partialReasoning: false,
+                partialMessage: true,
+              },
             ],
           },
         };

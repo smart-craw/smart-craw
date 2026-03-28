@@ -16,10 +16,14 @@ import type {
 import { Action, Assistant } from "../../shared/models.ts";
 import { type ExecuteLLMInputServer } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
+import fs from "fs";
 import { logger } from "../logging.ts";
+import { manageBotFolder } from "../file_utils/bot_folder.ts";
+
 export const routeCreateBot = (
   { id, description, name, instructions, cron }: CreateBotInput,
   sendToClient: (message: string) => void,
+  manageBotFolder: ({ id, name }: Pick<CreateBotInput, "id" | "name">) => void,
   insertBot: (
     id: string,
     name: string,
@@ -35,7 +39,8 @@ export const routeCreateBot = (
   const newBot = id === undefined;
   const bot = createBot(name, description, instructions, id);
   const botDefinition = bot.definition[bot.name];
-  logger.info("Creating new bot", bot.id);
+  logger.info(newBot ? "Creating new bot" : "Update bot", bot.id);
+  manageBotFolder({ id, name });
   insertBot(bot.id, bot.name, botDefinition.description, botDefinition.prompt);
   if (cron) {
     logger.info("Scheduling bot", bot.id);
@@ -163,20 +168,13 @@ export const routeExecuteLlm = (
   { mcpConfigs }: ExecuteLLMInputServer,
   sendToClient: (message: string) => void,
   wsm: WebSocketMessageQueue,
-  getBots: () => BotOutput[],
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
   const id = uuidv4();
-  const bots = getBots().map(
-    ({ name, description, instructions, id }: BotOutput) => {
-      return createBot(name, description, instructions, id);
-    },
-  );
   const query = instructLlm(
     id,
     mcpConfigs, // mcpServers
-    bots,
     approvalWebsocket(id, sendToClient, Assistant.Llm, pendingApprovals),
     notification(sendToClient),
     wsm,

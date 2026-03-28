@@ -28,19 +28,28 @@ Any model that works with Anthropic's API can be used.  Want a fully private exp
 Store memories for later use:
 `mkdir memory`
 
-Run docker container, mounting current directory for the persistent storage and the memory directory for notes.  Works if you are locally hosting a model via Ollama.  `add-host` is optional Windows/Mac.
+Run docker container, mounting current directory for the persistent storage and the memory directory for bot-specific memories.  Works if you are locally hosting a model via Ollama.  `add-host` is optional on Windows/Mac.
 
-`docker run -p 8000:8000 -v $(pwd):/app/db -v $(pwd)/memory:/app/smart-craw-server/memory --add-host=host.docker.internal:host-gateway  ghcr.io/smart-craw/smart-craw:v0.0.4`
+`docker run -p 8000:8000 -v $(pwd):/app/db -v $(pwd)/memory:/home/node/.claude/projects -v $(pwd):/app/smart-craw-server --add-host=host.docker.internal:host-gateway  ghcr.io/smart-craw/smart-craw:v0.0.4`
 
 Run with remote or public LLM:
 
-`docker run -p 8000:8000 -e ANTHROPIC_BASE_URL=[yourllmurl] -e ANTHROPIC_AUTH_TOKEN=[yourauthtoken] -e ANTHROPIC_API_KEY=[yourapikey] -v $(pwd):/app/db -v $(pwd)/memory:/app/smart-craw-server/memory --add-host=host.docker.internal:host-gateway ghcr.io/smart-craw/smart-craw:v0.0.4`
+`docker run -p 8000:8000 -e ANTHROPIC_BASE_URL=[yourllmurl] -e ANTHROPIC_AUTH_TOKEN=[yourauthtoken] -e ANTHROPIC_API_KEY=[yourapikey] -v $(pwd):/app/db -v $(pwd)/memory:/home/node/.claude/projects --add-host=host.docker.internal:host-gateway ghcr.io/smart-craw/smart-craw:v0.0.4`
+
+### All available environment variables
 
 Full env variables:
 * ANTHROPIC_BASE_URL (defaults to "http://host.docker.internal:11434", local Ollama)
 * ANTHROPIC_AUTH_TOKEN (defaults to "ollama")
 * ANTHROPIC_API_KEY (defaults to "sk-local-dummy")
 * LOG_LEVEL (defaults to "info")
+* MODEL (model to use, eg "hf.co/Qwen/Qwen3-4B-GGUF:latest").  Does not matter if backend server is llama-server.
+
+## Design Approach
+
+Your bot fleet is constrained to the folder that you mount into your docker container. Each new bot will have its own directory within this folder.  If you want a bot to act on a set of files (code or other text documents) you must put them inside the bot's directory.
+
+Claude keeps "memories" for each bot.  Mount `/home/node/.claude/projects` into your file system to persistently store bot memories.  If this memory isn't mounted your bots will "lose" their memory on every pod restart.
 
 ## Cautions
 
