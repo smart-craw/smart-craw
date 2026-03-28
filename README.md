@@ -43,7 +43,7 @@ Full env variables:
 * ANTHROPIC_AUTH_TOKEN (defaults to "ollama")
 * ANTHROPIC_API_KEY (defaults to "sk-local-dummy")
 * LOG_LEVEL (defaults to "info")
-* MODEL (model to use, eg "hf.co/Qwen/Qwen3-4B-GGUF:latest")
+* MODEL (model to use, eg "hf.co/Qwen/Qwen3-4B-GGUF:latest").  Does not matter if backend server is llama-server.
 
 ## Design Approach
 
