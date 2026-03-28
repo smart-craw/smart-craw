@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Card, Space, Button, Descriptions, Flex } from "antd";
-//import LlmActionButton from "./LlmAction";
 import { converseLlm, sendLlmApproval, stopBot } from "../services/ws";
 import { useAppStore } from "../state/store";
 import { Think, Sender, ThoughtChain } from "@ant-design/x";
@@ -23,13 +22,11 @@ const MainChat: React.FC = () => {
     messages.length > 0
       ? messages[messages.length - 1]
       : { reasoning: "", message: "" };
-  //console.log(llmState);
   const onConfirm = (id: string, toolName: string) => () => {
     sendLlmApproval(ws, id, toolName);
     return actionLlmApproval(true);
   };
   const execute = (id: string) => () => {
-    //setCommand("");
     converseLlm(ws, id, command);
     startLlm();
   };
@@ -61,13 +58,11 @@ const MainChat: React.FC = () => {
               {
                 key: "toolcall",
                 title: approval.toolName,
-                //description: JSON.stringify(approval.input),
                 icon: <CodeOutlined />,
                 footer: (
                   <Flex gap="small" vertical>
                     <Descriptions
                       column={1}
-                      //title="Tool info"
                       items={Object.entries<string>(approval.input).map(
                         ([key, value]) => ({
                           key,
@@ -96,55 +91,4 @@ const MainChat: React.FC = () => {
     </Card>
   );
 };
-//<Collapse ghost items={items} />
 export default MainChat;
-//     <Text style={{ paddingTop: 5 }}>{message}</Text>
-/*<Row gutter={[0, 8]}>
-  <Col span={24}>
-    <TextArea
-      rows={4}
-      placeholder="Instructions"
-      onChange={(e) => setCommand(e.target.value)}
-      onPressEnter={execute(id)}
-    />
-  </Col>
-  <Col span={24}>
-    <LlmActionButton
-      id={id}
-      approval={approval}
-      isExecuting={isExecuting}
-      onConfirm={onConfirm}
-      execute={execute}
-      stopExecute={stopExecute}
-    />
-  </Col>
-  <Col span={24}>
-    <Card title="Result">
-      <Collapse ghost items={items} />
-      <Text style={{ paddingTop: 5 }}>{message}</Text>
-    </Card>
-  </Col>
-</Row> */
-
-/*<TextArea
-  rows={4}
-  placeholder="Instructions"
-  onChange={(e) => {
-    setCommand(e.target.value);
-  }}
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      //won't propogate to onChange
-      e.preventDefault();
-    }
-  }}
-  onPressEnter={execute(id)}
-/>
-<LlmActionButton
-  id={id}
-  approval={approval}
-  isExecuting={isExecuting}
-  onConfirm={onConfirm}
-  execute={execute}
-  stopExecute={stopExecute}
-/> */
