@@ -21,7 +21,7 @@ function stopRunApproval(
 }
 
 type Props = Pick<Bot | Llm, "approval" | "id" | "isExecuting"> & {
-  onConfirm: (id: string, toolName: string) => () => void;
+  onDecision: (id: string, toolName: string, approved: boolean) => () => void;
   stopExecute: (id: string) => () => void;
   execute: (id: string) => () => void;
 };
@@ -30,7 +30,7 @@ const LlmActionButton = ({
   approval,
   id,
   isExecuting,
-  onConfirm,
+  onDecision,
   stopExecute,
   execute,
 }: Props) => {
@@ -45,7 +45,8 @@ const LlmActionButton = ({
           description={JSON.stringify(approval!.input)}
           okText="Yes"
           cancelText="No"
-          onConfirm={onConfirm(id, approval!.toolName)}
+          onConfirm={onDecision(id, approval!.toolName, true)}
+          onCancel={onDecision(id, approval!.toolName, false)}
         >
           <Badge count={1}>
             <Button>Approval</Button>

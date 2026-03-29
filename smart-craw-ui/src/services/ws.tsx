@@ -267,20 +267,30 @@ export function converseLlm(ws: WebSocket, id: string, message: string) {
   );
 }
 
-export function sendBotApproval(ws: WebSocket, id: string, toolName: string) {
+export function sendBotApprovalDecision(
+  ws: WebSocket,
+  id: string,
+  toolName: string,
+  approved: boolean,
+) {
   ws.send(
     JSON.stringify({
       path: "/bot/approval",
-      input: { approved: true, toolName, id },
+      input: { approved, toolName, id },
     }),
   );
 }
 
-export function sendLlmApproval(ws: WebSocket, id: string, toolName: string) {
+export function sendLlmApprovalDecision(
+  ws: WebSocket,
+  id: string,
+  toolName: string,
+  approved: boolean,
+) {
   ws.send(
     JSON.stringify({
       path: "/llm/approval",
-      input: { approved: true, toolName, id },
+      input: { approved, toolName, id },
     }),
   );
 }

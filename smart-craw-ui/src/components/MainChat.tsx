@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Card, Space, Button, Descriptions, Flex } from "antd";
-import { converseLlm, sendLlmApproval, stopBot } from "../services/ws";
+import { converseLlm, sendLlmApprovalDecision, stopBot } from "../services/ws";
 import { useAppStore } from "../state/store";
 import { Think, Sender, ThoughtChain } from "@ant-design/x";
 import { XMarkdown } from "@ant-design/x-markdown";
@@ -22,10 +22,12 @@ const MainChat: React.FC = () => {
     messages.length > 0
       ? messages[messages.length - 1]
       : { reasoning: "", message: "" };
-  const onConfirm = (id: string, toolName: string) => () => {
-    sendLlmApproval(ws, id, toolName);
-    return actionLlmApproval(true);
-  };
+  const onDecision =
+    (id: string, toolName: string, approved: boolean) => () => {
+      sendLlmApprovalDecision(ws, id, toolName, approved);
+      return actionLlmApproval(approved);
+    };
+
   const execute = (id: string) => () => {
     converseLlm(ws, id, command);
     startLlm();
@@ -74,11 +76,16 @@ const MainChat: React.FC = () => {
                     <Flex gap="small" wrap>
                       <Button
                         type="primary"
-                        onClick={onConfirm(id, approval.toolName)}
+                        onClick={onDecision(id, approval.toolName, true)}
                       >
                         Approve
                       </Button>
-                      <Button danger>Deny</Button>
+                      <Button
+                        danger
+                        onClick={onDecision(id, approval.toolName, false)}
+                      >
+                        Deny
+                      </Button>
                     </Flex>
                   </Flex>
                 ),

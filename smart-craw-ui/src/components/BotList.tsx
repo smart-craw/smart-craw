@@ -6,7 +6,7 @@ import {
   executeBot,
   getMessages,
   removeBot,
-  sendBotApproval,
+  sendBotApprovalDecision,
   stopBot,
 } from "../services/ws";
 import LlmActionButton from "./LlmAction";
@@ -25,11 +25,11 @@ const BotList: React.FC = () => {
   const startBot = useAppStore((state) => state.startBot);
   const finishBot = useAppStore((state) => state.finishBot);
   const deleteBot = useAppStore((state) => state.deleteBot);
-
-  const onConfirm = (id: string, toolName: string) => () => {
-    sendBotApproval(ws, id, toolName);
-    return actionBotApproval(id, true);
-  };
+  const onDecision =
+    (id: string, toolName: string, approved: boolean) => () => {
+      sendBotApprovalDecision(ws, id, toolName, approved);
+      return actionBotApproval(id, approved);
+    };
   const onCreate = (isNew: boolean, bot: BotOutput) => {
     const { id, name, description, instructions, cron } = bot;
     //will update in place if ID exists already
@@ -97,7 +97,7 @@ const BotList: React.FC = () => {
                     approval={approval}
                     id={id}
                     isExecuting={isExecuting}
-                    onConfirm={onConfirm}
+                    onDecision={onDecision}
                     execute={execute}
                     stopExecute={stopExecute}
                   />,
