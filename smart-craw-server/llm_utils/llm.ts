@@ -1,11 +1,9 @@
 import {
-  type AgentDefinition,
   type Query,
   type McpServerConfig,
   query,
 } from "@anthropic-ai/claude-agent-sdk";
 
-import { type BotDefinition } from "./bots.ts";
 import { WebSocketMessageQueue } from "./ws.ts";
 import { approvalWrapper, notificationWrapper } from "./responses.ts";
 

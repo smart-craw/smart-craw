@@ -16,9 +16,7 @@ import type {
 import { Action, Assistant } from "../../shared/models.ts";
 import { type ExecuteLLMInputServer } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
-import fs from "fs";
 import { logger } from "../logging.ts";
-import { manageBotFolder } from "../file_utils/bot_folder.ts";
 
 export const routeCreateBot = (
   { id, description, name, instructions, cron }: CreateBotInput,
