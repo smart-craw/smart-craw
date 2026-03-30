@@ -1,6 +1,7 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { type Bot, type Llm } from "../state/store";
 import { Popconfirm, Button, Badge } from "antd";
+import ApprovalDescription from "./ApprovalDescription";
 export const ButtonOption = {
   Approval: "approval",
   Stop: "stop",
@@ -42,7 +43,7 @@ const LlmActionButton = ({
         <Popconfirm
           placement="top"
           title={approval!.toolName}
-          description={JSON.stringify(approval!.input)}
+          description={<ApprovalDescription input={approval!.input} />}
           okText="Yes"
           cancelText="No"
           onConfirm={onDecision(id, approval!.toolName, true)}
