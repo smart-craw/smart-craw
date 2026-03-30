@@ -41,6 +41,7 @@ const LlmActionButton = ({
     case ButtonOption.Approval: {
       button = (
         <Popconfirm
+          styles={{ root: { maxWidth: 400 } }}
           placement="top"
           title={approval!.toolName}
           description={<ApprovalDescription input={approval!.input} />}
