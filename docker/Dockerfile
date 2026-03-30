@@ -12,6 +12,7 @@ COPY --from=builder /app/smart-craw-ui/dist /app/dist/
 COPY smart-craw-server/ /app/smart-craw-server/
 COPY docker/script.sh /app/smart-craw-server/script.sh
 COPY shared/ /app/shared/
+RUN apk add --no-cache bash # bash is needed for claude code
 RUN mkdir /app/db
 WORKDIR /app/smart-craw-server/
 RUN chown -R node:node /app
