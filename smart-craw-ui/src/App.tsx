@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { connectWs } from "./services/ws";
 import BotList from "./components/BotList";
+import smartCrawImg from "./assets/smart_craw_crab_only.svg";
 import {
   Col,
   Row,
@@ -11,26 +12,28 @@ import {
 } from "antd";
 import MainChat from "./components/MainChat";
 import { useAppStore } from "./state/store";
+import SettingsButton from "./components/Settings";
 
 const { Content, Header } = Layout;
 
 function App() {
   const notificationState = useAppStore((state) => state.notification);
   const setWs = useAppStore((state) => state.setWs);
+  const { coneOfSilence } = useAppStore((state) => state.settings);
   const [api, contextHolder] = notification.useNotification({
     stack: {
       threshold: 3,
     },
   });
   useEffect(() => {
-    if (notificationState !== null) {
+    if (notificationState !== null && !coneOfSilence) {
       api.open({
         title: notificationState?.notificationType,
         description: notificationState?.message,
         duration: false,
       });
     }
-  }, [notificationState, api]);
+  }, [notificationState, api, coneOfSilence]);
 
   useEffect(() => {
     const wsInstance = connectWs();
@@ -54,7 +57,10 @@ function App() {
         {contextHolder}
         <Layout style={{ minHeight: "100vh" }}>
           <Header style={{ display: "flex", alignItems: "center" }}>
-            <div className="demo-logo" />
+            <img style={{ height: "100%" }} src={smartCrawImg} />
+            <div style={{ marginLeft: "auto" }}>
+              <SettingsButton />
+            </div>
           </Header>
           <Content style={{ padding: "5px 48px" }}>
             <Row gutter={8}>

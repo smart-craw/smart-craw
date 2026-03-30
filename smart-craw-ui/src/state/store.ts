@@ -37,6 +37,9 @@ export function dateUtcConvertor(dateInUTC: string) {
   return new Date(`${dateInUTC.replace(" ", "T")}Z`);
 }
 
+export type Settings = {
+  coneOfSilence: boolean;
+};
 export type AppState = {
   // State
   bots: Bot[];
@@ -44,12 +47,15 @@ export type AppState = {
   notification: Notification | null;
   llm: Llm;
   ws: WebSocket | null;
+  settings: Settings;
 
   // Actions
+  //
   setWs: (ws: WebSocket | null) => void;
   setBot: (bot: Bot) => void;
   setBots: (bots: Bot[]) => void;
   addBot: (bot: Bot) => void;
+  setSettings: (settings: Settings) => void;
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
   setBotApproval: (id: string, toolName: string, input: any) => void;
   actionBotApproval: (id: string, approved: boolean) => void;
@@ -84,7 +90,10 @@ export const useAppStore = create<AppState>((set) => ({
     isExecuting: false,
   },
   ws: null,
-
+  settings: {
+    coneOfSilence: false,
+  },
+  setSettings: (settings: Settings) => set({ settings }),
   setWs: (ws) => set({ ws }),
   setBot: ({ id, description, name, instructions, cron }) =>
     set((state) => ({
