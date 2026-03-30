@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Card, Space, Button, Descriptions, Flex } from "antd";
+import { Card, Space, Button, Flex } from "antd";
 import { converseLlm, sendLlmApprovalDecision, stopBot } from "../services/ws";
 import { useAppStore } from "../state/store";
 import { Think, Sender, ThoughtChain } from "@ant-design/x";
 import { XMarkdown } from "@ant-design/x-markdown";
 import { CodeOutlined } from "@ant-design/icons";
+import ApprovalDescription from "./ApprovalDescription";
 
 const MainChat: React.FC = () => {
   const ws = useAppStore((state) => state.ws)!;
@@ -63,16 +64,7 @@ const MainChat: React.FC = () => {
                 icon: <CodeOutlined />,
                 footer: (
                   <Flex gap="small" vertical>
-                    <Descriptions
-                      column={1}
-                      items={Object.entries<string>(approval.input).map(
-                        ([key, value]) => ({
-                          key,
-                          label: key,
-                          children: value,
-                        }),
-                      )}
-                    />
+                    <ApprovalDescription input={approval.input} />
                     <Flex gap="small" wrap>
                       <Button
                         type="primary"
