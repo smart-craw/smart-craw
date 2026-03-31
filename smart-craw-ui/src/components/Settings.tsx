@@ -1,4 +1,4 @@
-import { DownOutlined, MutedOutlined } from "@ant-design/icons";
+import { MutedOutlined, SettingOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Switch, Tooltip, type MenuProps } from "antd";
 import { useAppStore } from "../state/store";
 import { useState } from "react";
@@ -34,11 +34,8 @@ const SettingsButton = () => {
         }
       }}
     >
-      <Button icon={<DownOutlined />} iconPlacement="end">
-        Options
-      </Button>
+      <Button icon={<SettingOutlined />} />
     </Dropdown>
   );
 };
-
 export default SettingsButton;
