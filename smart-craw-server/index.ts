@@ -36,18 +36,18 @@ import {
 import type { Query } from "@anthropic-ai/claude-agent-sdk";
 import nodeCron from "node-cron";
 import { startScheduler } from "./llm_utils/schedule.ts";
-import path from "path";
 import http from "http";
 import st from "st";
 import { logger } from "./logging.ts";
 import { createDirectoriesOnStart } from "./file_utils/startup.ts";
 import { manageBotFolder } from "./file_utils/bot_folder.ts";
-const staticPath =
-  process.env.STATIC_HTML_LOCATION ||
-  path.join(import.meta.dirname, "../smart-craw-ui/dist");
-logger.debug(staticPath);
+import { uiPath, botPath } from "./locations.ts";
+
+logger.debug(`UI path: ${uiPath}`);
+logger.debug(`Bot path: ${botPath}`);
+
 const mount = st({
-  path: staticPath,
+  path: uiPath,
   url: "/",
   index: "index.html",
 });
@@ -68,7 +68,7 @@ const writeAllClients = (wss: WebSocketServer) => (message: string) => {
 };
 
 //async
-createDirectoriesOnStart(getBots);
+createDirectoriesOnStart(botPath, getBots);
 
 //Global state
 const pendingApprovals = new Map<string, (approved: boolean) => void>();
@@ -101,7 +101,7 @@ wss.on("connection", function connection(ws) {
         routeCreateBot(
           input as CreateBotInput,
           writeAllClients(wss),
-          manageBotFolder(getBot),
+          manageBotFolder(botPath, getBot),
           insertBot,
           insertBotCron,
           insertMessage,

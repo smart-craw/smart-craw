@@ -55,8 +55,6 @@ const MainChat: React.FC = () => {
         </Think>
         {approval && (
           <ThoughtChain
-            //This goes a way as soon as "approve" is hit.  Need to modify this so there is feedback
-            // ...eh...this may be the right behavior
             items={[
               {
                 key: "toolcall",

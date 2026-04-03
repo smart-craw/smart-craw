@@ -54,7 +54,7 @@ export async function handleLLMResponse(
         break;
       }
       default: {
-        logger.debug("uncaught type", msg);
+        logger.debug(`uncaught type ${msg}`);
       }
     }
   }
@@ -84,7 +84,7 @@ export const notificationWrapper = (
       }
       default: {
         const notification = input as NotificationHookInput;
-        logger.debug("notification received", notification);
+        logger.debug(`Notification received ${notification}`);
         notificationCb(notification.message, notification.notification_type);
       }
     }
