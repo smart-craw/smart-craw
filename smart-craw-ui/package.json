@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
-    "@ant-design/x": "^2.4.0",
+    "@ant-design/x": "^2.0.1",
     "@ant-design/x-markdown": "^2.4.0",
     "antd": "^6.3.1",
     "cron-validator": "^1.4.0",
