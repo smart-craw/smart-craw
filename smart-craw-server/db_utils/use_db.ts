@@ -2,7 +2,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 import type { BotOutput, MessageOutput } from "../../shared/models.ts";
-import { dbPath } from "./location.ts";
+import { dbPath } from "../locations.ts";
 const database = new DatabaseSync(dbPath);
 import { logger } from "../logging.ts";
 

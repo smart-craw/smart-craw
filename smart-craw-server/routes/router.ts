@@ -37,11 +37,11 @@ export const routeCreateBot = (
   const newBot = id === undefined;
   const bot = createBot(name, description, instructions, id);
   const botDefinition = bot.definition[bot.name];
-  logger.info(newBot ? "Creating new bot" : "Update bot", bot.id);
+  logger.info(newBot ? `Creating new bot ${bot.id}` : `Update bot ${bot.id}`);
   manageBotFolder({ id, name });
   insertBot(bot.id, bot.name, botDefinition.description, botDefinition.prompt);
   if (cron) {
-    logger.info("Scheduling bot", bot.id);
+    logger.info(`Scheduling bot ${bot.id}`);
     insertBotCron(bot.id, cron);
     scheduledBots.set(
       bot.id,
@@ -126,7 +126,7 @@ export const executeBot = (
     }),
   );
   const bot = createBot(name, description, instructions, id);
-  logger.info("Bot", id, "executing");
+  logger.info(`Bot ${id} executing`);
   const query = botExecute(
     bot,
     approvalWebsocket(bot.id, sendToClient, Assistant.Bot, pendingApprovals),

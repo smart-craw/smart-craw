@@ -30,16 +30,13 @@ Store memories for later use:
 
 Run docker container, mounting current directory for the persistent storage and the memory directory for bot-specific memories.  Works if you are locally hosting a model via Ollama.  `add-host` is optional on Windows/Mac.
 
-`docker run -p 8000:8000 -v $(pwd):/app/db -v $(pwd)/memory:/home/node/.claude -v $(pwd):/app/smart-craw-server --add-host=host.docker.internal:host-gateway  ghcr.io/smart-craw/smart-craw:v0.0.7`
+`docker run -p 8000:8000 -v $(pwd):/app/db -v $(pwd):/app/bots -v $(pwd)/memory:/home/node/.claude -v $(pwd):/app/smart-craw-server --add-host=host.docker.internal:host-gateway  ghcr.io/smart-craw/smart-craw:v0.0.9`
 
 Run with remote or public LLM:
 
-`docker run -p 8000:8000 -e ANTHROPIC_BASE_URL=[yourllmurl] -e ANTHROPIC_AUTH_TOKEN=[yourauthtoken] -e ANTHROPIC_API_KEY=[yourapikey] -v $(pwd):/app/db -v $(pwd)/memory:/home/node/.claude --add-host=host.docker.internal:host-gateway ghcr.io/smart-craw/smart-craw:v0.0.7`
+`docker run -p 8000:8000 -e ANTHROPIC_BASE_URL=[yourllmurl] -e ANTHROPIC_AUTH_TOKEN=[yourauthtoken] -e ANTHROPIC_API_KEY=[yourapikey] -v $(pwd):/app/db -v $(pwd):/app/bots  -v $(pwd)/memory:/home/node/.claude --add-host=host.docker.internal:host-gateway ghcr.io/smart-craw/smart-craw:v0.0.9`
 
 On a Mac, you need to proxy remote calls through your host.  A simple way to do that is to run something like `socat TCP-LISTEN:9000,fork TCP:[yourllmurl]` in a seperate terminal (or using nohup), and then set `http://host.docker.internal:9000` as your ANTHROPIC_BASE_URL.  Alternatively, run the [example script](./example/startup_mac.sh) passing in `[yourllmurl]` as the argument to the script (without the "http://").
-
-
-
 
 ### All available environment variables
 
@@ -52,9 +49,9 @@ Full env variables:
 
 ## Design Approach
 
-Your bot fleet is constrained to the folder that you mount into your docker container. Each new bot will have its own directory within this folder.  If you want a bot to act on a set of files (code or other text documents) you must put them inside the bot's directory.
+Your bot fleet is constrained to the folder that you mount into your docker container. Each new bot will have its own directory within this folder.  If you want a bot to act on a set of files (code or other text documents) you must put them inside the bot's directory.  To do this, mount the docker `/app/bots` directory into your file system.
 
-Claude keeps "memories" for each bot.  Mount `/home/node/.claude/projects` into your file system to persistently store bot memories.  If this memory isn't mounted your bots will "lose" their memory on every pod restart.
+Claude keeps "memories" for each bot.  Mount docker's `/home/node/.claude` into your file system to persistently store bot memories.  If this memory isn't mounted your bots will "lose" their memory on every pod restart.
 
 ## Cautions
 
