@@ -35,37 +35,45 @@ export async function handleLLMResponse(
   onStream: (msg: string, id: string) => void,
   onComplete: (id: string, message: string, reasoning: string) => void,
 ) {
-  for await (const msg of query) {
-    switch (msg.type) {
-      //"result" always fires, so no need to action "assistant" type
-      case "stream_event": {
-        const { event } = msg;
-        if (event.type === "content_block_delta") {
-          if (event.delta.type === "text_delta") {
-            onStream(event.delta.text, id);
+  //need to ensure the app doesn't completely crash if claude errors
+  try {
+    for await (const msg of query) {
+      switch (msg.type) {
+        //"result" always fires, so no need to action "assistant" type
+        case "stream_event": {
+          const { event } = msg;
+          if (event.type === "content_block_delta") {
+            if (event.delta.type === "text_delta") {
+              onStream(event.delta.text, id);
+            }
           }
+          break;
         }
-        break;
-      }
-      case "result": {
-        if (msg.subtype === "success") {
-          const { result } = msg;
-          const { message, reasoning } = handleMessage(result);
-          onComplete(id, message, reasoning);
-        } else {
-          const errorText = msg.errors.reduce(
-            (aggr, curr) => `${aggr}, ${curr}`,
-          );
-          //TODO! Better/rigorous error handling
-          onComplete(id, "error", errorText);
-          logger.error(`Error! ${errorText}`);
+        case "result": {
+          if (msg.subtype === "success") {
+            const { result } = msg;
+            const { message, reasoning } = handleMessage(result);
+            onComplete(id, message, reasoning);
+          } else {
+            const errorText = msg.errors.reduce(
+              (aggr, curr) => `${aggr}, ${curr}`,
+            );
+            //TODO! Better/rigorous error handling
+            onComplete(id, "error", errorText);
+            logger.error(`Error! ${errorText}`);
+          }
+          break;
         }
-        break;
-      }
-      default: {
-        logger.debug(`uncaught type ${msg}`);
+        default: {
+          logger.debug(`uncaught type ${msg}`);
+        }
       }
     }
+  } catch (err) {
+    const error = err as Error;
+    //TODO! Better/rigorous error handling
+    onComplete(id, "error", error.message);
+    logger.error(`Error! ${error.name}: ${error.message}`);
   }
 }
 
