@@ -20,6 +20,7 @@ import { logger } from "../logging.ts";
 
 export const routeCreateBot = (
   { id, description, name, instructions, cron }: CreateBotInput,
+  botDirectory: string,
   sendToClient: (message: string) => void,
   manageBotFolder: ({ id, name }: Pick<CreateBotInput, "id" | "name">) => void,
   insertBot: (
@@ -54,6 +55,7 @@ export const routeCreateBot = (
             name: bot.name,
             cron,
           },
+          botDirectory,
           sendToClient,
           insertMessage,
           holdQueries,
@@ -112,6 +114,7 @@ export const routeGetMessages = (
 };
 export const executeBot = (
   botFromDb: BotOutput,
+  botDirectory: string,
   sendToClient: (message: string) => void,
   insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
@@ -129,6 +132,7 @@ export const executeBot = (
   logger.info(`Bot ${id} executing`);
   const query = botExecute(
     bot,
+    botDirectory,
     approvalWebsocket(bot.id, sendToClient, Assistant.Bot, pendingApprovals),
     notification(sendToClient),
   );
@@ -142,6 +146,7 @@ export const executeBot = (
 };
 export const routeExecuteBot = (
   { id }: BotIdInput,
+  botDirectory: string,
   sendToClient: (message: string) => void,
   getBot: (id: string) => BotOutput | undefined,
   insertMessage: (id: string, message: string, reasoning: string) => void,
@@ -155,6 +160,7 @@ export const routeExecuteBot = (
   }
   executeBot(
     botDef,
+    botDirectory,
     sendToClient,
     insertMessage,
     holdQueries,

@@ -5,7 +5,7 @@ import {
 } from "@anthropic-ai/claude-agent-sdk";
 import { v4 as uuidv4 } from "uuid";
 import { approvalWrapper, notificationWrapper } from "./responses.ts";
-
+import { generateBotPath } from "../file_utils/utils.ts";
 export type BotDefinition = {
   definition: Record<string, AgentDefinition>;
   id: string;
@@ -34,13 +34,14 @@ export function createBot(
 //should bots have mcp servers?
 export function botExecute(
   bot: BotDefinition,
+  bodDirectory: string,
   approvalCb: (toolName: string, input: any) => Promise<boolean>,
   notificationCb: (message: string, type: string) => void,
 ): Query {
   const queryResult = query({
     prompt: bot.definition[bot.name].prompt,
     options: {
-      cwd: bot.name, //folder path is directory, with own "memory"
+      cwd: generateBotPath(bodDirectory, bot.name), //folder path is directory, with own "memory"
       tools: { type: "preset", preset: "claude_code" },
       canUseTool: approvalWrapper(approvalCb),
       hooks: {
