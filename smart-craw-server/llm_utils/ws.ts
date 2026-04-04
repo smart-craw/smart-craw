@@ -13,8 +13,8 @@ export class WebSocketMessageQueue {
       type: "user" as const,
       session_id: "is this needed",
       message: {
-        role: "user",
-        content: [{ type: "text", text: message }],
+        role: "user" as const,
+        content: message, //[{ type: "text", text: message }],
       },
       parent_tool_use_id: null,
     };

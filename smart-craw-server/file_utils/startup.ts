@@ -1,7 +1,6 @@
 import { type BotOutput } from "../models.ts";
 import fs from "fs";
-import sanitize from "sanitize-filename";
-import path from "path";
+import { generateBotPath } from "./utils.ts";
 export async function createDirectoriesOnStart(
   directory: string,
   getBots: () => BotOutput[],
@@ -10,7 +9,7 @@ export async function createDirectoriesOnStart(
     getBots().map((bot: BotOutput) => {
       return new Promise<void>((res, rej) =>
         fs.mkdir(
-          path.join(directory, sanitize(bot.name)),
+          generateBotPath(directory, bot.name),
           { recursive: true },
           (err) => {
             if (err) {

@@ -48,9 +48,18 @@ export async function handleLLMResponse(
         break;
       }
       case "result": {
-        const { result } = msg;
-        const { message, reasoning } = handleMessage(result);
-        onComplete(id, message, reasoning);
+        if (msg.subtype === "success") {
+          const { result } = msg;
+          const { message, reasoning } = handleMessage(result);
+          onComplete(id, message, reasoning);
+        } else {
+          const errorText = msg.errors.reduce(
+            (aggr, curr) => `${aggr}, ${curr}`,
+          );
+          //TODO! Better/rigorous error handling
+          onComplete(id, "error", errorText);
+          logger.error(`Error! ${errorText}`);
+        }
         break;
       }
       default: {

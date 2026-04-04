@@ -100,6 +100,7 @@ wss.on("connection", function connection(ws) {
       case "/bot/create":
         routeCreateBot(
           input as CreateBotInput,
+          botPath,
           writeAllClients(wss),
           manageBotFolder(botPath, getBot),
           insertBot,
@@ -113,6 +114,7 @@ wss.on("connection", function connection(ws) {
       case "/bot/execute":
         routeExecuteBot(
           input as BotIdInput,
+          botPath,
           writeAllClients(wss),
           getBot,
           insertMessage,

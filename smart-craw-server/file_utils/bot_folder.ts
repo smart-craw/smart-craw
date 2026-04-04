@@ -2,7 +2,7 @@ import type { BotOutput, CreateBotInput } from "../../shared/models.ts";
 import { logger } from "../logging.ts";
 import fs from "fs";
 import sanitize from "sanitize-filename";
-import path from "path";
+import { generateBotPath } from "./utils.ts";
 export const manageBotFolder =
   (directory: string, getBot: (id: string) => BotOutput | undefined) =>
   ({ id, name }: Pick<CreateBotInput, "id" | "name">) => {
@@ -13,7 +13,7 @@ export const manageBotFolder =
         // should always be able to get prevBot if ID exists,
         // so the inside of this if statement should always execute
         fs.rename(
-          path.join(directory, sanitize(prevBot.name)),
+          generateBotPath(directory, prevBot.name),
           sanitize(name),
           (err) => {
             logger.error(`Error renaming directory for bot ${name} ${err}`);
@@ -23,7 +23,7 @@ export const manageBotFolder =
       }
     }
     // id doesn't exist or bot doesn't exist in database
-    fs.mkdir(path.join(directory, sanitize(name)), (err) => {
+    fs.mkdir(generateBotPath(directory, name), (err) => {
       logger.error(`Error creating directory for bot ${name} ${err}`);
     });
   };

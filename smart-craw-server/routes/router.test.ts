@@ -40,6 +40,7 @@ describe("Router", () => {
       const scheduledBots = new Map();
       routeCreateBot(
         { name: "test-bot", description: "desc", instructions: "instr" } as any,
+        "mydirectory",
         sendToClientMock,
         manageBotFolder,
         insertBotMock,
