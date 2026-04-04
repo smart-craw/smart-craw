@@ -30,13 +30,13 @@ Store memories for later use:
 
 Run docker container, mounting current directory for the persistent storage and the memory directory for bot-specific memories.  Works if you are locally hosting a model via Ollama.  `add-host` is optional on Windows/Mac.
 
-`docker run -p 8000:8000 -v $(pwd):/app/db -v $(pwd):/app/bots -v $(pwd)/memory:/home/node/.claude -v $(pwd):/app/smart-craw-server --add-host=host.docker.internal:host-gateway  ghcr.io/smart-craw/smart-craw:v0.0.9`
+`docker run -p 8000:8000 -v $(pwd):/app/db -v $(pwd):/app/bots -v $(pwd)/memory:/home/node/.claude -v $(pwd):/app/smart-craw-server --add-host=host.docker.internal:host-gateway  ghcr.io/smart-craw/smart-craw:v0.0.11`
 
 Run with remote or public LLM:
 
-`docker run -p 8000:8000 -e ANTHROPIC_BASE_URL=[yourllmurl] -e ANTHROPIC_AUTH_TOKEN=[yourauthtoken] -e ANTHROPIC_API_KEY=[yourapikey] -v $(pwd):/app/db -v $(pwd):/app/bots  -v $(pwd)/memory:/home/node/.claude --add-host=host.docker.internal:host-gateway ghcr.io/smart-craw/smart-craw:v0.0.9`
+`docker run -p 8000:8000 -e ANTHROPIC_BASE_URL=[yourllmurl] -e ANTHROPIC_AUTH_TOKEN=[yourauthtoken] -e ANTHROPIC_API_KEY=[yourapikey] -v $(pwd):/app/db -v $(pwd):/app/bots  -v $(pwd)/memory:/home/node/.claude --add-host=host.docker.internal:host-gateway ghcr.io/smart-craw/smart-craw:v0.0.11`
 
-On a Mac, you need to proxy remote calls through your host.  A simple way to do that is to run something like `socat TCP-LISTEN:9000,fork TCP:[yourllmurl]` in a seperate terminal (or using nohup), and then set `http://host.docker.internal:9000` as your ANTHROPIC_BASE_URL.  Alternatively, run the [example script](./example/startup_mac.sh) passing in `[yourllmurl]` as the argument to the script (without the "http://").
+On a Mac, you need to proxy remote calls through your host.  A simple way to do that is to run something like `socat TCP-LISTEN:9000,fork TCP:[yourllmurl]` in a seperate terminal (or using nohup), and then set `http://host.docker.internal:9000` as your ANTHROPIC_BASE_URL.  Alternatively, run the [example script](./example/startup_mac.sh) passing in `[yourllmurl]` (without the "http://") and the docker tag (eg, `v0.0.11`) as the arguments to the script.
 
 ### All available environment variables
 
