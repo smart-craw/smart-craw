@@ -142,6 +142,7 @@ export const executeBot = (
     id,
     assistantMessage(sendToClient),
     completeMessage(sendToClient, insertMessage),
+    notification(sendToClient),
   );
 };
 export const routeExecuteBot = (
@@ -189,6 +190,7 @@ export const routeExecuteLlm = (
     id,
     assistantMessage(sendToClient),
     completeLlmMessage(sendToClient),
+    notification(sendToClient),
   );
   sendToClient(
     JSON.stringify({
@@ -295,13 +297,18 @@ export const completeMessage =
     insertMessage: (id: string, message: string, reasoning: string) => void,
   ) =>
   (id: string, message: string, reasoning: string) => {
+    //message can either be the actual message or an literal "error"
     sendToClient(
       JSON.stringify({
         id,
+        message,
+        reasoning,
         action: Action.CompleteMessage,
       }),
     );
-    insertMessage(id, message, reasoning);
+    if (message !== "error") {
+      insertMessage(id, message, reasoning);
+    }
   };
 
 export const completeLlmMessage =

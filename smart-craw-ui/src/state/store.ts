@@ -8,6 +8,7 @@ export type Bot = {
   instructions: string;
   approval?: Approval;
   isExecuting: boolean;
+  isSuccess?: boolean;
   cron?: string;
 };
 
@@ -25,7 +26,7 @@ export type Llm = {
   instructions: string;
   approval?: Approval;
   isExecuting: boolean;
-  result: string;
+  isSuccess?: boolean;
 };
 
 export type Notification = {
@@ -61,7 +62,7 @@ export type AppState = {
   actionBotApproval: (id: string, approved: boolean) => void;
   deleteBot: (id: string) => void;
   startBot: (id: string) => void;
-  finishBot: (id: string) => void;
+  finishBot: (id: string, isSuccess: boolean) => void;
 
   setMessages: (id: string, messages: MessageOutput[]) => void;
   addMessage: (botId: string, message: string) => void;
@@ -72,7 +73,7 @@ export type AppState = {
   setLlmApproval: (id: string, toolName: string, input: any) => void;
   actionLlmApproval: (approved: boolean) => void;
   startLlm: () => void;
-  finishLlm: (result: string) => void;
+  finishLlm: (isSuccess: boolean) => void;
 
   setNotification: (notification: Notification) => void;
 };
@@ -85,7 +86,7 @@ export const useAppStore = create<AppState>((set) => ({
   llm: {
     id: "hello",
     instructions: "",
-    result: "",
+    //result: "",
     approval: undefined,
     isExecuting: false,
   },
@@ -123,13 +124,13 @@ export const useAppStore = create<AppState>((set) => ({
   startBot: (id) =>
     set((state) => ({
       bots: state.bots.map((v) =>
-        v.id === id ? { ...v, isExecuting: true } : v,
+        v.id === id ? { ...v, isExecuting: true, isSuccess: undefined } : v,
       ),
     })),
-  finishBot: (id) =>
+  finishBot: (id, isSuccess) =>
     set((state) => ({
       bots: state.bots.map((v) =>
-        v.id === id ? { ...v, isExecuting: false } : v,
+        v.id === id ? { ...v, isExecuting: false, isSuccess } : v,
       ),
     })),
 
@@ -254,11 +255,11 @@ export const useAppStore = create<AppState>((set) => ({
     })),
   startLlm: () =>
     set((state) => ({
-      llm: { ...state.llm, isExecuting: true },
+      llm: { ...state.llm, isSuccess: undefined, isExecuting: true },
     })),
-  finishLlm: (result) =>
+  finishLlm: (isSuccess: boolean) =>
     set((state) => ({
-      llm: { ...state.llm, result, isExecuting: false },
+      llm: { ...state.llm, isSuccess, isExecuting: false },
     })),
 
   setNotification: (notification) => set({ notification }),

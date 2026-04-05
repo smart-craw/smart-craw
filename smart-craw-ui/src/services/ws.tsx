@@ -41,7 +41,6 @@ type MessageResponse = MessagePayload & {
 type MessageLlmResponse = {
   id: string;
   message: string;
-  reasoning: string;
   action: ActionType;
 };
 
@@ -154,9 +153,9 @@ export function connectWs(): WebSocket {
         break;
       }
       case Action.CompleteMessage: {
-        const { id } = rest as MessageResponse;
+        const { id, message } = rest as MessageResponse;
         store.finishMessage(id);
-        store.finishBot(id);
+        store.finishBot(id, message !== "error");
         break;
       }
       case Action.ExecutionStarted: {
@@ -166,7 +165,7 @@ export function connectWs(): WebSocket {
       }
       case Action.CompleteLlmMessage: {
         const { message } = rest as MessageLlmResponse;
-        store.finishLlm(message);
+        store.finishLlm(message !== "error");
         break;
       }
       case Action.LlmInstantiate: {
@@ -175,7 +174,7 @@ export function connectWs(): WebSocket {
           id,
           instructions: "",
           isExecuting: false,
-          result: "",
+          //result: "",
         });
         break;
       }

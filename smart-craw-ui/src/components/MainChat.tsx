@@ -35,7 +35,7 @@ const MainChat: React.FC = () => {
   };
   const stopExecute = (id: string) => () => {
     stopBot(ws, id); //works on LLM as well
-    finishLlm("");
+    finishLlm(true);
   };
   return (
     <Card title="Bot Playground">

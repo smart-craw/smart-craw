@@ -31,6 +31,7 @@ function App() {
         title: notificationState?.notificationType,
         description: notificationState?.message,
         duration: false,
+        placement: "bottomRight",
       });
     }
   }, [notificationState, api, coneOfSilence]);

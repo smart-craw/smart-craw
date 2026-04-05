@@ -10,7 +10,6 @@ describe("useAppStore", () => {
         id: "",
         approval: undefined,
         isExecuting: false,
-        result: "",
         instructions: "",
       },
       notification: null,

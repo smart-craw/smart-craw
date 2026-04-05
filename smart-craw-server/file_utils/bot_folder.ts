@@ -16,7 +16,9 @@ export const manageBotFolder =
           generateBotPath(directory, prevBot.name),
           sanitize(name),
           (err) => {
-            logger.error(`Error renaming directory for bot ${name} ${err}`);
+            if (err) {
+              logger.error(`Error renaming directory for bot ${name} ${err}`);
+            }
           },
         );
         return;
@@ -24,6 +26,8 @@ export const manageBotFolder =
     }
     // id doesn't exist or bot doesn't exist in database
     fs.mkdir(generateBotPath(directory, name), (err) => {
-      logger.error(`Error creating directory for bot ${name} ${err}`);
+      if (err) {
+        logger.error(`Error creating directory for bot ${name} ${err}`);
+      }
     });
   };
