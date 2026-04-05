@@ -27,7 +27,6 @@ export type Llm = {
   approval?: Approval;
   isExecuting: boolean;
   isSuccess?: boolean;
-  //result: string;
 };
 
 export type Notification = {
