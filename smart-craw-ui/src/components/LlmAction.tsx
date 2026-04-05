@@ -1,5 +1,5 @@
 import { LoadingOutlined } from "@ant-design/icons";
-import { type Bot, type Llm } from "../state/store";
+import { type Bot } from "../state/store";
 import { Popconfirm, Button, Badge } from "antd";
 import ApprovalDescription from "./ApprovalDescription";
 export const ButtonOption = {
@@ -21,7 +21,7 @@ function stopRunApproval(
   }
 }
 
-type Props = Pick<Bot | Llm, "approval" | "id" | "isExecuting"> & {
+type Props = Pick<Bot, "approval" | "id" | "isExecuting"> & {
   onDecision: (id: string, toolName: string, approved: boolean) => () => void;
   stopExecute: (id: string) => () => void;
   execute: (id: string) => () => void;

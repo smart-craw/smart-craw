@@ -1,4 +1,4 @@
-import { List, Button, Card, App } from "antd";
+import { Button, Card, App, Descriptions, Space, Alert } from "antd";
 import cronstrue from "cronstrue";
 import { useAppStore } from "../state/store";
 import {
@@ -10,10 +10,14 @@ import {
   stopBot,
 } from "../services/ws";
 import LlmActionButton from "./LlmAction";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  CommentOutlined,
+  DeleteOutlined,
+  EditOutlined,
+} from "@ant-design/icons";
 import { isNotEmpty, showBotModal, showMessagesModal } from "./modalFunction";
 import type { BotOutput } from "../../../shared/models";
-
+const { Meta } = Card;
 const lowerFirstLetter = (v: string) => {
   return v ? v.charAt(0).toLowerCase() + v.slice(1) : v;
 };
@@ -48,7 +52,7 @@ const BotList: React.FC = () => {
   };
   const stopExecute = (id: string) => () => {
     stopBot(ws, id);
-    finishBot(id);
+    finishBot(id, true);
   };
   const onDelete = (id: string) => () => {
     removeBot(ws, id);
@@ -58,94 +62,96 @@ const BotList: React.FC = () => {
   return (
     <>
       <Card title="Bot Inventory">
-        <Button
-          onClick={() =>
-            showBotModal(
-              "Create Bot",
-              modal,
-              {
-                id: "",
-                name: "",
-                instructions: "",
-                description: "",
-                cron: undefined,
-              },
-              true,
-              onCreate,
-            )
-          }
-        >
-          Add New
-        </Button>
-        <List
-          itemLayout="horizontal"
-          dataSource={data}
-          renderItem={({
-            approval,
-            id,
-            isExecuting,
-            name,
-            instructions,
-            description,
-            cron,
-          }) => {
-            return (
-              <List.Item
-                key={id}
-                actions={[
-                  <LlmActionButton
-                    approval={approval}
-                    id={id}
-                    isExecuting={isExecuting}
-                    onDecision={onDecision}
-                    execute={execute}
-                    stopExecute={stopExecute}
-                  />,
-                  <Button onClick={onDelete(id)} icon={<DeleteOutlined />} />,
-                  <Button
-                    onClick={() => {
-                      showBotModal(
-                        "Edit Bot",
-                        modal,
-                        {
-                          id,
-                          name,
-                          instructions,
-                          description,
-                          cron,
-                        },
-                        false,
-                        onCreate,
-                      );
-                    }}
-                    icon={<EditOutlined />}
-                  />,
-                ]}
-              >
-                <List.Item.Meta
-                  title={
-                    <a
+        <Space vertical>
+          <Button
+            onClick={() =>
+              showBotModal(
+                "Create Bot",
+                modal,
+                {
+                  id: "",
+                  name: "",
+                  instructions: "",
+                  description: "",
+                  cron: undefined,
+                },
+                true,
+                onCreate,
+              )
+            }
+          >
+            Add New
+          </Button>
+          {data.map(
+            ({
+              approval,
+              id,
+              isExecuting,
+              name,
+              instructions,
+              description,
+              isSuccess,
+              cron,
+            }) => {
+              return (
+                <Card
+                  key={id}
+                  size="small"
+                  actions={[
+                    <LlmActionButton
+                      approval={approval}
+                      id={id}
+                      isExecuting={isExecuting}
+                      onDecision={onDecision}
+                      execute={execute}
+                      stopExecute={stopExecute}
+                    />,
+                    <CommentOutlined
                       onClick={() => {
                         getMessages(ws, id);
                         showMessagesModal(id, modal);
                       }}
-                    >
-                      {name}
-                    </a>
-                  }
-                  description={instructions}
-                />
-
-                <div>
-                  {description}
-                  {cron
-                    ? `. Runs ${lowerFirstLetter(cronstrue.toString(cron))}.`
-                    : ""}
-                </div>
-              </List.Item>
-            );
-          }}
-        />
+                    />,
+                    <EditOutlined
+                      onClick={() => {
+                        showBotModal(
+                          "Edit Bot",
+                          modal,
+                          {
+                            id,
+                            name,
+                            instructions,
+                            description,
+                            cron,
+                          },
+                          false,
+                          onCreate,
+                        );
+                      }}
+                    />,
+                    <DeleteOutlined onClick={onDelete(id)} />,
+                  ]}
+                >
+                  <Meta
+                    title={name}
+                    description={`${description}${
+                      cron
+                        ? `. Runs ${lowerFirstLetter(cronstrue.toString(cron))}.`
+                        : ""
+                    }`}
+                  />
+                  <Descriptions
+                    style={{ marginTop: 8 }}
+                    items={[{ label: "Instructions", children: instructions }]}
+                  />
+                  {isSuccess !== undefined && !isSuccess && (
+                    <Alert title="Unexpected error" type="error" />
+                  )}
+                </Card>
+              );
+            },
+          )}
+        </Space>
       </Card>
     </>
   );

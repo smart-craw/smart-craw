@@ -34,6 +34,7 @@ export async function handleLLMResponse(
   id: string, //just bot id?  What about "normal" llm?
   onStream: (msg: string, id: string) => void,
   onComplete: (id: string, message: string, reasoning: string) => void,
+  notificationCb: (message: string, type: string) => void,
 ) {
   //need to ensure the app doesn't completely crash if claude errors
   try {
@@ -60,6 +61,7 @@ export async function handleLLMResponse(
             );
             //TODO! Better/rigorous error handling
             onComplete(id, "error", errorText);
+            notificationCb(errorText, "error");
             logger.error(`Error! ${errorText}`);
           }
           break;
