@@ -41,7 +41,6 @@ type MessageResponse = MessagePayload & {
 type MessageLlmResponse = {
   id: string;
   message: string;
-  //reasoning: string;
   action: ActionType;
 };
 

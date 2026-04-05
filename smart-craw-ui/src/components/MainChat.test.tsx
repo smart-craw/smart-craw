@@ -21,7 +21,6 @@ describe("MainChat", () => {
         id: "bot-1",
         approval: undefined,
         isExecuting: false,
-        result: "",
         instructions: "",
       },
       messages: {
