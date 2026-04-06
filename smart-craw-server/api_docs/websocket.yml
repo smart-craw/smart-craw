@@ -1,0 +1,389 @@
+asyncapi: "3.1.0"
+info:
+  title: Bot/LLM WebSocket API
+  version: ${VERSION}
+  description: >
+    Single WebSocket connection. Client sends JSON with { path, input }.
+    Server broadcasts to ALL connected clients on every response.
+
+servers:
+  production:
+    host: "localhost:8000"
+    protocol: ws
+    description: WebSocket server (shared with HTTP static file server)
+
+channels:
+  root:
+    address: /
+    messages:
+      # ── Client → Server ──────────────────────────────────────────
+      botCreate:
+        $ref: "#/components/messages/BotCreate"
+      botExecute:
+        $ref: "#/components/messages/BotExecute"
+      botRemove:
+        $ref: "#/components/messages/BotRemove"
+      botStop:
+        $ref: "#/components/messages/BotStop"
+      botMessages:
+        $ref: "#/components/messages/BotMessages"
+      botAll:
+        $ref: "#/components/messages/BotAll"
+      llmInstantiate:
+        $ref: "#/components/messages/LlmInstantiate"
+      llmConverse:
+        $ref: "#/components/messages/LlmConverse"
+      botApproval:
+        $ref: "#/components/messages/BotApproval"
+      llmApproval:
+        $ref: "#/components/messages/LlmApproval"
+      # ── Server → Client ──────────────────────────────────────────
+      botCreatedOrUpdated:
+        $ref: "#/components/messages/BotCreatedOrUpdated"
+      botsListed:
+        $ref: "#/components/messages/BotsListed"
+      messagesListed:
+        $ref: "#/components/messages/MessagesListed"
+      executionStarted:
+        $ref: "#/components/messages/ExecutionStarted"
+      assistantMessage:
+        $ref: "#/components/messages/AssistantMessage"
+      completeMessage:
+        $ref: "#/components/messages/CompleteMessage"
+      completeLlmMessage:
+        $ref: "#/components/messages/CompleteLlmMessage"
+      llmInstantiated:
+        $ref: "#/components/messages/LlmInstantiated"
+      approvalRequest:
+        $ref: "#/components/messages/ApprovalRequest"
+      approvalActioned:
+        $ref: "#/components/messages/ApprovalActioned"
+      notification:
+        $ref: "#/components/messages/Notification"
+
+operations:
+  sendBotCreate:
+    action: send
+    channel: { $ref: "#/channels/root" }
+    messages: [{ $ref: "#/channels/root/messages/botCreate" }]
+
+  sendBotExecute:
+    action: send
+    channel: { $ref: "#/channels/root" }
+    messages: [{ $ref: "#/channels/root/messages/botExecute" }]
+
+  sendLlmInstantiate:
+    action: send
+    channel: { $ref: "#/channels/root" }
+    messages: [{ $ref: "#/channels/root/messages/llmInstantiate" }]
+
+  sendLlmConverse:
+    action: send
+    channel: { $ref: "#/channels/root" }
+    messages: [{ $ref: "#/channels/root/messages/llmConverse" }]
+
+  sendApproval:
+    action: send
+    channel: { $ref: "#/channels/root" }
+    messages:
+      - { $ref: "#/channels/root/messages/botApproval" }
+      - { $ref: "#/channels/root/messages/llmApproval" }
+
+  receiveServerEvents:
+    action: receive
+    channel: { $ref: "#/channels/root" }
+    messages:
+      - { $ref: "#/channels/root/messages/botCreatedOrUpdated" }
+      - { $ref: "#/channels/root/messages/botsListed" }
+      - { $ref: "#/channels/root/messages/messagesListed" }
+      - { $ref: "#/channels/root/messages/executionStarted" }
+      - { $ref: "#/channels/root/messages/assistantMessage" }
+      - { $ref: "#/channels/root/messages/completeMessage" }
+      - { $ref: "#/channels/root/messages/completeLlmMessage" }
+      - { $ref: "#/channels/root/messages/llmInstantiated" }
+      - { $ref: "#/channels/root/messages/approvalRequest" }
+      - { $ref: "#/channels/root/messages/approvalActioned" }
+      - { $ref: "#/channels/root/messages/notification" }
+
+components:
+  # ── Reusable schemas (match your TS types 1:1) ─────────────────
+  schemas:
+    BotIdInput:
+      $ref: "./models.json#/definitions/BotIdInput"
+
+    CreateBotInput:
+      $ref: "./models.json#/definitions/CreateBotInput"
+
+    BotOutput:
+      $ref: "./models.json#/definitions/BotOutput"
+
+    MessageOutput:
+      $ref: "./models.json#/definitions/MessageOutput"
+
+    ApprovalInput:
+      $ref: "./models.json#/definitions/ApprovalInput"
+
+    McpConfig:
+      $ref: "./models.json#/definitions/McpConfig"
+
+    ExecuteLLMInput:
+      $ref: "./models.json#/definitions/ExecuteLLMInput"
+
+    ConverseInput:
+      $ref: "./models.json#/definitions/ConverseInput"
+
+    AssistantType:
+      $ref: "./models.json#/definitions/AssistantType"
+
+    ActionType:
+      $ref: "./models.json#/definitions/ActionType"
+
+  # ── Envelope helper ────────────────────────────────────────────
+  # Every client message wraps { path, input }
+  # Every server message carries an "action" discriminator
+
+  messages:
+    # ── Client → Server ──────────────────────────────────────────
+    BotCreate:
+      name: BotCreate
+      title: Create or update a bot
+      contentType: application/json
+      payload:
+        type: object
+        required: [path, input]
+        properties:
+          path: { type: string, const: /bot/create }
+          input: { $ref: "#/components/schemas/CreateBotInput" }
+
+    BotExecute:
+      name: BotExecute
+      title: Execute a bot by id
+      contentType: application/json
+      payload:
+        type: object
+        required: [path, input]
+        properties:
+          path: { type: string, const: /bot/execute }
+          input: { $ref: "#/components/schemas/BotIdInput" }
+
+    BotRemove:
+      name: BotRemove
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          path: { type: string, const: /bot/remove }
+          input: { $ref: "#/components/schemas/BotIdInput" }
+
+    BotStop:
+      name: BotStop
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          path: { type: string, const: /bot/stop }
+          input: { $ref: "#/components/schemas/BotIdInput" }
+
+    BotMessages:
+      name: BotMessages
+      title: Request message history for a bot
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          path: { type: string, const: /bot/messages }
+          input: { $ref: "#/components/schemas/BotIdInput" }
+
+    BotAll:
+      name: BotAll
+      title: Request all bots
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          path: { type: string, const: /bot/all }
+          input: { type: object }
+
+    LlmInstantiate:
+      name: LlmInstantiate
+      title: Start an ad-hoc LLM session
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          path: { type: string, const: /llm/instantiate }
+          input: { $ref: "#/components/schemas/ExecuteLLMInput" }
+
+    LlmConverse:
+      name: LlmConverse
+      title: Send a message to the active LLM session
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          path: { type: string, const: /llm/converse }
+          input: { $ref: "#/components/schemas/ConverseInput" }
+
+    BotApproval:
+      name: BotApproval
+      title: Approve or reject a pending bot tool call
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          path: { type: string, const: /bot/approval }
+          input: { $ref: "#/components/schemas/ApprovalInput" }
+
+    LlmApproval:
+      name: LlmApproval
+      title: Approve or reject a pending LLM tool call
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          path: { type: string, const: /llm/approval }
+          input: { $ref: "#/components/schemas/ApprovalInput" }
+
+    # ── Server → Client ──────────────────────────────────────────
+    BotCreatedOrUpdated:
+      name: BotCreatedOrUpdated
+      title: Confirmation after create or update
+      contentType: application/json
+      payload:
+        allOf:
+          - { $ref: "#/components/schemas/BotOutput" }
+          - type: object
+            required: [action]
+            properties:
+              action:
+                type: string
+                enum: [createbot, updatebot]
+
+    BotsListed:
+      name: BotsListed
+      contentType: application/json
+      payload:
+        type: object
+        required: [bots, action]
+        properties:
+          bots:
+            { type: array, items: { $ref: "#/components/schemas/BotOutput" } }
+          action: { type: string, const: getbots }
+
+    MessagesListed:
+      name: MessagesListed
+      contentType: application/json
+      payload:
+        type: object
+        required: [id, messages, action]
+        properties:
+          id: { type: string, format: uuid }
+          messages:
+            {
+              type: array,
+              items: { $ref: "#/components/schemas/MessageOutput" },
+            }
+          action: { type: string, const: getmessages }
+
+    ExecutionStarted:
+      name: ExecutionStarted
+      contentType: application/json
+      payload:
+        type: object
+        required: [id, action]
+        properties:
+          id: { type: string, format: uuid }
+          action: { type: string, const: executionstarted }
+
+    AssistantMessage:
+      name: AssistantMessage
+      title: Streaming message fragment from bot/LLM
+      contentType: application/json
+      payload:
+        type: object
+        required: [id, message, action]
+        properties:
+          id: { type: string, format: uuid }
+          message: { type: string }
+          action: { type: string, const: assistantmessage }
+
+    CompleteMessage:
+      name: CompleteMessage
+      title: Final bot output (persisted to DB)
+      contentType: application/json
+      payload:
+        type: object
+        required: [id, message, reasoning, action]
+        properties:
+          id: { type: string, format: uuid }
+          message:
+            { type: string, description: "Final message or literal 'error'" }
+          reasoning: { type: string }
+          action: { type: string, const: completemessage }
+
+    CompleteLlmMessage:
+      name: CompleteLlmMessage
+      title: Final LLM output (not persisted)
+      contentType: application/json
+      payload:
+        type: object
+        required: [id, message, reasoning, action]
+        properties:
+          id: { type: string, format: uuid }
+          message: { type: string }
+          reasoning: { type: string }
+          action: { type: string, const: completellmmessage }
+
+    LlmInstantiated:
+      name: LlmInstantiated
+      title: LLM session ready, returns its id
+      contentType: application/json
+      payload:
+        type: object
+        required: [id, action]
+        properties:
+          id: { type: string, format: uuid }
+          action: { type: string, const: llminstantiate }
+
+    ApprovalRequest:
+      name: ApprovalRequest
+      title: Server requests human approval before tool execution
+      contentType: application/json
+      payload:
+        type: object
+        required: [id, toolName, input, assistantType, action]
+        properties:
+          id: { type: string, format: uuid }
+          toolName: { type: string }
+          input:
+            {
+              type: object,
+              description: "Tool call arguments (varies by tool)",
+            }
+          assistantType: { $ref: "#/components/schemas/AssistantType" }
+          action: { type: string, const: approvalrequest }
+
+    ApprovalActioned:
+      name: ApprovalActioned
+      title: Broadcast after approval is resolved
+      contentType: application/json
+      payload:
+        type: object
+        required: [id, approved, assistantType, action]
+        properties:
+          id: { type: string, format: uuid }
+          approved: { type: boolean }
+          assistantType: { $ref: "#/components/schemas/AssistantType" }
+          action: { type: string, const: approvalactioned }
+
+    Notification:
+      name: Notification
+      title: Generic server-side notification
+      contentType: application/json
+      payload:
+        type: object
+        required: [message, notificationType, action]
+        properties:
+          message: { type: string }
+          notificationType: { type: string }
+          action: { type: string, const: notification }

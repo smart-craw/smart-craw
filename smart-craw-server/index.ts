@@ -76,6 +76,7 @@ const holdQueries = new Map<string, Query>();
 const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
   Object.entries(
     startScheduler(
+      botPath,
       writeAllClients(wss),
       getBots,
       insertMessage,
