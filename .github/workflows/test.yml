@@ -40,5 +40,7 @@ jobs:
       - name: install deps
         run: |
           npm ci
+      - name: run typescript check
+        run: npx tsc --noEmit --strict --skipLibCheck
       - name: run tests
         run: npm run test -- --coverage .

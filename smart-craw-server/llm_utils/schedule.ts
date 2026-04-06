@@ -3,6 +3,7 @@ import { type BotOutput } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
 import { executeBot } from "../routes/router.ts";
 export const startScheduler = (
+  botDirectory: string,
   sendToClient: (message: string) => void,
   getBots: () => BotOutput[],
   insertMessage: (id: string, message: string, reasoning: string) => void,
@@ -17,6 +18,7 @@ export const startScheduler = (
         job: nodeCron.schedule(bot.cron!, () => {
           executeBot(
             bot,
+            botDirectory,
             sendToClient,
             insertMessage,
             holdQueries,
