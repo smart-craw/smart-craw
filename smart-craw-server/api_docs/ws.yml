@@ -1,4 +1,3 @@
-asyncapi: "3.1.0"
 info:
   title: Bot/LLM WebSocket API
   version: ${VERSION}
@@ -6,144 +5,14 @@ info:
     Single WebSocket connection. Client sends JSON with { path, input }.
     Server broadcasts to ALL connected clients on every response.
 
-servers:
-  production:
-    host: "localhost:8000"
-    protocol: ws
-    description: WebSocket server (shared with HTTP static file server)
+server:
+  host: "localhost:8000/ws"
+  protocol: ws
+  description: WebSocket server
 
-channels:
-  root:
-    address: /
-    messages:
-      # ── Client → Server ──────────────────────────────────────────
-      botCreate:
-        $ref: "#/components/messages/BotCreate"
-      botExecute:
-        $ref: "#/components/messages/BotExecute"
-      botRemove:
-        $ref: "#/components/messages/BotRemove"
-      botStop:
-        $ref: "#/components/messages/BotStop"
-      botMessages:
-        $ref: "#/components/messages/BotMessages"
-      botAll:
-        $ref: "#/components/messages/BotAll"
-      llmInstantiate:
-        $ref: "#/components/messages/LlmInstantiate"
-      llmConverse:
-        $ref: "#/components/messages/LlmConverse"
-      botApproval:
-        $ref: "#/components/messages/BotApproval"
-      llmApproval:
-        $ref: "#/components/messages/LlmApproval"
-      # ── Server → Client ──────────────────────────────────────────
-      botCreatedOrUpdated:
-        $ref: "#/components/messages/BotCreatedOrUpdated"
-      botsListed:
-        $ref: "#/components/messages/BotsListed"
-      messagesListed:
-        $ref: "#/components/messages/MessagesListed"
-      executionStarted:
-        $ref: "#/components/messages/ExecutionStarted"
-      assistantMessage:
-        $ref: "#/components/messages/AssistantMessage"
-      completeMessage:
-        $ref: "#/components/messages/CompleteMessage"
-      completeLlmMessage:
-        $ref: "#/components/messages/CompleteLlmMessage"
-      llmInstantiated:
-        $ref: "#/components/messages/LlmInstantiated"
-      approvalRequest:
-        $ref: "#/components/messages/ApprovalRequest"
-      approvalActioned:
-        $ref: "#/components/messages/ApprovalActioned"
-      notification:
-        $ref: "#/components/messages/Notification"
-
-operations:
-  sendBotCreate:
-    action: send
-    channel: { $ref: "#/channels/root" }
-    messages: [{ $ref: "#/channels/root/messages/botCreate" }]
-
-  sendBotExecute:
-    action: send
-    channel: { $ref: "#/channels/root" }
-    messages: [{ $ref: "#/channels/root/messages/botExecute" }]
-
-  sendLlmInstantiate:
-    action: send
-    channel: { $ref: "#/channels/root" }
-    messages: [{ $ref: "#/channels/root/messages/llmInstantiate" }]
-
-  sendLlmConverse:
-    action: send
-    channel: { $ref: "#/channels/root" }
-    messages: [{ $ref: "#/channels/root/messages/llmConverse" }]
-
-  sendApproval:
-    action: send
-    channel: { $ref: "#/channels/root" }
-    messages:
-      - { $ref: "#/channels/root/messages/botApproval" }
-      - { $ref: "#/channels/root/messages/llmApproval" }
-
-  receiveServerEvents:
-    action: receive
-    channel: { $ref: "#/channels/root" }
-    messages:
-      - { $ref: "#/channels/root/messages/botCreatedOrUpdated" }
-      - { $ref: "#/channels/root/messages/botsListed" }
-      - { $ref: "#/channels/root/messages/messagesListed" }
-      - { $ref: "#/channels/root/messages/executionStarted" }
-      - { $ref: "#/channels/root/messages/assistantMessage" }
-      - { $ref: "#/channels/root/messages/completeMessage" }
-      - { $ref: "#/channels/root/messages/completeLlmMessage" }
-      - { $ref: "#/channels/root/messages/llmInstantiated" }
-      - { $ref: "#/channels/root/messages/approvalRequest" }
-      - { $ref: "#/channels/root/messages/approvalActioned" }
-      - { $ref: "#/channels/root/messages/notification" }
-
-components:
-  # ── Reusable schemas (match your TS types 1:1) ─────────────────
-  schemas:
-    BotIdInput:
-      $ref: "./models.json#/definitions/BotIdInput"
-
-    CreateBotInput:
-      $ref: "./models.json#/definitions/CreateBotInput"
-
-    BotOutput:
-      $ref: "./models.json#/definitions/BotOutput"
-
-    MessageOutput:
-      $ref: "./models.json#/definitions/MessageOutput"
-
-    ApprovalInput:
-      $ref: "./models.json#/definitions/ApprovalInput"
-
-    McpConfig:
-      $ref: "./models.json#/definitions/McpConfig"
-
-    ExecuteLLMInput:
-      $ref: "./models.json#/definitions/ExecuteLLMInput"
-
-    ConverseInput:
-      $ref: "./models.json#/definitions/ConverseInput"
-
-    AssistantType:
-      $ref: "./models.json#/definitions/AssistantType"
-
-    ActionType:
-      $ref: "./models.json#/definitions/ActionType"
-
-  # ── Envelope helper ────────────────────────────────────────────
-  # Every client message wraps { path, input }
-  # Every server message carries an "action" discriminator
-
-  messages:
-    # ── Client → Server ──────────────────────────────────────────
+messages:
+  # ── Client → Server ──────────────────────────────────────────
+  send:
     BotCreate:
       name: BotCreate
       title: Create or update a bot
@@ -153,7 +22,7 @@ components:
         required: [path, input]
         properties:
           path: { type: string, const: /bot/create }
-          input: { $ref: "#/components/schemas/CreateBotInput" }
+          input: { $ref: "./models.json#/definitions/CreateBotInput" }
 
     BotExecute:
       name: BotExecute
@@ -164,25 +33,27 @@ components:
         required: [path, input]
         properties:
           path: { type: string, const: /bot/execute }
-          input: { $ref: "#/components/schemas/BotIdInput" }
+          input: { $ref: "./models.json#/definitions/BotIdInput" }
 
     BotRemove:
       name: BotRemove
       contentType: application/json
       payload:
         type: object
+        required: [path, input]
         properties:
           path: { type: string, const: /bot/remove }
-          input: { $ref: "#/components/schemas/BotIdInput" }
+          input: { $ref: "./models.json#/definitions/BotIdInput" }
 
     BotStop:
       name: BotStop
       contentType: application/json
       payload:
         type: object
+        required: [path, input]
         properties:
           path: { type: string, const: /bot/stop }
-          input: { $ref: "#/components/schemas/BotIdInput" }
+          input: { $ref: "./models.json#/definitions/BotIdInput" }
 
     BotMessages:
       name: BotMessages
@@ -190,9 +61,10 @@ components:
       contentType: application/json
       payload:
         type: object
+        required: [path, input]
         properties:
           path: { type: string, const: /bot/messages }
-          input: { $ref: "#/components/schemas/BotIdInput" }
+          input: { $ref: "./models.json#/definitions/BotIdInput" }
 
     BotAll:
       name: BotAll
@@ -200,9 +72,9 @@ components:
       contentType: application/json
       payload:
         type: object
+        required: [path, input]
         properties:
           path: { type: string, const: /bot/all }
-          input: { type: object }
 
     LlmInstantiate:
       name: LlmInstantiate
@@ -210,9 +82,10 @@ components:
       contentType: application/json
       payload:
         type: object
+        required: [path, input]
         properties:
           path: { type: string, const: /llm/instantiate }
-          input: { $ref: "#/components/schemas/ExecuteLLMInput" }
+          input: { $ref: "./models.json#/definitions/ExecuteLLMInput" }
 
     LlmConverse:
       name: LlmConverse
@@ -220,9 +93,10 @@ components:
       contentType: application/json
       payload:
         type: object
+        required: [path, input]
         properties:
           path: { type: string, const: /llm/converse }
-          input: { $ref: "#/components/schemas/ConverseInput" }
+          input: { $ref: "./models.json#/definitions/ConverseInput" }
 
     BotApproval:
       name: BotApproval
@@ -230,9 +104,10 @@ components:
       contentType: application/json
       payload:
         type: object
+        required: [path, input]
         properties:
           path: { type: string, const: /bot/approval }
-          input: { $ref: "#/components/schemas/ApprovalInput" }
+          input: { $ref: "./models.json#/definitions/ApprovalInput" }
 
     LlmApproval:
       name: LlmApproval
@@ -240,25 +115,25 @@ components:
       contentType: application/json
       payload:
         type: object
+        required: [path, input]
         properties:
           path: { type: string, const: /llm/approval }
-          input: { $ref: "#/components/schemas/ApprovalInput" }
-
-    # ── Server → Client ──────────────────────────────────────────
+          input: { $ref: "./models.json#/definitions/ApprovalInput" }
+  # ── Server → Client ──────────────────────────────────────────
+  receive:
     BotCreatedOrUpdated:
       name: BotCreatedOrUpdated
       title: Confirmation after create or update
       contentType: application/json
       payload:
         allOf:
-          - { $ref: "#/components/schemas/BotOutput" }
+          - { $ref: "./models.json#/definitions/BotOutput" }
           - type: object
             required: [action]
             properties:
               action:
                 type: string
                 enum: [createbot, updatebot]
-
     BotsListed:
       name: BotsListed
       contentType: application/json
@@ -267,7 +142,7 @@ components:
         required: [bots, action]
         properties:
           bots:
-            { type: array, items: { $ref: "#/components/schemas/BotOutput" } }
+            { type: array, items: { $ref: "./models.json#/definitions/BotOutput" } }
           action: { type: string, const: getbots }
 
     MessagesListed:
@@ -281,7 +156,7 @@ components:
           messages:
             {
               type: array,
-              items: { $ref: "#/components/schemas/MessageOutput" },
+              items: { $ref: "./models.json#/definitions/MessageOutput" },
             }
           action: { type: string, const: getmessages }
 
@@ -360,7 +235,7 @@ components:
               type: object,
               description: "Tool call arguments (varies by tool)",
             }
-          assistantType: { $ref: "#/components/schemas/AssistantType" }
+          assistantType: { $ref: "./models.json#/definitions/AssistantType" }
           action: { type: string, const: approvalrequest }
 
     ApprovalActioned:
@@ -373,7 +248,7 @@ components:
         properties:
           id: { type: string, format: uuid }
           approved: { type: boolean }
-          assistantType: { $ref: "#/components/schemas/AssistantType" }
+          assistantType: { $ref: "./models.json#/definitions/AssistantType" }
           action: { type: string, const: approvalactioned }
 
     Notification:

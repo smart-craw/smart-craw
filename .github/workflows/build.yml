@@ -46,7 +46,7 @@ jobs:
           npm run generate_json_schema
 
           # replace version with tag
-          sed "s/\${VERSION}/${{ github.event.release.tag_name }}/" ./api_docs/websocket.yml
+          sed "s/\${VERSION}/${{ github.event.release.tag_name }}/" ./api_docs/ws.yml
 
           # generates ./api_docs/asyncapi.json
           npm run generate_single_doc
