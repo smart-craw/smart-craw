@@ -72,7 +72,7 @@ messages:
       contentType: application/json
       payload:
         type: object
-        required: [path, input]
+        required: [path]
         properties:
           path: { type: string, const: /bot/all }
 
