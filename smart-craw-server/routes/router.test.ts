@@ -35,6 +35,8 @@ describe("Router", () => {
       const insertBotMock = vi.fn();
       const insertBotCronMock = vi.fn();
       const insertMessageMock = vi.fn();
+      const extractReasoningMock = vi.fn();
+      const handleReasoningStreamingMock = vi.fn();
       const holdQueries = new Map();
       const pendingApprovals = new Map();
       const scheduledBots = new Map();
@@ -42,6 +44,8 @@ describe("Router", () => {
         { name: "test-bot", description: "desc", instructions: "instr" } as any,
         "mydirectory",
         sendToClientMock,
+        extractReasoningMock,
+        handleReasoningStreamingMock,
         manageBotFolder,
         insertBotMock,
         insertBotCronMock,

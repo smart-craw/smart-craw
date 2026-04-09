@@ -8,34 +8,60 @@ import type {
 } from "@anthropic-ai/claude-agent-sdk";
 import { logger } from "../logging.ts";
 
-interface SplitReasoning {
+export interface SplitReasoning {
   reasoning: string;
   message: string;
 }
-//exported for testing
-export function handleMessage(text: string): SplitReasoning {
-  if (text.includes("</think>")) {
-    const [reasoning, message] = text.split("</think>");
-    return {
-      reasoning: reasoning.replace("<think>", "").trim(),
-      message: (message || "").trim(),
-    };
-  } else {
-    //not a reasoning model
-    return {
-      reasoning: "",
-      message: text.trim(),
-    };
-  }
+
+export function handleMessage(
+  startThink: string,
+  endThink: string,
+): (text: string) => SplitReasoning {
+  return (text: string) => {
+    if (text.includes(endThink)) {
+      const [reasoning, message] = text.split(endThink);
+      return {
+        reasoning: reasoning.replace(startThink, "").trim(),
+        message: (message || "").trim(),
+      };
+    } else {
+      //not a reasoning model
+      return {
+        reasoning: "",
+        message: text.trim(),
+      };
+    }
+  };
+}
+
+export function isStreamThinking(
+  startThink: string,
+  endThink: string,
+): (text: string, isThinking: boolean) => boolean {
+  return (text: string, isThinking: boolean) => {
+    if (text.includes(startThink)) {
+      // need the ternary in case startThink is the same as endThink
+      // otherwise could just return `true`
+      return isThinking ? false : true;
+    } else if (text.includes(endThink)) {
+      //only gets here if endThink is different from startThink
+      return false;
+    } else {
+      return isThinking;
+    }
+  };
 }
 
 export async function handleLLMResponse(
   query: Query,
-  id: string, //just bot id?  What about "normal" llm?
-  onStream: (msg: string, id: string) => void,
+  id: string,
+  onStream: (msg: string, id: string, isThinking: boolean) => void,
   onComplete: (id: string, message: string, reasoning: string) => void,
+  extractReasoning: (text: string) => SplitReasoning,
+  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
   notificationCb: (message: string, type: string) => void,
 ) {
+  let isThinking = false; //default to no thinking
   //need to ensure the app doesn't completely crash if claude errors
   try {
     for await (const msg of query) {
@@ -45,7 +71,11 @@ export async function handleLLMResponse(
           const { event } = msg;
           if (event.type === "content_block_delta") {
             if (event.delta.type === "text_delta") {
-              onStream(event.delta.text, id);
+              isThinking = handleReasoningStreaming(
+                event.delta.text,
+                isThinking,
+              );
+              onStream(event.delta.text, id, isThinking);
             }
           }
           break;
@@ -53,7 +83,7 @@ export async function handleLLMResponse(
         case "result": {
           if (msg.subtype === "success") {
             const { result } = msg;
-            const { message, reasoning } = handleMessage(result);
+            const { message, reasoning } = extractReasoning(result);
             onComplete(id, message, reasoning);
           } else {
             const errorText = msg.errors.reduce(

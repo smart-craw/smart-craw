@@ -41,6 +41,8 @@ ENV ANTHROPIC_AUTH_TOKEN="ollama"
 ENV ANTHROPIC_API_KEY="sk-local-dummy"
 ENV LOG_LEVEL="info"
 ENV MODEL="hf.co/Qwen/Qwen3-4B-GGUF:latest"
+ENV START_THINK_TOKEN="<think>"
+ENV END_THINK_TOKEN="</think>"
 EXPOSE 8000
 ENTRYPOINT ["/bin/sh", "/app/smart-craw-server/script.sh"]
 CMD []

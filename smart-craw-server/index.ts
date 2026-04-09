@@ -42,6 +42,7 @@ import { logger } from "./logging.ts";
 import { createDirectoriesOnStart } from "./file_utils/startup.ts";
 import { manageBotFolder } from "./file_utils/bot_folder.ts";
 import { uiPath, botPath } from "./locations.ts";
+import { handleMessage, isStreamThinking } from "./llm_utils/responses.ts";
 
 logger.debug(`UI path: ${uiPath}`);
 logger.debug(`Bot path: ${botPath}`);
@@ -69,7 +70,8 @@ const writeAllClients = (wss: WebSocketServer) => (message: string) => {
 
 //async
 createDirectoriesOnStart(botPath, getBots);
-
+const startThink = process.env.START_THINK_TOKEN || "<think>";
+const endThink = process.env.END_THINK_TOKEN || "</think>";
 //Global state
 const pendingApprovals = new Map<string, (approved: boolean) => void>();
 const holdQueries = new Map<string, Query>();
@@ -79,6 +81,8 @@ const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
       botPath,
       writeAllClients(wss),
       getBots,
+      handleMessage(startThink, endThink),
+      isStreamThinking(startThink, endThink),
       insertMessage,
       holdQueries,
       pendingApprovals,
@@ -103,6 +107,8 @@ wss.on("connection", function connection(ws) {
           input as CreateBotInput,
           botPath,
           writeAllClients(wss),
+          handleMessage(startThink, endThink),
+          isStreamThinking(startThink, endThink),
           manageBotFolder(botPath, getBot),
           insertBot,
           insertBotCron,
@@ -118,7 +124,10 @@ wss.on("connection", function connection(ws) {
           botPath,
           writeAllClients(wss),
           getBot,
+
           insertMessage,
+          handleMessage(startThink, endThink),
+          isStreamThinking(startThink, endThink),
           holdQueries,
           pendingApprovals,
         );
@@ -144,6 +153,8 @@ wss.on("connection", function connection(ws) {
           input as ExecuteLLMInputServer,
           writeAllClients(wss),
           messageQueue,
+          handleMessage(startThink, endThink),
+          isStreamThinking(startThink, endThink),
           holdQueries,
           pendingApprovals,
         );

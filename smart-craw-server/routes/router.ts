@@ -1,6 +1,6 @@
 import { botExecute, createBot } from "../llm_utils/bots.ts";
 import { instructLlm } from "../llm_utils/llm.ts";
-import { handleLLMResponse } from "../llm_utils/responses.ts";
+import { handleLLMResponse, SplitReasoning } from "../llm_utils/responses.ts";
 import { WebSocketMessageQueue } from "../llm_utils/ws.ts";
 import { v4 as uuidv4 } from "uuid";
 import nodeCron from "node-cron";
@@ -22,6 +22,8 @@ export const routeCreateBot = (
   { id, description, name, instructions, cron }: CreateBotInput,
   botDirectory: string,
   sendToClient: (message: string) => void,
+  extractReasoning: (text: string) => SplitReasoning,
+  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
   manageBotFolder: ({ id, name }: Pick<CreateBotInput, "id" | "name">) => void,
   insertBot: (
     id: string,
@@ -57,6 +59,8 @@ export const routeCreateBot = (
           },
           botDirectory,
           sendToClient,
+          extractReasoning,
+          handleReasoningStreaming,
           insertMessage,
           holdQueries,
           pendingApprovals,
@@ -116,6 +120,8 @@ export const executeBot = (
   botFromDb: BotOutput,
   botDirectory: string,
   sendToClient: (message: string) => void,
+  extractReasoning: (text: string) => SplitReasoning,
+  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
   insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
@@ -142,6 +148,8 @@ export const executeBot = (
     id,
     assistantMessage(sendToClient),
     completeMessage(sendToClient, insertMessage),
+    extractReasoning,
+    handleReasoningStreaming,
     notification(sendToClient),
   );
 };
@@ -151,6 +159,8 @@ export const routeExecuteBot = (
   sendToClient: (message: string) => void,
   getBot: (id: string) => BotOutput | undefined,
   insertMessage: (id: string, message: string, reasoning: string) => void,
+  extractReasoning: (text: string) => SplitReasoning,
+  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
@@ -163,6 +173,8 @@ export const routeExecuteBot = (
     botDef,
     botDirectory,
     sendToClient,
+    extractReasoning,
+    handleReasoningStreaming,
     insertMessage,
     holdQueries,
     pendingApprovals,
@@ -173,6 +185,8 @@ export const routeExecuteLlm = (
   { mcpConfigs }: ExecuteLLMInputServer,
   sendToClient: (message: string) => void,
   wsm: WebSocketMessageQueue,
+  extractReasoning: (text: string) => SplitReasoning,
+  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
@@ -190,6 +204,8 @@ export const routeExecuteLlm = (
     id,
     assistantMessage(sendToClient),
     completeLlmMessage(sendToClient),
+    extractReasoning,
+    handleReasoningStreaming,
     notification(sendToClient),
   );
   sendToClient(

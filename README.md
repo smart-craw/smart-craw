@@ -46,6 +46,8 @@ Full env variables:
 * ANTHROPIC_API_KEY (defaults to "sk-local-dummy")
 * LOG_LEVEL (defaults to "info")
 * MODEL (model to use, eg "hf.co/Qwen/Qwen3-4B-GGUF:latest").  Does not matter if backend server is llama-server.
+* START_THINK_TOKEN (start token for thinking, defaults to "<think>")
+* END_THINK_TOKEN (start token for thinking, defaults to "</think>")
 
 ## Design Approach
 
