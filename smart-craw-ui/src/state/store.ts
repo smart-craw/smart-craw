@@ -155,8 +155,6 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => {
       const messages = state.messages;
       const messagesForBot = messages[botId] || [];
-      //console.log(message);
-      //console.log(isThinking);
       const isFirstMessage =
         messagesForBot.length === 0 || //no messages at all
         messagesForBot[messagesForBot.length - 1].partialMessage === false; //last message has completed (ie, this one is a new message)
