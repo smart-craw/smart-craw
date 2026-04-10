@@ -165,7 +165,8 @@ export function connectWs(): WebSocket {
         break;
       }
       case Action.CompleteLlmMessage: {
-        const { message } = rest as MessageLlmResponse;
+        const { id, message } = rest as MessageLlmResponse;
+        store.finishMessage(id);
         store.finishLlm(message !== "error");
         break;
       }
@@ -175,7 +176,6 @@ export function connectWs(): WebSocket {
           id,
           instructions: "",
           isExecuting: false,
-          //result: "",
         });
         break;
       }
