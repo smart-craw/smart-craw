@@ -32,6 +32,7 @@ type GetMessagesResponse = MessagesFromServer & {
 type MessagePayload = {
   id: string;
   message: string;
+  isThinking: boolean;
 };
 
 type MessageResponse = MessagePayload & {
@@ -148,8 +149,8 @@ export function connectWs(): WebSocket {
         break;
       }
       case Action.AssistantMessage: {
-        const { id, message } = rest as MessagePayload;
-        store.addMessage(id, message);
+        const { id, message, isThinking } = rest as MessagePayload;
+        store.addMessage(id, message, isThinking);
         break;
       }
       case Action.CompleteMessage: {

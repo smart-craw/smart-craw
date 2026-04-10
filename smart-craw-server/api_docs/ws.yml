@@ -142,7 +142,10 @@ messages:
         required: [bots, action]
         properties:
           bots:
-            { type: array, items: { $ref: "./models.json#/definitions/BotOutput" } }
+            {
+              type: array,
+              items: { $ref: "./models.json#/definitions/BotOutput" },
+            }
           action: { type: string, const: getbots }
 
     MessagesListed:
@@ -176,10 +179,11 @@ messages:
       contentType: application/json
       payload:
         type: object
-        required: [id, message, action]
+        required: [id, message, isThinking, action]
         properties:
           id: { type: string, format: uuid }
           message: { type: string }
+          isThinking: { type: boolean }
           action: { type: string, const: assistantmessage }
 
     CompleteMessage:

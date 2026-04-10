@@ -65,7 +65,7 @@ export type AppState = {
   finishBot: (id: string, isSuccess: boolean) => void;
 
   setMessages: (id: string, messages: MessageOutput[]) => void;
-  addMessage: (botId: string, message: string) => void;
+  addMessage: (botId: string, message: string, isThinking: boolean) => void;
   finishMessage: (botId: string) => void;
 
   setLlm: (llm: Llm) => void;
@@ -77,8 +77,11 @@ export type AppState = {
 
   setNotification: (notification: Notification) => void;
 };
-const beginThink = "<think>";
-const endThink = "</think>";
+
+const setMessage = (message: string, isThinking: boolean) =>
+  isThinking ? "" : message;
+const setReasoning = (message: string, isThinking: boolean) =>
+  isThinking ? message : "";
 export const useAppStore = create<AppState>((set) => ({
   bots: [],
   messages: {},
@@ -86,7 +89,6 @@ export const useAppStore = create<AppState>((set) => ({
   llm: {
     id: "hello",
     instructions: "",
-    //result: "",
     approval: undefined,
     isExecuting: false,
   },
@@ -149,12 +151,16 @@ export const useAppStore = create<AppState>((set) => ({
       },
     })),
 
-  addMessage: (botId, message) =>
+  addMessage: (botId, message, isThinking) =>
     set((state) => {
       const messages = state.messages;
       const messagesForBot = messages[botId] || [];
-      //what happens if not a reasoning model?
-      if (message.startsWith(beginThink)) {
+      //console.log(message);
+      //console.log(isThinking);
+      const isFirstMessage =
+        messagesForBot.length === 0 || //no messages at all
+        messagesForBot[messagesForBot.length - 1].partialMessage === false; //last message has completed (ie, this one is a new message)
+      if (isFirstMessage) {
         const id = window.crypto.randomUUID();
         return {
           messages: {
@@ -163,16 +169,16 @@ export const useAppStore = create<AppState>((set) => ({
               ...messagesForBot,
               {
                 id,
-                message: "",
-                reasoning: message.replace(beginThink, ""),
-                partialReasoning: true,
+                message: setMessage(message, isThinking),
+                reasoning: setReasoning(message, isThinking),
+                partialReasoning: isThinking,
                 partialMessage: true,
                 timestamp: new Date(),
               },
             ],
           },
         };
-      } else if (message.endsWith(endThink)) {
+      } else {
         const lastMessage = messagesForBot[messagesForBot.length - 1];
         const allButLast = messagesForBot.slice(0, -1);
         return {
@@ -182,49 +188,15 @@ export const useAppStore = create<AppState>((set) => ({
               ...allButLast,
               {
                 ...lastMessage,
+                message: lastMessage.message + setMessage(message, isThinking),
                 reasoning:
-                  lastMessage.reasoning + message.replace(endThink, ""),
-                partialReasoning: false,
+                  lastMessage.reasoning + setReasoning(message, isThinking),
+                partialReasoning: isThinking,
                 partialMessage: true,
               },
             ],
           },
         };
-      } else {
-        const lastMessage = messagesForBot[messagesForBot.length - 1];
-        if (!lastMessage) return state; // Safety guard
-        const allButLast = messagesForBot.slice(0, -1);
-
-        if (lastMessage.partialReasoning) {
-          return {
-            messages: {
-              ...messages,
-              [botId]: [
-                ...allButLast,
-                {
-                  ...lastMessage,
-                  reasoning: lastMessage.reasoning + message,
-                  partialReasoning: true,
-                  partialMessage: true,
-                },
-              ],
-            },
-          };
-        } else {
-          return {
-            messages: {
-              ...messages,
-              [botId]: [
-                ...allButLast,
-                {
-                  ...lastMessage,
-                  message: lastMessage.message + message,
-                  partialMessage: true,
-                },
-              ],
-            },
-          };
-        }
       }
     }),
   finishMessage: (botId) =>

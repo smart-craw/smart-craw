@@ -7,35 +7,16 @@ import type {
   PostToolUseFailureHookInput,
 } from "@anthropic-ai/claude-agent-sdk";
 import { logger } from "../logging.ts";
-
-interface SplitReasoning {
-  reasoning: string;
-  message: string;
-}
-//exported for testing
-export function handleMessage(text: string): SplitReasoning {
-  if (text.includes("</think>")) {
-    const [reasoning, message] = text.split("</think>");
-    return {
-      reasoning: reasoning.replace("<think>", "").trim(),
-      message: (message || "").trim(),
-    };
-  } else {
-    //not a reasoning model
-    return {
-      reasoning: "",
-      message: text.trim(),
-    };
-  }
-}
+import { type StreamUtils } from "../routes/utils.ts";
 
 export async function handleLLMResponse(
   query: Query,
-  id: string, //just bot id?  What about "normal" llm?
-  onStream: (msg: string, id: string) => void,
+  id: string,
+  streamUtils: StreamUtils,
   onComplete: (id: string, message: string, reasoning: string) => void,
   notificationCb: (message: string, type: string) => void,
 ) {
+  let isThinking = false; //default to no thinking
   //need to ensure the app doesn't completely crash if claude errors
   try {
     for await (const msg of query) {
@@ -45,7 +26,11 @@ export async function handleLLMResponse(
           const { event } = msg;
           if (event.type === "content_block_delta") {
             if (event.delta.type === "text_delta") {
-              onStream(event.delta.text, id);
+              isThinking = streamUtils.detectThinking(
+                event.delta.text,
+                isThinking,
+              );
+              streamUtils.sendMessage(event.delta.text, id, isThinking);
             }
           }
           break;
@@ -53,13 +38,13 @@ export async function handleLLMResponse(
         case "result": {
           if (msg.subtype === "success") {
             const { result } = msg;
-            const { message, reasoning } = handleMessage(result);
+            const { message, reasoning } =
+              streamUtils.parseCompleteMessage(result);
             onComplete(id, message, reasoning);
           } else {
             const errorText = msg.errors.reduce(
               (aggr, curr) => `${aggr}, ${curr}`,
             );
-            //TODO! Better/rigorous error handling
             onComplete(id, "error", errorText);
             notificationCb(errorText, "error");
             logger.error(`Error! ${errorText}`);
@@ -73,7 +58,6 @@ export async function handleLLMResponse(
     }
   } catch (err) {
     const error = err as Error;
-    //TODO! Better/rigorous error handling
     onComplete(id, "error", error.message);
     logger.error(`Error! ${error.name}: ${error.message}`);
   }
