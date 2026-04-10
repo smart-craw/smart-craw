@@ -30,25 +30,26 @@ describe("Router", () => {
 
   describe("routeCreateBot", () => {
     it("should call insertBot and ws.send", () => {
-      const sendToClientMock = vi.fn();
       const manageBotFolder = vi.fn();
       const insertBotMock = vi.fn();
       const insertBotCronMock = vi.fn();
       const insertMessageMock = vi.fn();
-      const extractReasoningMock = vi.fn();
-      const handleReasoningStreamingMock = vi.fn();
+      const mockStreamUtils = {
+        sendMessage: vi.fn(),
+        parseCompleteMessage: vi.fn(),
+        detectThinking: vi.fn(),
+        sendToClient: vi.fn(),
+      };
       const holdQueries = new Map();
       const pendingApprovals = new Map();
       const scheduledBots = new Map();
       routeCreateBot(
         { name: "test-bot", description: "desc", instructions: "instr" } as any,
         "mydirectory",
-        sendToClientMock,
-        extractReasoningMock,
-        handleReasoningStreamingMock,
         manageBotFolder,
         insertBotMock,
         insertBotCronMock,
+        mockStreamUtils,
         insertMessageMock,
         holdQueries,
         pendingApprovals,
@@ -61,10 +62,12 @@ describe("Router", () => {
         "desc",
         "prompt",
       );
-      expect(sendToClientMock).toHaveBeenCalled();
+      expect(mockStreamUtils.sendToClient).toHaveBeenCalled();
       expect(manageBotFolder).toHaveBeenCalled();
 
-      const sentData = JSON.parse(sendToClientMock.mock.calls[0][0]);
+      const sentData = JSON.parse(
+        mockStreamUtils.sendToClient.mock.calls[0][0],
+      );
       expect(sentData.action).toBe(Action.CreateBot);
       expect(sentData.name).toBe("test-bot");
     });

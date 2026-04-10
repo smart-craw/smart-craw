@@ -7,58 +7,13 @@ import type {
   PostToolUseFailureHookInput,
 } from "@anthropic-ai/claude-agent-sdk";
 import { logger } from "../logging.ts";
-
-export interface SplitReasoning {
-  reasoning: string;
-  message: string;
-}
-
-export function handleMessage(
-  startThink: string,
-  endThink: string,
-): (text: string) => SplitReasoning {
-  return (text: string) => {
-    if (text.includes(endThink)) {
-      const [reasoning, message] = text.split(endThink);
-      return {
-        reasoning: reasoning.replace(startThink, "").trim(),
-        message: (message || "").trim(),
-      };
-    } else {
-      //not a reasoning model
-      return {
-        reasoning: "",
-        message: text.trim(),
-      };
-    }
-  };
-}
-
-export function isStreamThinking(
-  startThink: string,
-  endThink: string,
-): (text: string, isThinking: boolean) => boolean {
-  return (text: string, isThinking: boolean) => {
-    if (text.includes(startThink)) {
-      // need the ternary in case startThink is the same as endThink
-      // otherwise could just return `true`
-      return isThinking ? false : true;
-    } else if (text.includes(endThink)) {
-      //only gets here if endThink is different from startThink
-      return false;
-    } else {
-      return isThinking;
-    }
-  };
-}
+import { type StreamUtils } from "../routes/utils.ts";
 
 export async function handleLLMResponse(
   query: Query,
   id: string,
-  onStream: (msg: string, id: string, isThinking: boolean) => void,
+  streamUtils: StreamUtils,
   onComplete: (id: string, message: string, reasoning: string) => void,
-  extractReasoning: (text: string) => SplitReasoning,
-  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
   notificationCb: (message: string, type: string) => void,
 ) {
   let isThinking = false; //default to no thinking
@@ -71,11 +26,11 @@ export async function handleLLMResponse(
           const { event } = msg;
           if (event.type === "content_block_delta") {
             if (event.delta.type === "text_delta") {
-              isThinking = handleReasoningStreaming(
+              isThinking = streamUtils.detectThinking(
                 event.delta.text,
                 isThinking,
               );
-              onStream(event.delta.text, id, isThinking);
+              streamUtils.sendMessage(event.delta.text, id, isThinking);
             }
           }
           break;
@@ -83,13 +38,13 @@ export async function handleLLMResponse(
         case "result": {
           if (msg.subtype === "success") {
             const { result } = msg;
-            const { message, reasoning } = extractReasoning(result);
+            const { message, reasoning } =
+              streamUtils.parseCompleteMessage(result);
             onComplete(id, message, reasoning);
           } else {
             const errorText = msg.errors.reduce(
               (aggr, curr) => `${aggr}, ${curr}`,
             );
-            //TODO! Better/rigorous error handling
             onComplete(id, "error", errorText);
             notificationCb(errorText, "error");
             logger.error(`Error! ${errorText}`);
@@ -103,7 +58,6 @@ export async function handleLLMResponse(
     }
   } catch (err) {
     const error = err as Error;
-    //TODO! Better/rigorous error handling
     onComplete(id, "error", error.message);
     logger.error(`Error! ${error.name}: ${error.message}`);
   }

@@ -2,13 +2,11 @@ import nodeCron from "node-cron";
 import { type BotOutput } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
 import { executeBot } from "../routes/router.ts";
-import { SplitReasoning } from "./responses.ts";
+import { type StreamUtils } from "../routes/utils.ts";
 export const startScheduler = (
   botDirectory: string,
-  sendToClient: (message: string) => void,
   getBots: () => BotOutput[],
-  extractReasoning: (text: string) => SplitReasoning,
-  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
+  streamUtils: StreamUtils,
   insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
@@ -22,9 +20,7 @@ export const startScheduler = (
           executeBot(
             bot,
             botDirectory,
-            sendToClient,
-            extractReasoning,
-            handleReasoningStreaming,
+            streamUtils,
             insertMessage,
             holdQueries,
             pendingApprovals,

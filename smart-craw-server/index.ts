@@ -42,10 +42,13 @@ import { logger } from "./logging.ts";
 import { createDirectoriesOnStart } from "./file_utils/startup.ts";
 import { manageBotFolder } from "./file_utils/bot_folder.ts";
 import { uiPath, botPath } from "./locations.ts";
-import { handleMessage, isStreamThinking } from "./llm_utils/responses.ts";
+import { handleStreamingMessage } from "./routes/utils.ts";
 
+const startThink = process.env.START_THINK_TOKEN || "<think>";
+const endThink = process.env.END_THINK_TOKEN || "</think>";
 logger.debug(`UI path: ${uiPath}`);
 logger.debug(`Bot path: ${botPath}`);
+logger.info(`Start and end tokens: ${startThink}, ${endThink}`);
 
 const mount = st({
   path: uiPath,
@@ -70,19 +73,21 @@ const writeAllClients = (wss: WebSocketServer) => (message: string) => {
 
 //async
 createDirectoriesOnStart(botPath, getBots);
-const startThink = process.env.START_THINK_TOKEN || "<think>";
-const endThink = process.env.END_THINK_TOKEN || "</think>";
+
 //Global state
 const pendingApprovals = new Map<string, (approved: boolean) => void>();
 const holdQueries = new Map<string, Query>();
+const streamUtils = handleStreamingMessage(
+  writeAllClients(wss),
+  startThink,
+  endThink,
+);
 const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
   Object.entries(
     startScheduler(
       botPath,
-      writeAllClients(wss),
       getBots,
-      handleMessage(startThink, endThink),
-      isStreamThinking(startThink, endThink),
+      streamUtils,
       insertMessage,
       holdQueries,
       pendingApprovals,
@@ -106,12 +111,10 @@ wss.on("connection", function connection(ws) {
         routeCreateBot(
           input as CreateBotInput,
           botPath,
-          writeAllClients(wss),
-          handleMessage(startThink, endThink),
-          isStreamThinking(startThink, endThink),
           manageBotFolder(botPath, getBot),
           insertBot,
           insertBotCron,
+          streamUtils,
           insertMessage,
           holdQueries,
           pendingApprovals,
@@ -122,12 +125,9 @@ wss.on("connection", function connection(ws) {
         routeExecuteBot(
           input as BotIdInput,
           botPath,
-          writeAllClients(wss),
           getBot,
-
+          streamUtils,
           insertMessage,
-          handleMessage(startThink, endThink),
-          isStreamThinking(startThink, endThink),
           holdQueries,
           pendingApprovals,
         );
@@ -151,10 +151,8 @@ wss.on("connection", function connection(ws) {
       case "/llm/instantiate":
         routeExecuteLlm(
           input as ExecuteLLMInputServer,
-          writeAllClients(wss),
           messageQueue,
-          handleMessage(startThink, endThink),
-          isStreamThinking(startThink, endThink),
+          streamUtils,
           holdQueries,
           pendingApprovals,
         );

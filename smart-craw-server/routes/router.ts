@@ -1,6 +1,6 @@
 import { botExecute, createBot } from "../llm_utils/bots.ts";
 import { instructLlm } from "../llm_utils/llm.ts";
-import { handleLLMResponse, SplitReasoning } from "../llm_utils/responses.ts";
+import { handleLLMResponse } from "../llm_utils/responses.ts";
 import { WebSocketMessageQueue } from "../llm_utils/ws.ts";
 import { v4 as uuidv4 } from "uuid";
 import nodeCron from "node-cron";
@@ -17,13 +17,11 @@ import { Action, Assistant } from "../../shared/models.ts";
 import { type ExecuteLLMInputServer } from "../models.ts";
 import { type Query } from "@anthropic-ai/claude-agent-sdk";
 import { logger } from "../logging.ts";
+import { type StreamUtils } from "./utils.ts";
 
 export const routeCreateBot = (
   { id, description, name, instructions, cron }: CreateBotInput,
   botDirectory: string,
-  sendToClient: (message: string) => void,
-  extractReasoning: (text: string) => SplitReasoning,
-  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
   manageBotFolder: ({ id, name }: Pick<CreateBotInput, "id" | "name">) => void,
   insertBot: (
     id: string,
@@ -32,6 +30,7 @@ export const routeCreateBot = (
     instructions: string,
   ) => void,
   insertBotCron: (id: string, cron: string) => void,
+  streamUtils: StreamUtils,
   insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
@@ -58,9 +57,7 @@ export const routeCreateBot = (
             cron,
           },
           botDirectory,
-          sendToClient,
-          extractReasoning,
-          handleReasoningStreaming,
+          streamUtils,
           insertMessage,
           holdQueries,
           pendingApprovals,
@@ -68,7 +65,7 @@ export const routeCreateBot = (
       }),
     );
   }
-  sendToClient(
+  streamUtils.sendToClient(
     JSON.stringify({
       id: bot.id,
       name,
@@ -119,16 +116,14 @@ export const routeGetMessages = (
 export const executeBot = (
   botFromDb: BotOutput,
   botDirectory: string,
-  sendToClient: (message: string) => void,
-  extractReasoning: (text: string) => SplitReasoning,
-  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
+  streamUtils: StreamUtils,
   insertMessage: (id: string, message: string, reasoning: string) => void,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
   const { name, description, instructions, id } = botFromDb;
   //tell client things started
-  sendToClient(
+  streamUtils.sendToClient(
     JSON.stringify({
       action: Action.ExecutionStarted,
       id,
@@ -139,28 +134,29 @@ export const executeBot = (
   const query = botExecute(
     bot,
     botDirectory,
-    approvalWebsocket(bot.id, sendToClient, Assistant.Bot, pendingApprovals),
-    notification(sendToClient),
+    approvalWebsocket(
+      bot.id,
+      streamUtils.sendToClient,
+      Assistant.Bot,
+      pendingApprovals,
+    ),
+    notification(streamUtils.sendToClient),
   );
   holdQueries.set(id, query);
   handleLLMResponse(
     query,
     id,
-    assistantMessage(sendToClient),
-    completeMessage(sendToClient, insertMessage),
-    extractReasoning,
-    handleReasoningStreaming,
-    notification(sendToClient),
+    streamUtils,
+    completeMessage(streamUtils.sendToClient, insertMessage),
+    notification(streamUtils.sendToClient),
   );
 };
 export const routeExecuteBot = (
   { id }: BotIdInput,
   botDirectory: string,
-  sendToClient: (message: string) => void,
   getBot: (id: string) => BotOutput | undefined,
+  streamUtils: StreamUtils,
   insertMessage: (id: string, message: string, reasoning: string) => void,
-  extractReasoning: (text: string) => SplitReasoning,
-  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
@@ -172,9 +168,7 @@ export const routeExecuteBot = (
   executeBot(
     botDef,
     botDirectory,
-    sendToClient,
-    extractReasoning,
-    handleReasoningStreaming,
+    streamUtils,
     insertMessage,
     holdQueries,
     pendingApprovals,
@@ -183,10 +177,8 @@ export const routeExecuteBot = (
 
 export const routeExecuteLlm = (
   { mcpConfigs }: ExecuteLLMInputServer,
-  sendToClient: (message: string) => void,
   wsm: WebSocketMessageQueue,
-  extractReasoning: (text: string) => SplitReasoning,
-  handleReasoningStreaming: (text: string, isThinking: boolean) => boolean,
+  streamUtils: StreamUtils,
   holdQueries: Map<string, Query>,
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
@@ -194,21 +186,24 @@ export const routeExecuteLlm = (
   const query = instructLlm(
     id,
     mcpConfigs, // mcpServers
-    approvalWebsocket(id, sendToClient, Assistant.Llm, pendingApprovals),
-    notification(sendToClient),
+    approvalWebsocket(
+      id,
+      streamUtils.sendToClient,
+      Assistant.Llm,
+      pendingApprovals,
+    ),
+    notification(streamUtils.sendToClient),
     wsm,
   );
   holdQueries.set(id, query);
   handleLLMResponse(
     query,
     id,
-    assistantMessage(sendToClient),
-    completeLlmMessage(sendToClient),
-    extractReasoning,
-    handleReasoningStreaming,
-    notification(sendToClient),
+    streamUtils,
+    completeLlmMessage(streamUtils.sendToClient),
+    notification(streamUtils.sendToClient),
   );
-  sendToClient(
+  streamUtils.sendToClient(
     JSON.stringify({
       id,
       action: Action.LlmInstantiate,
@@ -295,25 +290,13 @@ export const approvalWebsocket =
     });
   };
 
-export const assistantMessage =
-  (sendToClient: (message: string) => void) =>
-  (message: string, id: string) => {
-    sendToClient(
-      JSON.stringify({
-        message,
-        id,
-        action: Action.AssistantMessage,
-      }),
-    );
-  };
-
 export const completeMessage =
   (
     sendToClient: (message: string) => void,
     insertMessage: (id: string, message: string, reasoning: string) => void,
   ) =>
   (id: string, message: string, reasoning: string) => {
-    //message can either be the actual message or an literal "error"
+    //message can either be the actual message or a literal "error"
     sendToClient(
       JSON.stringify({
         id,

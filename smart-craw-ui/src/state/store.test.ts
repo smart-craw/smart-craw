@@ -60,27 +60,27 @@ describe("useAppStore", () => {
       let store = useAppStore.getState();
 
       // Start thinking block
-      store.addMessage("bot-1", "<think>pondering...");
+      store.addMessage("bot-1", "pondering...", true);
       store = useAppStore.getState();
       expect(store.messages["bot-1"]).toHaveLength(1);
       expect(store.messages["bot-1"][0].partialReasoning).toBe(true);
 
       // Stream thinking text
-      store.addMessage("bot-1", "cogitating...");
+      store.addMessage("bot-1", "cogitating...", true);
       store = useAppStore.getState();
       expect(store.messages["bot-1"][0].reasoning).toBe(
         "pondering...cogitating...",
       );
 
       // End thinking block
-      store.addMessage("bot-1", "still considering...</think>");
+      store.addMessage("bot-1", "still considering...", false);
       store = useAppStore.getState();
       expect(store.messages["bot-1"][0].partialReasoning).toBe(false);
       expect(store.messages["bot-1"][0].reasoning).toBe(
         "pondering...cogitating...still considering...",
       );
       // Stream message block
-      store.addMessage("bot-1", "hello world!");
+      store.addMessage("bot-1", "hello world!", false);
       store = useAppStore.getState();
       expect(store.messages["bot-1"][0].message).toBe("hello world!");
     });
