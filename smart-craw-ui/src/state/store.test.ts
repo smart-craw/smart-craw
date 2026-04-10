@@ -77,12 +77,14 @@ describe("useAppStore", () => {
       store = useAppStore.getState();
       expect(store.messages["bot-1"][0].partialReasoning).toBe(false);
       expect(store.messages["bot-1"][0].reasoning).toBe(
-        "pondering...cogitating...still considering...",
+        "pondering...cogitating...",
       );
       // Stream message block
       store.addMessage("bot-1", "hello world!", false);
       store = useAppStore.getState();
-      expect(store.messages["bot-1"][0].message).toBe("hello world!");
+      expect(store.messages["bot-1"][0].message).toBe(
+        "still considering...hello world!",
+      );
     });
   });
 });
