@@ -150,7 +150,6 @@ export function connectWs(): WebSocket {
       }
       case Action.AssistantMessage: {
         const { id, message, isThinking } = rest as MessagePayload;
-        console.log(message);
         store.addMessage(id, message, isThinking);
         break;
       }
