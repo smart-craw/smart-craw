@@ -82,6 +82,14 @@ const setMessage = (message: string, isThinking: boolean) =>
   isThinking ? "" : message;
 const setReasoning = (message: string, isThinking: boolean) =>
   isThinking ? message : "";
+const stripThinking = (message: string) => {
+  //Gemma puts an extra "thought" into its reasoning, replace it client side
+  if (message.startsWith("thought")) {
+    return message.replace("thought", "").trim();
+  } else {
+    return message;
+  }
+};
 export const useAppStore = create<AppState>((set) => ({
   bots: [],
   messages: {},
@@ -168,10 +176,7 @@ export const useAppStore = create<AppState>((set) => ({
               {
                 id,
                 message: setMessage(message, isThinking),
-                //Gemma puts an extra "thought" into its reasoning, replace it client side
-                reasoning: setReasoning(message, isThinking)
-                  .replace("thought", "")
-                  .trim(),
+                reasoning: stripThinking(setReasoning(message, isThinking)),
                 partialReasoning: isThinking,
                 partialMessage: true,
                 timestamp: new Date(),
@@ -190,8 +195,9 @@ export const useAppStore = create<AppState>((set) => ({
               {
                 ...lastMessage,
                 message: lastMessage.message + setMessage(message, isThinking),
-                reasoning:
+                reasoning: stripThinking(
                   lastMessage.reasoning + setReasoning(message, isThinking),
+                ),
                 partialReasoning: isThinking,
                 partialMessage: true,
               },

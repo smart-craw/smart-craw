@@ -41,7 +41,7 @@ ENV ANTHROPIC_AUTH_TOKEN="ollama"
 ENV ANTHROPIC_API_KEY="sk-local-dummy"
 ENV LOG_LEVEL="info"
 ENV MODEL="hf.co/Qwen/Qwen3-4B-GGUF:latest"
-# "<|channel>thought" for gemma
+# "<|channel>" for gemma
 ENV START_THINK_TOKEN="<think>"
 # "<channel|>" for gemma
 ENV END_THINK_TOKEN="</think>"
