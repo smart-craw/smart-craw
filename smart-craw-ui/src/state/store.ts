@@ -168,7 +168,10 @@ export const useAppStore = create<AppState>((set) => ({
               {
                 id,
                 message: setMessage(message, isThinking),
-                reasoning: setReasoning(message, isThinking),
+                //Gemma puts an extra "thought" into its reasoning, replace it client side
+                reasoning: setReasoning(message, isThinking)
+                  .replace("thought", "")
+                  .trim(),
                 partialReasoning: isThinking,
                 partialMessage: true,
                 timestamp: new Date(),
