@@ -151,7 +151,7 @@ export const useAppStore = create<AppState>((set) => ({
         [id]: messagesById.map(({ id, message, reasoning, timestamp }) => ({
           id,
           message,
-          reasoning,
+          reasoning: stripThinking(reasoning),
           timestamp: dateUtcConvertor(timestamp as string),
           partialReasoning: false,
           partialMessage: false,
