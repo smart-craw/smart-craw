@@ -54,7 +54,52 @@ describe("useAppStore", () => {
     expect(store.bots[0].approval).toBeUndefined();
     expect(store.bots[0].isExecuting).toBe(true);
   });
-
+  describe("get initial messages", () => {
+    it("gets normal messages", () => {
+      let store = useAppStore.getState();
+      store.setMessages("123", [
+        {
+          id: "456",
+          message: "hello world",
+          reasoning: "I am reasoning",
+          timestamp: "2025-05-05",
+        },
+      ]);
+      store = useAppStore.getState();
+      expect(store.messages["123"]).toEqual([
+        {
+          id: "456",
+          message: "hello world",
+          reasoning: "I am reasoning",
+          timestamp: new Date("2025-05-05"),
+          partialMessage: false,
+          partialReasoning: false,
+        },
+      ]);
+    });
+    it("gets Gemma messages", () => {
+      let store = useAppStore.getState();
+      store.setMessages("123", [
+        {
+          id: "456",
+          message: "hello world",
+          reasoning: "thought I am reasoning",
+          timestamp: "2025-05-05",
+        },
+      ]);
+      store = useAppStore.getState();
+      expect(store.messages["123"]).toEqual([
+        {
+          id: "456",
+          message: "hello world",
+          reasoning: "I am reasoning",
+          timestamp: new Date("2025-05-05"),
+          partialMessage: false,
+          partialReasoning: false,
+        },
+      ]);
+    });
+  });
   describe("messages assembly", () => {
     it("processes reasoning block via <think> tags separately from main message", () => {
       let store = useAppStore.getState();
