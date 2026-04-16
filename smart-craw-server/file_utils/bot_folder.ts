@@ -1,7 +1,6 @@
 import type { BotOutput, CreateBotInput } from "../../shared/models.ts";
 import { logger } from "../logging.ts";
 import fs from "fs";
-import sanitize from "sanitize-filename";
 import { generateBotPath } from "./utils.ts";
 export const manageBotFolder =
   (directory: string, getBot: (id: string) => BotOutput | undefined) =>
@@ -14,7 +13,7 @@ export const manageBotFolder =
         // so the inside of this if statement should always execute
         fs.rename(
           generateBotPath(directory, prevBot.name),
-          sanitize(name),
+          generateBotPath(directory, name),
           (err) => {
             if (err) {
               logger.error(`Error renaming directory for bot ${name} ${err}`);
