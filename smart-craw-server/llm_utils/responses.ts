@@ -32,6 +32,11 @@ export async function handleLLMResponse(
               );
               streamUtils.sendMessage(event.delta.text, id, isThinking);
             }
+          } else if (event.type === "content_block_start") {
+            const { content_block } = event;
+            if (content_block.type === "tool_use") {
+              streamUtils.sendMessage(content_block.name, id, false, true);
+            }
           }
           break;
         }

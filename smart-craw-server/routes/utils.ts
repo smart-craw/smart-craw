@@ -1,7 +1,12 @@
 import { Action } from "../models.ts";
 
 export type StreamUtils = {
-  sendMessage: (message: string, id: string, isThinking: boolean) => void;
+  sendMessage: (
+    message: string,
+    id: string,
+    isThinking: boolean,
+    isTool?: boolean,
+  ) => void;
   parseCompleteMessage: (text: string) => SplitReasoning;
   detectThinking: (text: string, isThinking: boolean) => boolean;
   sendToClient: (message: string) => void;
@@ -16,13 +21,18 @@ export function handleStreamingMessage(
   endThink: string,
 ): StreamUtils {
   return {
-    sendMessage: (message: string, id: string, isThinking: boolean) => {
+    sendMessage: (
+      message: string,
+      id: string,
+      isThinking: boolean,
+      isTool?: boolean,
+    ) => {
       sendToClient(
         JSON.stringify({
           message: message.replace(startThink, "").replace(endThink, ""),
           id,
           isThinking,
-          action: Action.AssistantMessage,
+          action: isTool ? Action.ToolMessage : Action.AssistantMessage,
         }),
       );
     },

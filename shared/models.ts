@@ -11,6 +11,7 @@ export const Action = {
   GetMessages: "getmessages",
   LlmInstantiate: "llminstantiate",
   ExecutionStarted: "executionstarted",
+  ToolMessage: "toolmessage",
 } as const;
 
 export type ActionType = (typeof Action)[keyof typeof Action];

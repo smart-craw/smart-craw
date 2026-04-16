@@ -148,6 +148,11 @@ export function connectWs(): WebSocket {
         store.setMessages(id, messages);
         break;
       }
+      case Action.ToolMessage: {
+        const { id, message } = rest as MessagePayload;
+        store.addToolToMessage(id, message);
+        break;
+      }
       case Action.AssistantMessage: {
         const { id, message, isThinking } = rest as MessagePayload;
         store.addMessage(id, message, isThinking);

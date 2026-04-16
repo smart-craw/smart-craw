@@ -19,6 +19,7 @@ export type Message = {
   timestamp: Date;
   partialReasoning: boolean; //true if reasoning isn't finished
   partialMessage: boolean;
+  isTool: boolean;
 };
 
 export type Llm = {
@@ -41,6 +42,7 @@ export function dateUtcConvertor(dateInUTC: string) {
 export type Settings = {
   coneOfSilence: boolean;
 };
+
 export type AppState = {
   // State
   bots: Bot[];
@@ -66,8 +68,8 @@ export type AppState = {
 
   setMessages: (id: string, messages: MessageOutput[]) => void;
   addMessage: (botId: string, message: string, isThinking: boolean) => void;
+  addToolToMessage: (botId: string, tool: string) => void;
   finishMessage: (botId: string) => void;
-
   setLlm: (llm: Llm) => void;
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
   setLlmApproval: (id: string, toolName: string, input: any) => void;
@@ -155,14 +157,39 @@ export const useAppStore = create<AppState>((set) => ({
           timestamp: dateUtcConvertor(timestamp as string),
           partialReasoning: false,
           partialMessage: false,
+          isTool: false,
         })),
       },
     })),
 
+  addToolToMessage: (botId, tool) =>
+    set((state) => {
+      const messages = state.messages;
+      const messagesForBot = messages[botId] || [];
+      const id = window.crypto.randomUUID();
+      return {
+        messages: {
+          ...messages,
+          [botId]: [
+            ...messagesForBot,
+            {
+              id,
+              isTool: true,
+              reasoning: "",
+              message: tool,
+              timestamp: new Date(),
+              partialReasoning: false,
+              partialMessage: false,
+            },
+          ],
+        },
+      };
+    }),
   addMessage: (botId, message, isThinking) =>
     set((state) => {
       const messages = state.messages;
       const messagesForBot = messages[botId] || [];
+
       const isFirstMessage =
         messagesForBot.length === 0 || //no messages at all
         messagesForBot[messagesForBot.length - 1].partialMessage === false; //last message has completed (ie, this one is a new message)
@@ -180,6 +207,7 @@ export const useAppStore = create<AppState>((set) => ({
                 partialReasoning: isThinking,
                 partialMessage: true,
                 timestamp: new Date(),
+                isTool: false,
               },
             ],
           },
