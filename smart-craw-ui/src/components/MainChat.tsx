@@ -35,7 +35,6 @@ const MainChat: React.FC = () => {
     stopBot(ws, id); //works on LLM as well
     finishLlm(true);
   };
-  console.log(messages);
   return (
     <Card title="Bot Playground">
       <Space orientation="vertical" style={{ width: "100%" }}>
@@ -50,22 +49,21 @@ const MainChat: React.FC = () => {
           autoSize={{ minRows: 4, maxRows: 6 }}
         />
         {messages.map(({ reasoning, message, isTool }, index, arr) => {
+          const isLast = index === arr.length - 1;
           return isTool ? (
             <Tag
               key={index}
-              icon={
-                <SyncOutlined spin={index === arr.length - 1 ? true : false} />
-              }
+              icon={<SyncOutlined spin={isLast} />}
               variant="outlined"
             >
               {message}
             </Tag>
           ) : (
             <div key={index}>
-              <Think loading={isExecuting} title="Show thinking">
+              <Think loading={isExecuting && isLast} title="Show thinking">
                 {reasoning}
               </Think>
-              {approval && (
+              {approval && isLast && (
                 <ThoughtChain
                   items={[
                     {
