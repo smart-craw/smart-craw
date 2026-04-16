@@ -74,6 +74,7 @@ describe("useAppStore", () => {
           timestamp: new Date("2025-05-05"),
           partialMessage: false,
           partialReasoning: false,
+          isTool: false,
         },
       ]);
     });
@@ -96,6 +97,7 @@ describe("useAppStore", () => {
           timestamp: new Date("2025-05-05"),
           partialMessage: false,
           partialReasoning: false,
+          isTool: false,
         },
       ]);
     });
