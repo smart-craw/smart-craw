@@ -32,6 +32,7 @@ describe("MainChat", () => {
             timestamp: new Date(),
             partialMessage: false,
             partialReasoning: false,
+            isTool: false,
           },
         ],
       },
