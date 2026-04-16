@@ -1,8 +1,7 @@
-import { Card, Space, Tag } from "antd";
+import { Card, Space } from "antd";
 import { useAppStore } from "../state/store";
 import { XMarkdown } from "@ant-design/x-markdown";
 import { Think } from "@ant-design/x";
-import { SyncOutlined } from "@ant-design/icons";
 const ModalMessages = ({ botId }: { botId: string }) => {
   const messagesByBot = useAppStore((state) => state.messages);
   const bots = useAppStore((state) => state.bots);
