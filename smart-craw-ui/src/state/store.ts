@@ -67,12 +67,7 @@ export type AppState = {
   finishBot: (id: string, isSuccess: boolean) => void;
 
   setMessages: (id: string, messages: MessageOutput[]) => void;
-  addMessage: (
-    botId: string,
-    message: string,
-    isThinking: boolean,
-    isTool?: boolean,
-  ) => void;
+  addMessage: (botId: string, message: string, isThinking: boolean) => void;
   addToolToMessage: (botId: string, tool: string) => void;
   finishMessage: (botId: string) => void;
   setLlm: (llm: Llm) => void;
