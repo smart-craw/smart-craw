@@ -65,6 +65,7 @@ export function botExecute(
           process.env.ANTHROPIC_BASE_URL || "http://localhost:11434",
         ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN || "ollama",
         ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "sk-local-dummy",
+        CLAUDE_CODE_ATTRIBUTION_HEADER: "0",
       },
     },
   });

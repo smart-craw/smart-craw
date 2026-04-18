@@ -1,10 +1,10 @@
 import {
   type Query,
   type McpServerConfig,
+  type SDKUserMessage,
   query,
 } from "@anthropic-ai/claude-agent-sdk";
 
-import { WebSocketMessageQueue } from "./ws.ts";
 import { approvalWrapper, notificationWrapper } from "./responses.ts";
 
 function convertMcpListToObject(
@@ -26,7 +26,7 @@ export function instructLlm(
   mcpServers: McpServerConfig[],
   approvalCb: (toolName: string, input: any) => Promise<boolean>,
   notificationCb: (message: string, type: string) => void,
-  mq: WebSocketMessageQueue,
+  mq: AsyncIterable<SDKUserMessage>,
 ): Query {
   const q = query({
     prompt: mq,
@@ -59,6 +59,7 @@ export function instructLlm(
           process.env.ANTHROPIC_BASE_URL || "http://localhost:11434",
         ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN || "ollama",
         ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "sk-local-dummy",
+        CLAUDE_CODE_ATTRIBUTION_HEADER: "0",
       },
     },
   });
