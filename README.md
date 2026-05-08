@@ -58,13 +58,13 @@ On a Mac, you need to proxy remote calls through your host.  A simple way to do 
 ### All available environment variables
 
 Full env variables:
-* ANTHROPIC_BASE_URL (defaults to "http://host.docker.internal:11434", local Ollama)
-* ANTHROPIC_AUTH_TOKEN (defaults to "ollama")
-* ANTHROPIC_API_KEY (defaults to "sk-local-dummy")
-* LOG_LEVEL (defaults to "info")
-* MODEL (model to use, eg "hf.co/Qwen/Qwen3-4B-GGUF:latest").  Does not matter if backend server is llama-server.
-* START_THINK_TOKEN (start token for thinking, defaults to "<think>")
-* END_THINK_TOKEN (start token for thinking, defaults to "</think>")
+* ANTHROPIC_BASE_URL (defaults to `http://host.docker.internal:11434`, local Ollama)
+* ANTHROPIC_AUTH_TOKEN (defaults to `ollama`)
+* ANTHROPIC_API_KEY (defaults to `sk-local-dummy`)
+* LOG_LEVEL (defaults to `info`)
+* MODEL (model to use, eg `hf.co/Qwen/Qwen3-4B-GGUF:latest`).  Does not matter if backend server is llama-server.
+* START_THINK_TOKEN (start token for thinking, defaults to `<think/>`)
+* END_THINK_TOKEN (start token for thinking, defaults to `</think>`)
 
 ## Design Approach
 
