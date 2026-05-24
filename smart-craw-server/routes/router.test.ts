@@ -5,7 +5,7 @@ import {
   routeGetAllBots,
   routeGetMessages,
 } from "./router.ts";
-import { Action, Assistant } from "../../shared/models.ts";
+import { Action } from "../../shared/models.ts";
 
 // Mock the llm utils dependency
 vi.mock("../llm_utils/bots.ts", () => ({
@@ -19,6 +19,7 @@ vi.mock("../llm_utils/bots.ts", () => ({
       },
     },
   }),
+  createAgent: vi.fn(),
   botExecute: vi.fn(),
 }));
 
