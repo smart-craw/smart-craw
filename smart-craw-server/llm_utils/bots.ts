@@ -84,7 +84,7 @@ export function createAgent(
     model,
     printer: false,
     tools,
-    id: bot.name,
+    id: bot.id, //bot id and session id are the same
     conversationManager: new SummarizingConversationManager({
       summaryRatio: 0.5,
       preserveRecentMessages: 10,
