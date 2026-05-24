@@ -123,6 +123,7 @@ export const runAgent = (
     agent.id,
     streamUtils,
     completeMessage(streamUtils.sendToClient, insertMessage),
+    notification(streamUtils.sendToClient),
   );
 };
 
@@ -165,6 +166,7 @@ export const routeExecuteLlm = (
     agent.id,
     streamUtils,
     completeLlmMessage(streamUtils.sendToClient),
+    notification(streamUtils.sendToClient),
   );
 
   streamUtils.sendToClient(
@@ -174,50 +176,6 @@ export const routeExecuteLlm = (
     }),
   );
 };
-
-/*export const routeConversation = (
-  { message }: ConverseInput,
-  wsm: WebSocketMessageQueue,
-) => {
-  wsm.enqueue(message);
-};
-
-export const routeApproval = (
-  { approved, id }: ApprovalInput,
-  sendToClient: (message: string) => void,
-  assistantType: AssistantType,
-  pendingApprovals: Map<string, (approved: boolean) => void>,
-) => {
-  const resolve = pendingApprovals.get(id);
-  if (resolve) {
-    resolve(approved);
-    sendToClient(
-      JSON.stringify({
-        id,
-        approved,
-        assistantType,
-        action: Action.ApprovalActioned,
-      }),
-    );
-    pendingApprovals.delete(id);
-  } else {
-    logger.warn(`No pending approval found for bot id: ${id}`);
-  }
-};
-export const routeBotApproval = (
-  input: ApprovalInput,
-  sendToClient: (message: string) => void,
-  pendingApprovals: Map<string, (approved: boolean) => void>,
-) => {
-  routeApproval(input, sendToClient, Assistant.Bot, pendingApprovals);
-};
-export const routeLlmApproval = (
-  input: ApprovalInput,
-  sendToClient: (message: string) => void,
-  pendingApprovals: Map<string, (approved: boolean) => void>,
-) => {
-  routeApproval(input, sendToClient, Assistant.Llm, pendingApprovals);
-};*/
 
 export const routeStopBot = (
   { id }: BotIdInput,

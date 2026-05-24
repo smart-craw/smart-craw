@@ -67,10 +67,11 @@ export function createAgent(
     },
   });
 
+  const botPath = generateBotPath(botDirectory, bot.name);
   const session = new SessionManager({
     sessionId: bot.id,
     storage: {
-      snapshot: new FileStorage(generateBotPath(botDirectory, bot.name)),
+      snapshot: new FileStorage(botPath),
     },
   });
 
@@ -78,7 +79,7 @@ export function createAgent(
 
   // Create an agent with tools
   const agent = new Agent({
-    systemPrompt: bot.definition[bot.name].prompt,
+    systemPrompt: `Perform your actions in this directory: ${botPath}.  Your directions: ${bot.definition[bot.name].prompt}`,
     sessionManager: session,
     model,
     printer: false,
@@ -107,37 +108,4 @@ export function createAgent(
     notificationCb(messageText, "interrupt");
   });
   return agent;
-
-  /*const queryResult = query({
-    prompt: bot.definition[bot.name].prompt,
-    options: {
-      cwd: generateBotPath(botDirectory, bot.name), //folder path is directory, with own "memory"
-      tools: { type: "preset", preset: "claude_code" },
-      canUseTool: approvalWrapper(approvalCb),
-      hooks: {
-        Notification: [{ hooks: [notificationWrapper(notificationCb)] }],
-        PostToolUseFailure: [
-          {
-            hooks: [notificationWrapper(notificationCb)],
-          },
-        ],
-        PermissionRequest: [
-          {
-            hooks: [notificationWrapper(notificationCb)],
-          },
-        ],
-      },
-      includePartialMessages: true,
-      model: process.env.MODEL || "hf.co/Qwen/Qwen3-4B-GGUF:latest",
-      env: {
-        ...process.env,
-        ANTHROPIC_BASE_URL:
-          process.env.ANTHROPIC_BASE_URL || "http://localhost:11434",
-        ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN || "ollama",
-        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "sk-local-dummy",
-        CLAUDE_CODE_ATTRIBUTION_HEADER: "0",
-      },
-    },
-  });
-  return queryResult;*/
 }
