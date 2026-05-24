@@ -3,9 +3,6 @@ import type { Bot, Notification } from "../state/store";
 import {
   Action,
   type ActionType,
-  //Assistant,
-  // type ApprovalActioned,
-  //type ApprovalRequestedFromServer,
   type MessageOutput,
 } from "../../../shared/models.ts";
 
@@ -42,14 +39,7 @@ type MessageLlmResponse = {
   message: string;
   action: ActionType;
 };
-/*
-type ApprovalResponse = ApprovalRequestedFromServer & {
-  assistantType: AssistantType;
-  action: ActionType;
-};
-type ApprovalActionedResponse = ApprovalActioned & {
-  action: ActionType;
-};*/
+
 type NotificationResponse = Notification & {
   action: ActionType;
 };
@@ -74,8 +64,6 @@ export function connectWs(): WebSocket {
     const { action, ...rest } = JSON.parse(event.data) as
       | CreateBotResponse
       | GetBotsResponse
-      //| ApprovalResponse
-      //| ApprovalActionedResponse
       | NotificationResponse
       | MessageResponse
       | GetMessagesResponse
@@ -111,36 +99,7 @@ export function connectWs(): WebSocket {
         store.setBots(bots);
         break;
       }
-      /*case Action.ApprovalRequest: {
-        const { toolName, id, input, assistantType } = rest as ApprovalResponse;
-        switch (assistantType) {
-          case Assistant.Llm: {
-            store.setLlmApproval(id, toolName, input);
-            break;
-          }
-          case Assistant.Bot: {
-            store.setBotApproval(id, toolName, input);
-            break;
-          }
-        }
-        break;
-      }*/
-      /*case Action.ApprovalActioned: {
-        const { id, approved, assistantType } = rest as ApprovalActioned & {
-          assistantType: AssistantType;
-        };
-        switch (assistantType) {
-          case Assistant.Llm: {
-            store.actionLlmApproval(approved);
-            break;
-          }
-          case Assistant.Bot: {
-            store.actionBotApproval(id, approved);
-            break;
-          }
-        }
-        break;
-        }*/
+
       case Action.GetMessages: {
         const { id, messages } = rest as MessagesFromServer;
         store.setMessages(id, messages);
