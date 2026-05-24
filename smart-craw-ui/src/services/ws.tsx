@@ -68,7 +68,6 @@ export function connectWs(): WebSocket {
       | MessageResponse
       | GetMessagesResponse
       | ExecutionResponse;
-    console.log(action, rest);
     switch (action) {
       case Action.CreateBot: {
         const { name, id, description, instructions, cron } = rest as Bot;
