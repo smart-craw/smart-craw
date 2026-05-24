@@ -1,8 +1,8 @@
 export const Action = {
   CreateBot: "createbot",
   UpdateBot: "updatebot",
-  ApprovalRequest: "approvalrequest",
-  ApprovalActioned: "approvalactioned",
+  //ApprovalRequest: "approvalrequest",
+  //ApprovalActioned: "approvalactioned",
   AssistantMessage: "assistantmessage",
   CompleteMessage: "completemessage",
   CompleteLlmMessage: "completellmmessage",
@@ -50,7 +50,7 @@ export type BotIdInput = {
   id: string;
 };
 
-export type ApprovalInput = {
+/*export type ApprovalInput = {
   approved: boolean;
   toolName: string;
   id: string;
@@ -61,9 +61,9 @@ export const McpTransport = {
   HTTP: "http",
 } as const;
 
-export type McpTransportType = (typeof McpTransport)[keyof typeof McpTransport];
+export type McpTransportType = (typeof McpTransport)[keyof typeof McpTransport];*/
 
-export type McpConfig =
+/*export type McpConfig =
   | {
       command: string;
       args: string[];
@@ -73,11 +73,11 @@ export type McpConfig =
       type: McpTransportType; //sse or http
       url: string;
       headers?: Record<string, string>;
-    };
+      };*/
 
-export type ExecuteLLMInput = {
+/*export type ExecuteLLMInput = {
   mcpConfigs: McpConfig[];
-};
+};*/
 
 export type ConverseInput = {
   id: string;
@@ -89,12 +89,12 @@ export type WebSocketInput = {
   input:
     | CreateBotInput
     | BotIdInput
-    | ApprovalInput
-    | ExecuteLLMInput
+    //| ApprovalInput
+    //| ExecuteLLMInput
     | ConverseInput;
 };
 
-export type Approval = {
+/*export type Approval = {
   toolName: string;
   input: any;
 };
@@ -107,3 +107,4 @@ export type ApprovalActioned = {
   id: string;
   approved: boolean;
 };
+*/

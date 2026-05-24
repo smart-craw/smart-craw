@@ -3,11 +3,9 @@ import type { Bot, Notification } from "../state/store";
 import {
   Action,
   type ActionType,
-  Assistant,
-  type AssistantType,
-  type ApprovalActioned,
-  type ApprovalRequestedFromServer,
-  type McpConfig,
+  //Assistant,
+  // type ApprovalActioned,
+  //type ApprovalRequestedFromServer,
   type MessageOutput,
 } from "../../../shared/models.ts";
 
@@ -44,14 +42,14 @@ type MessageLlmResponse = {
   message: string;
   action: ActionType;
 };
-
+/*
 type ApprovalResponse = ApprovalRequestedFromServer & {
   assistantType: AssistantType;
   action: ActionType;
 };
 type ApprovalActionedResponse = ApprovalActioned & {
   action: ActionType;
-};
+};*/
 type NotificationResponse = Notification & {
   action: ActionType;
 };
@@ -69,20 +67,20 @@ export function connectWs(): WebSocket {
   ws.onopen = () => {
     console.log("connected");
     getBots(ws);
-    //TODO, add ability to create mcpConfigs
-    executeLlm(ws, []);
+    executeLlm(ws);
   };
   ws.onmessage = (event) => {
     const store = useAppStore.getState();
     const { action, ...rest } = JSON.parse(event.data) as
       | CreateBotResponse
       | GetBotsResponse
-      | ApprovalResponse
-      | ApprovalActionedResponse
+      //| ApprovalResponse
+      //| ApprovalActionedResponse
       | NotificationResponse
       | MessageResponse
       | GetMessagesResponse
       | ExecutionResponse;
+    console.log(action, rest);
     switch (action) {
       case Action.CreateBot: {
         const { name, id, description, instructions, cron } = rest as Bot;
@@ -113,7 +111,7 @@ export function connectWs(): WebSocket {
         store.setBots(bots);
         break;
       }
-      case Action.ApprovalRequest: {
+      /*case Action.ApprovalRequest: {
         const { toolName, id, input, assistantType } = rest as ApprovalResponse;
         switch (assistantType) {
           case Assistant.Llm: {
@@ -126,8 +124,8 @@ export function connectWs(): WebSocket {
           }
         }
         break;
-      }
-      case Action.ApprovalActioned: {
+      }*/
+      /*case Action.ApprovalActioned: {
         const { id, approved, assistantType } = rest as ApprovalActioned & {
           assistantType: AssistantType;
         };
@@ -142,7 +140,7 @@ export function connectWs(): WebSocket {
           }
         }
         break;
-      }
+        }*/
       case Action.GetMessages: {
         const { id, messages } = rest as MessagesFromServer;
         store.setMessages(id, messages);
@@ -254,11 +252,10 @@ export function getMessages(ws: WebSocket, id: string) {
   );
 }
 
-export function executeLlm(ws: WebSocket, mcpConfigs: McpConfig[]) {
+export function executeLlm(ws: WebSocket) {
   ws.send(
     JSON.stringify({
       path: "/llm/instantiate",
-      input: { mcpConfigs },
     }),
   );
 }

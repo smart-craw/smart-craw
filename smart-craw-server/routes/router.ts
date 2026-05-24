@@ -1,26 +1,21 @@
-import { botExecute, createBot } from "../llm_utils/bots.ts";
-import { instructLlm } from "../llm_utils/llm.ts";
+import { createAgent, createBot } from "../llm_utils/bots.ts";
 import { handleLLMResponse } from "../llm_utils/responses.ts";
-import { WebSocketMessageQueue } from "../llm_utils/ws.ts";
-import { v4 as uuidv4 } from "uuid";
 import nodeCron from "node-cron";
 import type {
-  ApprovalInput,
   BotIdInput,
   BotOutput,
-  ConverseInput,
   CreateBotInput,
   MessageOutput,
-  AssistantType,
 } from "../../shared/models.ts";
-import { Action, Assistant } from "../../shared/models.ts";
-import { type ExecuteLLMInputServer } from "../models.ts";
-import { type Query } from "@anthropic-ai/claude-agent-sdk";
+import { Action } from "../../shared/models.ts";
+import { type AgentWithSchedule } from "../models.ts";
 import { logger } from "../logging.ts";
 import { type StreamUtils } from "./utils.ts";
+import { Agent } from "@strands-agents/sdk";
 
 export const routeCreateBot = (
   { id, description, name, instructions, cron }: CreateBotInput,
+  llmUrl: string,
   botDirectory: string,
   manageBotFolder: ({ id, name }: Pick<CreateBotInput, "id" | "name">) => void,
   insertBot: (
@@ -32,9 +27,7 @@ export const routeCreateBot = (
   insertBotCron: (id: string, cron: string) => void,
   streamUtils: StreamUtils,
   insertMessage: (id: string, message: string, reasoning: string) => void,
-  holdQueries: Map<string, Query>,
-  pendingApprovals: Map<string, (approved: boolean) => void>,
-  scheduledBots: Map<string, nodeCron.ScheduledTask>,
+  holdAgents: Map<string, AgentWithSchedule>,
 ) => {
   const newBot = id === undefined;
   const bot = createBot(name, description, instructions, id);
@@ -42,29 +35,23 @@ export const routeCreateBot = (
   logger.info(newBot ? `Creating new bot ${bot.id}` : `Update bot ${bot.id}`);
   manageBotFolder({ id, name });
   insertBot(bot.id, bot.name, botDefinition.description, botDefinition.prompt);
+  const agent = createAgent(
+    llmUrl,
+    bot,
+    botDirectory,
+    notification(streamUtils.sendToClient),
+  );
+
   if (cron) {
     logger.info(`Scheduling bot ${bot.id}`);
     insertBotCron(bot.id, cron);
-    scheduledBots.set(
-      bot.id,
-      nodeCron.schedule(cron!, () => {
-        executeBot(
-          {
-            id: bot.id,
-            instructions: botDefinition.prompt,
-            description: botDefinition.description,
-            name: bot.name,
-            cron,
-          },
-          botDirectory,
-          streamUtils,
-          insertMessage,
-          holdQueries,
-          pendingApprovals,
-        );
-      }),
-    );
   }
+  const cronTask = cron
+    ? nodeCron.schedule(cron, () => {
+        runAgent(agent, streamUtils, insertMessage);
+      })
+    : undefined;
+  holdAgents.set(bot.id, { agent, cronTask });
   streamUtils.sendToClient(
     JSON.stringify({
       id: bot.id,
@@ -80,11 +67,15 @@ export const routeCreateBot = (
 export const routeRemoveBot = (
   { id }: BotIdInput,
   removeBot: (id: string) => void,
-  scheduledBots: Map<string, nodeCron.ScheduledTask>,
+  holdAgents: Map<string, AgentWithSchedule>,
 ) => {
   removeBot(id);
-  scheduledBots.get(id)?.destroy(); //destroy job before removing from state
-  scheduledBots.delete(id);
+  const agentWithSchedule = holdAgents.get(id);
+  if (agentWithSchedule) {
+    const { cronTask } = agentWithSchedule;
+    cronTask?.destroy(); //destroy job before removing from state
+    holdAgents.delete(id);
+  }
 };
 
 export const routeGetAllBots = (
@@ -113,105 +104,78 @@ export const routeGetMessages = (
     }),
   );
 };
-export const executeBot = (
-  botFromDb: BotOutput,
-  botDirectory: string,
+
+export const runAgent = (
+  agent: Agent,
   streamUtils: StreamUtils,
   insertMessage: (id: string, message: string, reasoning: string) => void,
-  holdQueries: Map<string, Query>,
-  pendingApprovals: Map<string, (approved: boolean) => void>,
+  prompt: string = "",
 ) => {
-  const { name, description, instructions, id } = botFromDb;
-  //tell client things started
   streamUtils.sendToClient(
     JSON.stringify({
       action: Action.ExecutionStarted,
-      id,
+      id: agent.id,
     }),
   );
-  const bot = createBot(name, description, instructions, id);
-  logger.info(`Bot ${id} executing`);
-  const query = botExecute(
-    bot,
-    botDirectory,
-    approvalWebsocket(
-      bot.id,
-      streamUtils.sendToClient,
-      Assistant.Bot,
-      pendingApprovals,
-    ),
-    notification(streamUtils.sendToClient),
-  );
-  holdQueries.set(id, query);
+  const agentStream = agent.stream(prompt);
   handleLLMResponse(
-    query,
-    id,
+    agentStream,
+    agent.id,
     streamUtils,
     completeMessage(streamUtils.sendToClient, insertMessage),
-    notification(streamUtils.sendToClient),
-  );
-};
-export const routeExecuteBot = (
-  { id }: BotIdInput,
-  botDirectory: string,
-  getBot: (id: string) => BotOutput | undefined,
-  streamUtils: StreamUtils,
-  insertMessage: (id: string, message: string, reasoning: string) => void,
-  holdQueries: Map<string, Query>,
-  pendingApprovals: Map<string, (approved: boolean) => void>,
-) => {
-  const botDef = getBot(id);
-  if (!botDef) {
-    logger.error(`Execution failed: bot ${id} not found`);
-    return;
-  }
-  executeBot(
-    botDef,
-    botDirectory,
-    streamUtils,
-    insertMessage,
-    holdQueries,
-    pendingApprovals,
   );
 };
 
-export const routeExecuteLlm = (
-  { mcpConfigs }: ExecuteLLMInputServer,
-  wsm: WebSocketMessageQueue,
+export const routeExecuteBot = (
+  { id }: BotIdInput,
   streamUtils: StreamUtils,
-  holdQueries: Map<string, Query>,
-  pendingApprovals: Map<string, (approved: boolean) => void>,
+  insertMessage: (id: string, message: string, reasoning: string) => void,
+  holdAgents: Map<string, AgentWithSchedule>,
 ) => {
-  const id = uuidv4();
-  const query = instructLlm(
-    id,
-    mcpConfigs, // mcpServers
-    approvalWebsocket(
-      id,
-      streamUtils.sendToClient,
-      Assistant.Llm,
-      pendingApprovals,
-    ),
-    notification(streamUtils.sendToClient),
-    wsm,
-  );
-  holdQueries.set(id, query);
-  handleLLMResponse(
-    query,
-    id,
-    streamUtils,
-    completeLlmMessage(streamUtils.sendToClient),
-    notification(streamUtils.sendToClient),
-  );
+  const agentWithSchedule = holdAgents.get(id);
+  if (!agentWithSchedule) {
+    logger.error(`Execution failed: bot ${id} not found`);
+    return;
+  }
+  runAgent(agentWithSchedule.agent, streamUtils, insertMessage);
+};
+export const LLM_ID = "llm";
+export const routeInstantiateLlm = (streamUtils: StreamUtils) => {
   streamUtils.sendToClient(
     JSON.stringify({
-      id,
+      id: LLM_ID,
+      action: Action.LlmInstantiate,
+    }),
+  );
+};
+export const routeExecuteLlm = (
+  prompt: string,
+  streamUtils: StreamUtils,
+  holdAgents: Map<string, AgentWithSchedule>,
+) => {
+  const agentWithSchedule = holdAgents.get(LLM_ID);
+  if (!agentWithSchedule) {
+    logger.error(`Execution failed: LLM not found`);
+    return;
+  }
+  const { agent } = agentWithSchedule;
+  const agentStream = agent.stream(prompt);
+  handleLLMResponse(
+    agentStream,
+    agent.id,
+    streamUtils,
+    completeLlmMessage(streamUtils.sendToClient),
+  );
+
+  streamUtils.sendToClient(
+    JSON.stringify({
+      id: agent.id,
       action: Action.LlmInstantiate,
     }),
   );
 };
 
-export const routeConversation = (
+/*export const routeConversation = (
   { message }: ConverseInput,
   wsm: WebSocketMessageQueue,
 ) => {
@@ -253,42 +217,19 @@ export const routeLlmApproval = (
   pendingApprovals: Map<string, (approved: boolean) => void>,
 ) => {
   routeApproval(input, sendToClient, Assistant.Llm, pendingApprovals);
-};
+};*/
+
 export const routeStopBot = (
   { id }: BotIdInput,
-  holdQueries: Map<string, Query>,
+  holdAgents: Map<string, AgentWithSchedule>,
 ) => {
-  const query = holdQueries.get(id);
-  if (query) {
-    query.close();
-    holdQueries.delete(id);
+  const agentWithSchedule = holdAgents.get(id);
+  if (agentWithSchedule) {
+    agentWithSchedule.agent.cancel();
   } else {
     logger.warn(`No Query found for bot id: ${id}`);
   }
 };
-
-// Instead of polling global state, we issue a Promise and store its resolver
-export const approvalWebsocket =
-  (
-    id: string,
-    sendToClient: (message: string) => void,
-    assistantType: AssistantType,
-    pendingApprovals: Map<string, (approved: boolean) => void>,
-  ) =>
-  async (toolName: string, input: any) => {
-    sendToClient(
-      JSON.stringify({
-        toolName,
-        id,
-        input,
-        assistantType,
-        action: Action.ApprovalRequest,
-      }),
-    );
-    return new Promise<boolean>((resolve) => {
-      pendingApprovals.set(id, resolve);
-    });
-  };
 
 export const completeMessage =
   (

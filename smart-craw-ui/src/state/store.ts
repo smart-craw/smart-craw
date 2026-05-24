@@ -1,12 +1,11 @@
 import { create } from "zustand";
-import type { Approval, MessageOutput } from "../../../shared/models.ts";
+import type { MessageOutput } from "../../../shared/models.ts";
 
 export type Bot = {
   name: string;
   id: string;
   description: string;
   instructions: string;
-  approval?: Approval;
   isExecuting: boolean;
   isSuccess?: boolean;
   cron?: string;
@@ -25,7 +24,6 @@ export type Message = {
 export type Llm = {
   id: string;
   instructions: string;
-  approval?: Approval;
   isExecuting: boolean;
   isSuccess?: boolean;
 };
@@ -59,9 +57,6 @@ export type AppState = {
   setBots: (bots: Bot[]) => void;
   addBot: (bot: Bot) => void;
   setSettings: (settings: Settings) => void;
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setBotApproval: (id: string, toolName: string, input: any) => void;
-  actionBotApproval: (id: string, approved: boolean) => void;
   deleteBot: (id: string) => void;
   startBot: (id: string) => void;
   finishBot: (id: string, isSuccess: boolean) => void;
@@ -71,9 +66,6 @@ export type AppState = {
   addToolToMessage: (botId: string, tool: string) => void;
   finishMessage: (botId: string) => void;
   setLlm: (llm: Llm) => void;
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setLlmApproval: (id: string, toolName: string, input: any) => void;
-  actionLlmApproval: (approved: boolean) => void;
   startLlm: () => void;
   finishLlm: (isSuccess: boolean) => void;
 
@@ -117,18 +109,6 @@ export const useAppStore = create<AppState>((set) => ({
   setBots: (bots) => set({ bots }),
   addBot: (bot) =>
     set((state) => ({ bots: [...state.bots, { ...bot, isExecuting: false }] })),
-  setBotApproval: (id, toolName, input) =>
-    set((state) => ({
-      bots: state.bots.map((v) =>
-        v.id === id ? { ...v, approval: { toolName, input } } : v,
-      ),
-    })),
-  actionBotApproval: (id, approved) =>
-    set((state) => ({
-      bots: state.bots.map((v) =>
-        v.id === id ? { ...v, approval: undefined, isExecuting: approved } : v,
-      ),
-    })),
   deleteBot: (id) =>
     set((state) => ({
       bots: state.bots.filter((t) => t.id !== id),
@@ -252,14 +232,6 @@ export const useAppStore = create<AppState>((set) => ({
     }),
 
   setLlm: (llm) => set({ llm }),
-  setLlmApproval: (id, toolName, input) =>
-    set((state) => ({
-      llm: { ...state.llm, id, approval: { toolName, input } },
-    })),
-  actionLlmApproval: (approved) =>
-    set((state) => ({
-      llm: { ...state.llm, approval: undefined, isExecuting: approved },
-    })),
   startLlm: () =>
     set((state) => ({
       llm: { ...state.llm, isSuccess: undefined, isExecuting: true },

@@ -1,15 +1,11 @@
 import "dotenv/config";
-import { WebSocketMessageQueue } from "./llm_utils/ws.ts";
+//import { WebSocketMessageQueue } from "./llm_utils/ws.ts";
 import type {
-  ApprovalInput,
   BotIdInput,
   ConverseInput,
   CreateBotInput,
 } from "../shared/models.ts";
-import {
-  type ExecuteLLMInputServer,
-  type WebSocketInputServer,
-} from "./models.ts";
+import { type WebSocketInputServer } from "./models.ts";
 import {
   insertBot,
   getBot,
@@ -22,9 +18,6 @@ import {
 
 import { WebSocketServer } from "ws";
 import {
-  routeBotApproval,
-  routeLlmApproval,
-  routeConversation,
   routeCreateBot,
   routeExecuteBot,
   routeExecuteLlm,
@@ -32,10 +25,9 @@ import {
   routeGetMessages,
   routeRemoveBot,
   routeStopBot,
+  routeInstantiateLlm,
 } from "./routes/router.ts";
-import type { Query } from "@anthropic-ai/claude-agent-sdk";
-import nodeCron from "node-cron";
-import { startScheduler } from "./llm_utils/schedule.ts";
+import { setAgents } from "./llm_utils/agentStore.ts";
 import http from "http";
 import st from "st";
 import { logger } from "./logging.ts";
@@ -75,34 +67,41 @@ const writeAllClients = (wss: WebSocketServer) => (message: string) => {
 createDirectoriesOnStart(botPath, getBots);
 
 //Global state
-const pendingApprovals = new Map<string, (approved: boolean) => void>();
-const holdQueries = new Map<string, Query>();
 const streamUtils = handleStreamingMessage(
   writeAllClients(wss),
   startThink,
   endThink,
 );
-const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
+const LLM_URL = process.env.ANTHROPIC_BASE_URL || "http://localhost:11434";
+const holdAgents = setAgents(
+  LLM_URL,
+  getBots,
+  streamUtils,
+  botPath,
+  insertMessage,
+);
+
+/*const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
   Object.entries(
     startScheduler(
-      botPath,
+      //botPath,
       getBots,
       streamUtils,
       insertMessage,
-      holdQueries,
-      pendingApprovals,
+      holdAgents,
+      //pendingApprovals,
     ),
   ),
-);
+);*/
 
 //pass wss to anything that writes back, and write back to ALL
 wss.on("connection", function connection(ws) {
   logger.info("Connection established");
-  logger.info(`LLM server url: ${process.env.ANTHROPIC_BASE_URL}`);
-  const messageQueue = new WebSocketMessageQueue(); //one per connection currently
+  logger.info(`LLM server url: ${LLM_URL}`);
+  //const messageQueue = new WebSocketMessageQueue(); //one per connection currently
   ws.on("error", (err) => {
     logger.error(err);
-    messageQueue.close();
+    //messageQueue.close();
   });
   ws.on("message", function message(data) {
     const { path, input } = JSON.parse(data.toString()) as WebSocketInputServer;
@@ -110,33 +109,29 @@ wss.on("connection", function connection(ws) {
       case "/bot/create":
         routeCreateBot(
           input as CreateBotInput,
+          LLM_URL,
           botPath,
           manageBotFolder(botPath, getBot),
           insertBot,
           insertBotCron,
           streamUtils,
           insertMessage,
-          holdQueries,
-          pendingApprovals,
-          scheduledBots,
+          holdAgents,
         );
         break;
       case "/bot/execute":
         routeExecuteBot(
           input as BotIdInput,
-          botPath,
-          getBot,
           streamUtils,
           insertMessage,
-          holdQueries,
-          pendingApprovals,
+          holdAgents,
         );
         break;
       case "/bot/remove":
-        routeRemoveBot(input as BotIdInput, removeBot, scheduledBots);
+        routeRemoveBot(input as BotIdInput, removeBot, holdAgents);
         break;
       case "/bot/stop":
-        routeStopBot(input as BotIdInput, holdQueries);
+        routeStopBot(input as BotIdInput, holdAgents);
         break;
       case "/bot/messages":
         routeGetMessages(
@@ -149,19 +144,15 @@ wss.on("connection", function connection(ws) {
         routeGetAllBots(writeAllClients(wss), getBots);
         break;
       case "/llm/instantiate":
-        routeExecuteLlm(
-          input as ExecuteLLMInputServer,
-          messageQueue,
-          streamUtils,
-          holdQueries,
-          pendingApprovals,
-        );
+        routeInstantiateLlm(streamUtils);
         break;
 
       case "/llm/converse":
-        routeConversation(input as ConverseInput, messageQueue);
+        const { message } = input as ConverseInput;
+        routeExecuteLlm(message, streamUtils, holdAgents);
+        //routeConversation(input as ConverseInput, messageQueue);
         break;
-      case "/bot/approval":
+      /*case "/bot/approval":
         routeBotApproval(
           input as ApprovalInput,
           writeAllClients(wss),
@@ -174,13 +165,13 @@ wss.on("connection", function connection(ws) {
           writeAllClients(wss),
           pendingApprovals,
         );
-        break;
+        break;*/
     }
     logger.debug(`received: ${data}`);
   });
 
   ws.on("close", () => {
     logger.info("websocket closed");
-    messageQueue.close();
+    //messageQueue.close();
   });
 });
