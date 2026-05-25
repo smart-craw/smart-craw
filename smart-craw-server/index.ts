@@ -1,5 +1,4 @@
 import "dotenv/config";
-//import { WebSocketMessageQueue } from "./llm_utils/ws.ts";
 import type {
   BotIdInput,
   ConverseInput,
@@ -89,10 +88,8 @@ const holdAgents = setAgents(
 wss.on("connection", function connection(ws) {
   logger.info("Connection established");
   logger.info(`LLM server url: ${LLM_URL}`);
-  //const messageQueue = new WebSocketMessageQueue(); //one per connection currently
   ws.on("error", (err) => {
     logger.error(err);
-    //messageQueue.close();
   });
   ws.on("message", function message(data) {
     const { path, input } = JSON.parse(data.toString()) as WebSocketInputServer;
@@ -142,28 +139,12 @@ wss.on("connection", function connection(ws) {
       case "/llm/converse":
         const { message } = input as ConverseInput;
         routeExecuteLlm(message, streamUtils, holdAgents);
-        //routeConversation(input as ConverseInput, messageQueue);
         break;
-      /*case "/bot/approval":
-        routeBotApproval(
-          input as ApprovalInput,
-          writeAllClients(wss),
-          pendingApprovals,
-        );
-        break;
-      case "/llm/approval":
-        routeLlmApproval(
-          input as ApprovalInput,
-          writeAllClients(wss),
-          pendingApprovals,
-        );
-        break;*/
     }
     logger.debug(`received: ${data}`);
   });
 
   ws.on("close", () => {
     logger.info("websocket closed");
-    //messageQueue.close();
   });
 });
