@@ -18,6 +18,7 @@ export const routeCreateBot = (
   llmUrl: string,
   botDirectory: string,
   manageBotFolder: ({ id, name }: Pick<CreateBotInput, "id" | "name">) => void,
+  sessionStorageDirectory: string,
   insertBot: (
     id: string,
     name: string,
@@ -39,6 +40,7 @@ export const routeCreateBot = (
     llmUrl,
     bot,
     botDirectory,
+    sessionStorageDirectory,
     notification(streamUtils.sendToClient),
   );
 

@@ -56,6 +56,7 @@ export function createAgent(
   llmUrl: string,
   bot: BotDefinition,
   botDirectory: string,
+  sessionStorageDirectory: string,
   notificationCb: (message: string, type: string) => void,
 ): Agent {
   const model = new OpenAIModel({
@@ -67,16 +68,15 @@ export function createAgent(
     },
   });
 
-  const botPath = generateBotPath(botDirectory, bot.name);
   const session = new SessionManager({
     sessionId: bot.id,
     storage: {
-      snapshot: new FileStorage(botPath),
+      snapshot: new FileStorage(sessionStorageDirectory),
     },
   });
 
   const tools = [bash, fileEditor, dateTimeTool];
-
+  const botPath = generateBotPath(botDirectory, bot.name);
   // Create an agent with tools
   const agent = new Agent({
     systemPrompt: `Perform your actions in this directory: ${botPath}.  Your directions: ${bot.definition[bot.name].prompt}`,

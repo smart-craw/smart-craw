@@ -12,19 +12,19 @@ COPY --from=builder /app/smart-craw-ui/dist /app/dist/
 COPY smart-craw-server/ /app/smart-craw-server/
 COPY docker/script.sh /app/smart-craw-server/script.sh
 COPY shared/ /app/shared/
-RUN apk add --no-cache bash # bash is needed for claude code
+RUN apk add --no-cache bash # bash is needed for tool calls
 # location of sqlite db
 RUN mkdir /app/db
 # location of mounted files for each bot
 RUN mkdir /app/bots
+# location of where strands stores session data
+RUN mkdir /app/memory
 
-## Lock down "node" user: only allow writes to /app/bots, /app/db, and ~/.claude
+## Lock down "node" user: only allow writes to /app/bots, /app/db, and /app/memory
 # Set all of /app to root:root, read-only for node
 RUN chown -R root:root /app && chmod -R 755 /app
 # Grant node write access ONLY to the specific dirs
-RUN chown node:node /app/db /app/bots && chmod 700 /app/db /app/bots
-# Create ~/.claude (node's home is /home/node) and grant write access
-RUN mkdir -p /home/node/.claude && chown -R node:node /home/node/.claude && chmod 700 /home/node/.claude
+RUN chown node:node /app/db /app/bots /app/memory && chmod 700 /app/db /app/bots /app/memory
 
 WORKDIR /app/smart-craw-server/
 RUN npm ci --only=production
@@ -36,11 +36,10 @@ ENV STATIC_HTML_LOCATION="/app/dist"
 ENV DB_LOCATION="/app/db"
 # don't manually set...keep this default
 ENV BOT_LOCATION="/app/bots"
-ENV ANTHROPIC_BASE_URL="http://host.docker.internal:11434"
-ENV ANTHROPIC_AUTH_TOKEN="ollama"
-ENV ANTHROPIC_API_KEY="sk-local-dummy"
+# don't manually set...keep this default
+ENV SESSION_STORAGE_LOCATION="/app/memory"
+ENV OPEN_API_COMPATIBLE_ENDPOINT="http://host.docker.internal:11434"
 ENV LOG_LEVEL="info"
-ENV MODEL="hf.co/Qwen/Qwen3-4B-GGUF:latest"
 # "<|channel>" for gemma
 ENV START_THINK_TOKEN="<think>"
 # "<channel|>" for gemma

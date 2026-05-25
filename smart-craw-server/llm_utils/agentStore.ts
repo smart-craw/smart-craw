@@ -9,6 +9,7 @@ export const setAgents = (
   getBots: () => BotOutput[],
   streamUtils: StreamUtils,
   botDirectory: string,
+  sessionStorageDirectory: string,
   insertMessage: (id: string, message: string, reasoning: string) => void,
 ) => {
   const holdAgents = new Map<string, AgentWithSchedule>(
@@ -23,6 +24,7 @@ export const setAgents = (
         llmUrl,
         botDefinition,
         botDirectory,
+        sessionStorageDirectory,
         notification(streamUtils.sendToClient),
       );
       const cronTask = bot.cron
@@ -44,6 +46,7 @@ export const setAgents = (
       llmUrl,
       llmDefinition,
       process.cwd(),
+      sessionStorageDirectory,
       notification(streamUtils.sendToClient),
     ),
   });

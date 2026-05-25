@@ -46,6 +46,7 @@ describe("Router", () => {
         "myllmurl",
         "mydirectory",
         manageBotFolder,
+        "mystoragedirectory",
         insertBotMock,
         insertBotCronMock,
         mockStreamUtils,

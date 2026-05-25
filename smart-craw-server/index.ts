@@ -38,6 +38,8 @@ import { handleStreamingMessage } from "./routes/utils.ts";
 
 const startThink = process.env.START_THINK_TOKEN || "<think>";
 const endThink = process.env.END_THINK_TOKEN || "</think>";
+const sessionStorageDirectory =
+  process.env.SESSION_STORAGE_LOCATION || process.cwd();
 logger.debug(`UI path: ${uiPath}`);
 logger.debug(`Bot path: ${botPath}`);
 logger.info(`Start and end tokens: ${startThink}, ${endThink}`);
@@ -72,27 +74,16 @@ const streamUtils = handleStreamingMessage(
   startThink,
   endThink,
 );
-const LLM_URL = process.env.ANTHROPIC_BASE_URL || "http://localhost:11434";
+const LLM_URL =
+  process.env.OPEN_API_COMPATIBLE_ENDPOINT || "http://localhost:11434";
 const holdAgents = setAgents(
   LLM_URL,
   getBots,
   streamUtils,
   botPath,
+  sessionStorageDirectory,
   insertMessage,
 );
-
-/*const scheduledBots: Map<string, nodeCron.ScheduledTask> = new Map(
-  Object.entries(
-    startScheduler(
-      //botPath,
-      getBots,
-      streamUtils,
-      insertMessage,
-      holdAgents,
-      //pendingApprovals,
-    ),
-  ),
-);*/
 
 //pass wss to anything that writes back, and write back to ALL
 wss.on("connection", function connection(ws) {
@@ -112,6 +103,7 @@ wss.on("connection", function connection(ws) {
           LLM_URL,
           botPath,
           manageBotFolder(botPath, getBot),
+          sessionStorageDirectory,
           insertBot,
           insertBotCron,
           streamUtils,
