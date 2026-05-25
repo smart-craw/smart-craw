@@ -4,9 +4,8 @@ import {
   routeRemoveBot,
   routeGetAllBots,
   routeGetMessages,
-  routeApproval,
 } from "./router.ts";
-import { Action, Assistant } from "../../shared/models.ts";
+import { Action } from "../../shared/models.ts";
 
 // Mock the llm utils dependency
 vi.mock("../llm_utils/bots.ts", () => ({
@@ -20,6 +19,7 @@ vi.mock("../llm_utils/bots.ts", () => ({
       },
     },
   }),
+  createAgent: vi.fn(),
   botExecute: vi.fn(),
 }));
 
@@ -41,19 +41,17 @@ describe("Router", () => {
         sendToClient: vi.fn(),
       };
       const holdQueries = new Map();
-      const pendingApprovals = new Map();
-      const scheduledBots = new Map();
       routeCreateBot(
         { name: "test-bot", description: "desc", instructions: "instr" } as any,
+        "myllmurl",
         "mydirectory",
         manageBotFolder,
+        "mystoragedirectory",
         insertBotMock,
         insertBotCronMock,
         mockStreamUtils,
         insertMessageMock,
         holdQueries,
-        pendingApprovals,
-        scheduledBots,
       );
 
       expect(insertBotMock).toHaveBeenCalledWith(
@@ -111,30 +109,6 @@ describe("Router", () => {
       expect(sentData.action).toBe(Action.GetMessages);
       expect(sentData.id).toBe("bot-1");
       expect(sentData.messages).toEqual([{ id: "msg-1" }]);
-    });
-  });
-
-  describe("routeApproval", () => {
-    it("should invoke pending approval function and send actioned message", () => {
-      const sendToClient = vi.fn();
-      const resolveMock = vi.fn();
-      const pendingApprovals = new Map<string, (approved: boolean) => void>();
-      pendingApprovals.set("app-1", resolveMock);
-
-      routeApproval(
-        { id: "app-1", approved: true } as any,
-        sendToClient,
-        Assistant.Bot,
-        pendingApprovals,
-      );
-
-      expect(resolveMock).toHaveBeenCalledWith(true);
-      expect(pendingApprovals.has("app-1")).toBe(false);
-      expect(sendToClient).toHaveBeenCalled();
-
-      const sentData = JSON.parse(sendToClient.mock.calls[0][0]);
-      expect(sentData.action).toBe(Action.ApprovalActioned);
-      expect(sentData.approved).toBe(true);
     });
   });
 });

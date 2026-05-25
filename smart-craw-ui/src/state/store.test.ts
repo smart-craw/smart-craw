@@ -8,7 +8,6 @@ describe("useAppStore", () => {
       messages: {},
       llm: {
         id: "",
-        approval: undefined,
         isExecuting: false,
         instructions: "",
       },
@@ -34,26 +33,6 @@ describe("useAppStore", () => {
     expect(store.bots[0].isExecuting).toBe(false);
   });
 
-  it("updates bot approval", () => {
-    let store = useAppStore.getState();
-    store.addBot({
-      id: "bot-1",
-      name: "Alpha",
-      description: "Desc",
-      instructions: "Inst",
-      isExecuting: false,
-    });
-    store.setBotApproval("bot-1", "test_tool", { a: 1 });
-
-    store = useAppStore.getState();
-    expect(store.bots[0].approval?.toolName).toBe("test_tool");
-    expect(store.bots[0].approval?.input).toEqual({ a: 1 });
-
-    store.actionBotApproval("bot-1", true);
-    store = useAppStore.getState();
-    expect(store.bots[0].approval).toBeUndefined();
-    expect(store.bots[0].isExecuting).toBe(true);
-  });
   describe("get initial messages", () => {
     it("gets normal messages", () => {
       let store = useAppStore.getState();

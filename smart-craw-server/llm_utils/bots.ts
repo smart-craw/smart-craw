@@ -1,18 +1,39 @@
-import {
-  type AgentDefinition,
-  type Query,
-  query,
-} from "@anthropic-ai/claude-agent-sdk";
 import { v4 as uuidv4 } from "uuid";
-import { approvalWrapper, notificationWrapper } from "./responses.ts";
 import { generateBotPath } from "../file_utils/utils.ts";
+import { logger } from "../logging.ts";
+import {
+  Agent,
+  FileStorage,
+  SessionManager,
+  SummarizingConversationManager,
+  BeforeInvocationEvent,
+  BeforeToolCallEvent,
+  BeforeModelCallEvent,
+  tool,
+  InterruptEvent,
+} from "@strands-agents/sdk";
+import { OpenAIModel } from "@strands-agents/sdk/models/openai";
+import { bash } from "@strands-agents/sdk/vended-tools/bash";
+import { fileEditor } from "@strands-agents/sdk/vended-tools/file-editor";
+
+type AgentDefinition = {
+  description: string;
+  prompt: string;
+};
 export type BotDefinition = {
   definition: Record<string, AgentDefinition>;
   id: string;
   name: string;
 };
 
-//model and tools are inhereted from parent
+const dateTimeTool = tool({
+  name: "current_datetime",
+  description: "Get current date and time",
+  callback: () => {
+    return new Date().toISOString();
+  },
+});
+
 export function createBot(
   name: string,
   description: string,
@@ -31,43 +52,60 @@ export function createBot(
   };
 }
 
-//should bots have mcp servers?
-export function botExecute(
+export function createAgent(
+  llmUrl: string,
   bot: BotDefinition,
-  bodDirectory: string,
-  approvalCb: (toolName: string, input: any) => Promise<boolean>,
+  botDirectory: string,
+  sessionStorageDirectory: string,
   notificationCb: (message: string, type: string) => void,
-): Query {
-  const queryResult = query({
-    prompt: bot.definition[bot.name].prompt,
-    options: {
-      cwd: generateBotPath(bodDirectory, bot.name), //folder path is directory, with own "memory"
-      tools: { type: "preset", preset: "claude_code" },
-      canUseTool: approvalWrapper(approvalCb),
-      hooks: {
-        Notification: [{ hooks: [notificationWrapper(notificationCb)] }],
-        PostToolUseFailure: [
-          {
-            hooks: [notificationWrapper(notificationCb)],
-          },
-        ],
-        PermissionRequest: [
-          {
-            hooks: [notificationWrapper(notificationCb)],
-          },
-        ],
-      },
-      includePartialMessages: true,
-      model: process.env.MODEL || "hf.co/Qwen/Qwen3-4B-GGUF:latest",
-      env: {
-        ...process.env,
-        ANTHROPIC_BASE_URL:
-          process.env.ANTHROPIC_BASE_URL || "http://localhost:11434",
-        ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN || "ollama",
-        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "sk-local-dummy",
-        CLAUDE_CODE_ATTRIBUTION_HEADER: "0",
-      },
+): Agent {
+  const model = new OpenAIModel({
+    api: "chat",
+    apiKey: "helloworld",
+    contextWindowLimit: 256_000, //needed to get proactive compaction working correctly
+    clientConfig: {
+      baseURL: llmUrl,
     },
   });
-  return queryResult;
+
+  const session = new SessionManager({
+    sessionId: bot.id,
+    storage: {
+      snapshot: new FileStorage(sessionStorageDirectory),
+    },
+  });
+
+  const tools = [bash, fileEditor, dateTimeTool];
+  const botPath = generateBotPath(botDirectory, bot.name);
+  // Create an agent with tools
+  const agent = new Agent({
+    systemPrompt: `Perform your actions in this directory: ${botPath}.  Your directions: ${bot.definition[bot.name].prompt}`,
+    sessionManager: session,
+    model,
+    printer: false,
+    tools,
+    id: bot.id, //bot id and session id are the same
+    conversationManager: new SummarizingConversationManager({
+      summaryRatio: 0.5,
+      preserveRecentMessages: 10,
+      proactiveCompression: true, //compress before hitting context limit error
+    }),
+  });
+  agent.addHook(BeforeInvocationEvent, (event) => {
+    logger.debug(JSON.stringify(event, null, 2));
+  });
+
+  agent.addHook(BeforeModelCallEvent, (event) => {
+    logger.info(JSON.stringify(event, null, 2));
+  });
+  agent.addHook(BeforeToolCallEvent, (event) => {
+    logger.info(JSON.stringify(event, null, 2));
+  });
+
+  agent.addHook(InterruptEvent, (event) => {
+    const messageText = JSON.stringify(event, null, 2);
+    logger.info(messageText);
+    notificationCb(messageText, "interrupt");
+  });
+  return agent;
 }

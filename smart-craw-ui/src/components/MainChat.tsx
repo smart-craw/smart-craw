@@ -1,30 +1,22 @@
 import React, { useState } from "react";
-import { Card, Space, Button, Flex, Tag } from "antd";
-import { converseLlm, sendLlmApprovalDecision, stopBot } from "../services/ws";
+import { Card, Space, Tag } from "antd";
+import { converseLlm, stopBot } from "../services/ws";
 import { useAppStore } from "../state/store";
-import { Think, Sender, ThoughtChain } from "@ant-design/x";
+import { Think, Sender } from "@ant-design/x";
 import { XMarkdown } from "@ant-design/x-markdown";
-import { CodeOutlined, SyncOutlined } from "@ant-design/icons";
-import ApprovalDescription from "./ApprovalDescription";
+import { SyncOutlined } from "@ant-design/icons";
 
 const MainChat: React.FC = () => {
   const ws = useAppStore((state) => state.ws)!;
 
   const [command, setCommand] = useState("");
   const llmState = useAppStore((state) => state.llm);
-  const actionLlmApproval = useAppStore((state) => state.actionLlmApproval);
   const startLlm = useAppStore((state) => state.startLlm);
   const finishLlm = useAppStore((state) => state.finishLlm);
   const setMessages = useAppStore((state) => state.setMessages);
   const messagesByBot = useAppStore((state) => state.messages);
-  const { id, approval, isExecuting } = llmState;
+  const { id, isExecuting } = llmState;
   const messages = messagesByBot[id] || [];
-  const onDecision =
-    (id: string, toolName: string, approved: boolean) => () => {
-      sendLlmApprovalDecision(ws, id, toolName, approved);
-      return actionLlmApproval(approved);
-    };
-
   const execute = (id: string) => () => {
     converseLlm(ws, id, command);
     startLlm();
@@ -63,36 +55,6 @@ const MainChat: React.FC = () => {
               <Think loading={isExecuting && isLast} title="Show thinking">
                 {reasoning}
               </Think>
-              {approval && isLast && (
-                <ThoughtChain
-                  items={[
-                    {
-                      key: "toolcall",
-                      title: approval.toolName,
-                      icon: <CodeOutlined />,
-                      footer: (
-                        <Flex gap="small" vertical>
-                          <ApprovalDescription input={approval.input} />
-                          <Flex gap="small" wrap>
-                            <Button
-                              type="primary"
-                              onClick={onDecision(id, approval.toolName, true)}
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              danger
-                              onClick={onDecision(id, approval.toolName, false)}
-                            >
-                              Deny
-                            </Button>
-                          </Flex>
-                        </Flex>
-                      ),
-                    },
-                  ]}
-                />
-              )}
 
               <XMarkdown content={message} />
             </div>

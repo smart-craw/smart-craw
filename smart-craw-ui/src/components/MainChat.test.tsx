@@ -19,7 +19,6 @@ describe("MainChat", () => {
       ],
       llm: {
         id: "bot-1",
-        approval: undefined,
         isExecuting: false,
         instructions: "",
       },
