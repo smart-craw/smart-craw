@@ -82,10 +82,9 @@ messages:
       contentType: application/json
       payload:
         type: object
-        required: [path, input]
+        required: [path]
         properties:
           path: { type: string, const: /llm/instantiate }
-          input: { $ref: "./models.json#/definitions/ExecuteLLMInput" }
 
     LlmConverse:
       name: LlmConverse
@@ -98,27 +97,6 @@ messages:
           path: { type: string, const: /llm/converse }
           input: { $ref: "./models.json#/definitions/ConverseInput" }
 
-    BotApproval:
-      name: BotApproval
-      title: Approve or reject a pending bot tool call
-      contentType: application/json
-      payload:
-        type: object
-        required: [path, input]
-        properties:
-          path: { type: string, const: /bot/approval }
-          input: { $ref: "./models.json#/definitions/ApprovalInput" }
-
-    LlmApproval:
-      name: LlmApproval
-      title: Approve or reject a pending LLM tool call
-      contentType: application/json
-      payload:
-        type: object
-        required: [path, input]
-        properties:
-          path: { type: string, const: /llm/approval }
-          input: { $ref: "./models.json#/definitions/ApprovalInput" }
   # ── Server → Client ──────────────────────────────────────────
   receive:
     BotCreatedOrUpdated:
@@ -223,37 +201,6 @@ messages:
         properties:
           id: { type: string, format: uuid }
           action: { type: string, const: llminstantiate }
-
-    ApprovalRequest:
-      name: ApprovalRequest
-      title: Server requests human approval before tool execution
-      contentType: application/json
-      payload:
-        type: object
-        required: [id, toolName, input, assistantType, action]
-        properties:
-          id: { type: string, format: uuid }
-          toolName: { type: string }
-          input:
-            {
-              type: object,
-              description: "Tool call arguments (varies by tool)",
-            }
-          assistantType: { $ref: "./models.json#/definitions/AssistantType" }
-          action: { type: string, const: approvalrequest }
-
-    ApprovalActioned:
-      name: ApprovalActioned
-      title: Broadcast after approval is resolved
-      contentType: application/json
-      payload:
-        type: object
-        required: [id, approved, assistantType, action]
-        properties:
-          id: { type: string, format: uuid }
-          approved: { type: boolean }
-          assistantType: { $ref: "./models.json#/definitions/AssistantType" }
-          action: { type: string, const: approvalactioned }
 
     Notification:
       name: Notification
