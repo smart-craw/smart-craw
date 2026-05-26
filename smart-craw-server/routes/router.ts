@@ -120,8 +120,6 @@ export const runAgent = (
       id: agent.id,
     }),
   );
-  //rerun system prompt
-  //const command = prompt || agent.systemPrompt?.toString() || "";
   const agentStream = agent.stream(prompt);
   handleLLMResponse(
     agentStream,
