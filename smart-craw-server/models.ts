@@ -14,5 +14,6 @@ export type WebSocketInputServer = {
 
 export type AgentWithSchedule = {
   agent: Agent;
+  instructions: string;
   cronTask?: nodeCron.ScheduledTask;
 };

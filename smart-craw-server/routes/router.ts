@@ -1,4 +1,5 @@
-import { createAgent, createBot } from "../llm_utils/bots.ts";
+import { createAgent } from "../llm_utils/bots.ts";
+import { v4 as uuidv4 } from "uuid";
 import { handleLLMResponse } from "../llm_utils/responses.ts";
 import nodeCron from "node-cron";
 import type {
@@ -31,32 +32,32 @@ export const routeCreateBot = (
   holdAgents: Map<string, AgentWithSchedule>,
 ) => {
   const newBot = id === undefined;
-  const bot = createBot(name, description, instructions, id);
-  const botDefinition = bot.definition[bot.name];
-  logger.info(newBot ? `Creating new bot ${bot.id}` : `Update bot ${bot.id}`);
+  const botId = id || uuidv4();
+  logger.info(newBot ? `Creating new bot ${botId}` : `Update bot ${botId}`);
   manageBotFolder({ id, name });
-  insertBot(bot.id, bot.name, botDefinition.description, botDefinition.prompt);
+  insertBot(botId, name, description, instructions);
   const agent = createAgent(
     llmUrl,
-    bot,
+    botId,
+    name,
     botDirectory,
     sessionStorageDirectory,
     notification(streamUtils.sendToClient),
   );
 
   if (cron) {
-    logger.info(`Scheduling bot ${bot.id}`);
-    insertBotCron(bot.id, cron);
+    logger.info(`Scheduling bot ${botId}`);
+    insertBotCron(botId, cron);
   }
   const cronTask = cron
     ? nodeCron.schedule(cron, () => {
-        runAgent(agent, streamUtils, insertMessage);
+        runAgent(agent, streamUtils, insertMessage, instructions);
       })
     : undefined;
-  holdAgents.set(bot.id, { agent, cronTask });
+  holdAgents.set(botId, { agent, cronTask, instructions });
   streamUtils.sendToClient(
     JSON.stringify({
-      id: bot.id,
+      id: botId,
       name,
       description,
       instructions,
@@ -111,7 +112,7 @@ export const runAgent = (
   agent: Agent,
   streamUtils: StreamUtils,
   insertMessage: (id: string, message: string, reasoning: string) => void,
-  prompt: string = "",
+  prompt: string,
 ) => {
   streamUtils.sendToClient(
     JSON.stringify({
@@ -119,6 +120,8 @@ export const runAgent = (
       id: agent.id,
     }),
   );
+  //rerun system prompt
+  //const command = prompt || agent.systemPrompt?.toString() || "";
   const agentStream = agent.stream(prompt);
   handleLLMResponse(
     agentStream,
@@ -140,7 +143,12 @@ export const routeExecuteBot = (
     logger.error(`Execution failed: bot ${id} not found`);
     return;
   }
-  runAgent(agentWithSchedule.agent, streamUtils, insertMessage);
+  runAgent(
+    agentWithSchedule.agent,
+    streamUtils,
+    insertMessage,
+    agentWithSchedule.instructions,
+  );
 };
 export const LLM_ID = "llm";
 export const routeInstantiateLlm = (streamUtils: StreamUtils) => {
