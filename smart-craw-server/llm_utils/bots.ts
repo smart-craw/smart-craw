@@ -15,16 +15,6 @@ import { OpenAIModel } from "@strands-agents/sdk/models/openai";
 import { bash } from "@strands-agents/sdk/vended-tools/bash";
 import { fileEditor } from "@strands-agents/sdk/vended-tools/file-editor";
 
-type AgentDefinition = {
-  description: string;
-  prompt: string;
-};
-export type BotDefinition = {
-  definition: Record<string, AgentDefinition>;
-  id: string;
-  name: string;
-};
-
 const dateTimeTool = tool({
   name: "current_datetime",
   description: "Get current date and time",
@@ -33,27 +23,8 @@ const dateTimeTool = tool({
   },
 });
 
-/*export function createBot(
-  name: string,
-  description: string,
-  instructions: string,
-  id: string | undefined,
-): BotDefinition {
-  return {
-    name,
-    definition: {
-      [name]: {
-        description,
-        prompt: instructions,
-      },
-    },
-    id: id || uuidv4(),
-  };
-  }*/
-
 export function createAgent(
   llmUrl: string,
-  //bot: BotDefinition,
   botId: string,
   botName: string,
   botDirectory: string,
