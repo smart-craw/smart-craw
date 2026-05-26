@@ -1,11 +1,6 @@
 import { Agent } from "@strands-agents/sdk";
 import nodeCron from "node-cron";
-//import { type McpServerConfig } from "@anthropic-ai/claude-agent-sdk";
 export * from "../shared/models.ts";
-
-/*export type ExecuteLLMInputServer = {
-  mcpConfigs: McpServerConfig[];
-};*/
 
 export type WebSocketInputServer = {
   path: string;
@@ -14,5 +9,6 @@ export type WebSocketInputServer = {
 
 export type AgentWithSchedule = {
   agent: Agent;
+  instructions: string;
   cronTask?: nodeCron.ScheduledTask;
 };

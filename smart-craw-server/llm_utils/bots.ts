@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { generateBotPath } from "../file_utils/utils.ts";
 import { logger } from "../logging.ts";
 import {
@@ -16,16 +15,6 @@ import { OpenAIModel } from "@strands-agents/sdk/models/openai";
 import { bash } from "@strands-agents/sdk/vended-tools/bash";
 import { fileEditor } from "@strands-agents/sdk/vended-tools/file-editor";
 
-type AgentDefinition = {
-  description: string;
-  prompt: string;
-};
-export type BotDefinition = {
-  definition: Record<string, AgentDefinition>;
-  id: string;
-  name: string;
-};
-
 const dateTimeTool = tool({
   name: "current_datetime",
   description: "Get current date and time",
@@ -34,27 +23,10 @@ const dateTimeTool = tool({
   },
 });
 
-export function createBot(
-  name: string,
-  description: string,
-  instructions: string,
-  id: string | undefined,
-): BotDefinition {
-  return {
-    name,
-    definition: {
-      [name]: {
-        description,
-        prompt: instructions,
-      },
-    },
-    id: id || uuidv4(),
-  };
-}
-
 export function createAgent(
   llmUrl: string,
-  bot: BotDefinition,
+  botId: string,
+  botName: string,
   botDirectory: string,
   sessionStorageDirectory: string,
   notificationCb: (message: string, type: string) => void,
@@ -69,22 +41,22 @@ export function createAgent(
   });
 
   const session = new SessionManager({
-    sessionId: bot.id,
+    sessionId: botId,
     storage: {
       snapshot: new FileStorage(sessionStorageDirectory),
     },
   });
 
   const tools = [bash, fileEditor, dateTimeTool];
-  const botPath = generateBotPath(botDirectory, bot.name);
+  const botPath = generateBotPath(botDirectory, botName);
   // Create an agent with tools
   const agent = new Agent({
-    systemPrompt: `Perform your actions in this directory: ${botPath}.  Your directions: ${bot.definition[bot.name].prompt}`,
+    systemPrompt: `Perform your actions in this directory: ${botPath}.  Your directions will come via messages that may often repeat.  Don't worry if they repeat, simply follow the directions.`,
     sessionManager: session,
     model,
     printer: false,
     tools,
-    id: bot.id, //bot id and session id are the same
+    id: botId, //bot id and session id are the same
     conversationManager: new SummarizingConversationManager({
       summaryRatio: 0.5,
       preserveRecentMessages: 10,

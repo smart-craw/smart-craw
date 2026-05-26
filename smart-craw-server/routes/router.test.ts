@@ -9,18 +9,11 @@ import { Action } from "../../shared/models.ts";
 
 // Mock the llm utils dependency
 vi.mock("../llm_utils/bots.ts", () => ({
-  createBot: vi.fn().mockReturnValue({
-    id: "mock-id",
-    name: "test-bot",
-    definition: {
-      "test-bot": {
-        description: "desc",
-        prompt: "prompt",
-      },
-    },
-  }),
   createAgent: vi.fn(),
   botExecute: vi.fn(),
+}));
+vi.mock("uuid", () => ({
+  v4: vi.fn().mockReturnValue("mock-id"),
 }));
 
 describe("Router", () => {
@@ -58,7 +51,7 @@ describe("Router", () => {
         "mock-id",
         "test-bot",
         "desc",
-        "prompt",
+        "instr",
       );
       expect(mockStreamUtils.sendToClient).toHaveBeenCalled();
       expect(manageBotFolder).toHaveBeenCalled();
