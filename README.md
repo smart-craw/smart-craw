@@ -49,7 +49,7 @@ docker run -p 8000:8000 -v $(pwd):/app/db \
 ghcr.io/smart-craw/smart-craw:v0.2.3
 ```
 
-On a Mac, you need to proxy remote calls through your host.  A simple way to do that is to run something like `socat TCP-LISTEN:9000,fork TCP:[yourllmurl]` in a seperate terminal (or using nohup), and then set `http://host.docker.internal:9000` as your OPEN_API_COMPATIBLE_ENDPOINT.  Alternatively, run the [example script](./example/startup_mac.sh) passing in `[yourllmurl]` (without the "http://") and the docker tag (eg, `v0.2.3`) as the arguments to the script.
+On a Mac, you need to proxy remote calls through your host.  A simple way to do that is to run something like `socat TCP-LISTEN:9000,fork TCP:[yourllmurl]` in a seperate terminal (or using nohup), and then set `http://host.docker.internal:9000` as your OPEN_API_COMPATIBLE_ENDPOINT.  Alternatively, run the [example script](./example/startup_mac.sh) passing in `[yourllmurl]` (without the "http://") and the docker tag (eg, `v0.2.3`) as the arguments to the script.  Eg, `./example/startup_mac.sh llm.home:8080 v0.2.3 "<|channel>" "<channel|>"`.
 
 ### All available environment variables
 
