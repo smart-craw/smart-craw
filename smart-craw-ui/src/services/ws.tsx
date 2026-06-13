@@ -135,8 +135,6 @@ export function connectWs(): WebSocket {
         const { id } = rest as MessageResponse;
         store.setLlm({
           id,
-          instructions: "",
-          isExecuting: false,
         });
         break;
       }
