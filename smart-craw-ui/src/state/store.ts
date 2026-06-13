@@ -65,10 +65,9 @@ export type AppState = {
   addMessage: (botId: string, message: string, isThinking: boolean) => void;
   addToolToMessage: (botId: string, tool: string) => void;
   finishMessage: (botId: string) => void;
-  setLlm: (llm: Llm) => void;
+  setLlm: (llm: Partial<Llm>) => void;
   startLlm: () => void;
   finishLlm: (isSuccess: boolean) => void;
-
   setNotification: (notification: Notification) => void;
 };
 
@@ -231,7 +230,8 @@ export const useAppStore = create<AppState>((set) => ({
       };
     }),
 
-  setLlm: (llm) => set({ llm }),
+  setLlm: (llm: Partial<Llm>) =>
+    set((state) => ({ llm: { ...state.llm, ...llm } })),
   startLlm: () =>
     set((state) => ({
       llm: { ...state.llm, isSuccess: undefined, isExecuting: true },
@@ -240,6 +240,11 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       llm: { ...state.llm, isSuccess, isExecuting: false },
     })),
-
   setNotification: (notification) => set({ notification }),
 }));
+
+useAppStore.subscribe((state, prev) => {
+  if (state.llm.isExecuting !== prev.llm.isExecuting) {
+    console.trace("isExecuting changed to", state.llm);
+  }
+});
