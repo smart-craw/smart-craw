@@ -242,9 +242,3 @@ export const useAppStore = create<AppState>((set) => ({
     })),
   setNotification: (notification) => set({ notification }),
 }));
-
-useAppStore.subscribe((state, prev) => {
-  if (state.llm.isExecuting !== prev.llm.isExecuting) {
-    console.trace("isExecuting changed to", state.llm);
-  }
-});
