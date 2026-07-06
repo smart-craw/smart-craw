@@ -55,7 +55,7 @@ const BotList: React.FC = () => {
   return (
     <>
       <Card title="Bot Inventory">
-        <Space vertical>
+        <Space vertical style={{ width: "100%" }}>
           <Button
             onClick={() =>
               showBotModal(
