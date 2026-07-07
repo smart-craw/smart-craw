@@ -16,6 +16,7 @@ import SettingsButton from "./components/Settings";
 
 const { Content, Header } = Layout;
 
+const wsUrl = window.location.href;
 function App() {
   const notificationState = useAppStore((state) => state.notification);
   const setWs = useAppStore((state) => state.setWs);
@@ -37,7 +38,7 @@ function App() {
   }, [notificationState, api, coneOfSilence]);
 
   useEffect(() => {
-    const wsInstance = connectWs();
+    const wsInstance = connectWs(wsUrl);
     setWs(wsInstance);
     return () => {
       wsInstance.close();

@@ -49,8 +49,8 @@ type ExecutionResponse = {
   action: ActionType;
 };
 
-export function connectWs(): WebSocket {
-  const url = new URL(`/ws`, window.location.href);
+export function connectWs(wsUrl: string): WebSocket {
+  const url = new URL(`/ws`, wsUrl);
   //handles https and wss too since both end in s
   url.protocol = url.protocol.replace("http", "ws");
   const ws = new WebSocket(url);

@@ -27,33 +27,25 @@ import {
   routeInstantiateLlm,
 } from "./routes/router.ts";
 import { setAgents } from "./llm_utils/agentStore.ts";
-import http from "http";
-import st from "st";
 import { logger } from "./logging.ts";
 import { createDirectoriesOnStart } from "./file_utils/startup.ts";
 import { manageBotFolder } from "./file_utils/bot_folder.ts";
-import { uiPath, botPath } from "./locations.ts";
+import { uiPath, botPath, isServerOnly } from "./locations.ts";
 import { handleStreamingMessage } from "./routes/utils.ts";
-
+import { generateServer } from "./server.ts";
 const startThink = process.env.START_THINK_TOKEN || "<think>";
 const endThink = process.env.END_THINK_TOKEN || "</think>";
 const sessionStorageDirectory =
   process.env.SESSION_STORAGE_LOCATION || process.cwd();
-logger.debug(`UI path: ${uiPath}`);
+
+if (!isServerOnly) {
+  logger.debug(`UI path: ${uiPath}`);
+}
 logger.debug(`Bot path: ${botPath}`);
 logger.info(`Start and end tokens: ${startThink}, ${endThink}`);
 
-const mount = st({
-  path: uiPath,
-  url: "/",
-  index: "index.html",
-});
 const port = process.env.PORT ? parseInt(process.env.PORT) : 8000;
-const server = http
-  .createServer((req, res) => {
-    mount(req, res, () => res.end("this is not a static file"));
-  })
-  .listen(port);
+const server = generateServer(isServerOnly, uiPath, port);
 const wss = new WebSocketServer({ server });
 
 const writeAllClients = (wss: WebSocketServer) => (message: string) => {
