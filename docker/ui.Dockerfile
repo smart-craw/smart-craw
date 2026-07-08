@@ -19,7 +19,8 @@ RUN chown -R nginx:nginx /var/cache/nginx && \
 
 # Switch to the non-root user
 USER nginx
-
+ENV AGENT_SERVICE="http://localhost:8000"
+ENV ALLOWED_IP_ADDRESS="192.168.0.0"
 # Final entrypoint and command
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
