@@ -1,5 +1,5 @@
 import { Agent } from "@strands-agents/sdk";
-import nodeCron from "node-cron";
+import type { ScheduledTask } from "node-cron";
 export * from "../shared/models.ts";
 
 export type WebSocketInputServer = {
@@ -10,5 +10,5 @@ export type WebSocketInputServer = {
 export type AgentWithSchedule = {
   agent: Agent;
   instructions: string;
-  cronTask?: nodeCron.ScheduledTask;
+  cronTask?: ScheduledTask;
 };
