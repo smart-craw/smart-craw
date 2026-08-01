@@ -40,11 +40,12 @@
   "devDependencies": {
     "@apidevtools/json-schema-ref-parser": "^15.3.5",
     "@types/node": "^25.3.3",
+    "@types/node-cron": "^3.0.11",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.18.1",
-    "@vitest/coverage-v8": "^4.1.0",
+    "@vitest/coverage-v8": "^4.1.10",
     "typescript": "^5.9.3",
     "typescript-json-schema": "^0.67.1",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.10"
   }
 }
