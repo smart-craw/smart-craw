@@ -22,7 +22,7 @@ describe("Router", () => {
   });
 
   describe("routeCreateBot", () => {
-    it("should call insertBot and ws.send", () => {
+    it("should call insertBot and ws.send", async () => {
       const manageBotFolder = vi.fn();
       const insertBotMock = vi.fn();
       const insertBotCronMock = vi.fn();
@@ -34,12 +34,13 @@ describe("Router", () => {
         sendToClient: vi.fn(),
       };
       const holdQueries = new Map();
-      routeCreateBot(
+      await routeCreateBot(
         { name: "test-bot", description: "desc", instructions: "instr" } as any,
         "myllmurl",
         "mydirectory",
         manageBotFolder,
         "mystoragedirectory",
+        [],
         insertBotMock,
         insertBotCronMock,
         mockStreamUtils,

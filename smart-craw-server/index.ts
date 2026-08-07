@@ -67,12 +67,16 @@ const streamUtils = handleStreamingMessage(
 );
 const LLM_URL =
   process.env.OPEN_API_COMPATIBLE_ENDPOINT || "http://localhost:11434";
-const holdAgents = setAgents(
+const MCP_URLS = process.env.MCP_SERVER_LIST
+  ? JSON.parse(process.env.MCP_SERVER_LIST)
+  : [];
+const holdAgents = await setAgents(
   LLM_URL,
   getBots,
   streamUtils,
   botPath,
   sessionStorageDirectory,
+  MCP_URLS,
   insertMessage,
 );
 
@@ -93,6 +97,7 @@ wss.on("connection", function connection(ws) {
           botPath,
           manageBotFolder(botPath, getBot),
           sessionStorageDirectory,
+          MCP_URLS,
           insertBot,
           insertBotCron,
           streamUtils,

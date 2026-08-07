@@ -4,22 +4,24 @@ import { LLM_ID, notification, runAgent } from "../routes/router.ts";
 import { type StreamUtils } from "../routes/utils.ts";
 import { createAgent } from "./bots.ts";
 
-export const setAgents = (
+export async function setAgents(
   llmUrl: string,
   getBots: () => BotOutput[],
   streamUtils: StreamUtils,
   botDirectory: string,
   sessionStorageDirectory: string,
+  mcpServerUrls: string[],
   insertMessage: (id: string, message: string, reasoning: string) => void,
-) => {
-  const holdAgents = new Map<string, AgentWithSchedule>(
-    getBots().map(({ name, instructions, id, cron }: BotOutput) => {
-      const agent = createAgent(
+) {
+  const botAgents: Promise<[string, AgentWithSchedule][]> = Promise.all(
+    getBots().map(async ({ name, instructions, id, cron }: BotOutput) => {
+      const agent = await createAgent(
         llmUrl,
         id,
         name,
         botDirectory,
         sessionStorageDirectory,
+        mcpServerUrls,
         notification(streamUtils.sendToClient),
       );
       const cronTask = cron
@@ -27,19 +29,26 @@ export const setAgents = (
             runAgent(agent, streamUtils, insertMessage, instructions);
           })
         : undefined;
-      return [id, { agent, cronTask, instructions }];
+      return [id, { agent, cronTask, instructions } as AgentWithSchedule];
     }),
   );
-  holdAgents.set(LLM_ID, {
-    agent: createAgent(
-      llmUrl,
-      LLM_ID,
-      "llm",
-      process.cwd(),
-      sessionStorageDirectory,
-      notification(streamUtils.sendToClient),
-    ),
-    instructions: "", //no instructions since these are given "per request"
-  });
+  const llmAgent: Promise<[string, AgentWithSchedule]> = createAgent(
+    llmUrl,
+    LLM_ID,
+    "llm",
+    process.cwd(),
+    sessionStorageDirectory,
+    mcpServerUrls,
+    notification(streamUtils.sendToClient),
+  ).then((agent) => [
+    LLM_ID,
+    {
+      agent,
+      instructions: "", //no instructions since these are given "per request"
+    } as AgentWithSchedule,
+  ]);
+  const [botEntries, llmEntry] = await Promise.all([botAgents, llmAgent]);
+  const agents: [string, AgentWithSchedule][] = [...botEntries, llmEntry];
+  const holdAgents = new Map<string, AgentWithSchedule>(agents);
   return holdAgents;
-};
+}

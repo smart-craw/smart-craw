@@ -2,35 +2,35 @@ import { generateBotPath } from "../file_utils/utils.ts";
 import { logger } from "../logging.ts";
 import {
   Agent,
-  FileStorage,
   SessionManager,
   SummarizingConversationManager,
   BeforeInvocationEvent,
   BeforeToolCallEvent,
   BeforeModelCallEvent,
-  tool,
   InterruptEvent,
 } from "@strands-agents/sdk";
 import { OpenAIModel } from "@strands-agents/sdk/models/openai";
+import { LocalFileStorage } from "@strands-agents/sdk/storage";
 import { bash } from "@strands-agents/sdk/vended-tools/bash";
 import { fileEditor } from "@strands-agents/sdk/vended-tools/file-editor";
+import {
+  dateTimeTool,
+  generateNoRuntimeInstructions,
+  getAllMcpTools,
+} from "./tools.ts";
 
-const dateTimeTool = tool({
-  name: "current_datetime",
-  description: "Get current date and time",
-  callback: () => {
-    return new Date().toISOString();
-  },
-});
-
-export function createAgent(
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+export async function createAgent(
   llmUrl: string,
   botId: string,
   botName: string,
   botDirectory: string,
   sessionStorageDirectory: string,
+  mcpServerUrls: string[],
   notificationCb: (message: string, type: string) => void,
-): Agent {
+): Promise<Agent> {
   const model = new OpenAIModel({
     api: "chat",
     apiKey: "helloworld",
@@ -42,12 +42,13 @@ export function createAgent(
 
   const session = new SessionManager({
     sessionId: botId,
-    storage: {
-      snapshot: new FileStorage(sessionStorageDirectory),
-    },
+    storage: new LocalFileStorage(sessionStorageDirectory),
   });
+  const mcpTools = await getAllMcpTools(mcpServerUrls);
+  const mcpToolNames = mcpTools.map((v) => v.name);
+  const bashInstructions = generateNoRuntimeInstructions(mcpToolNames);
 
-  const tools = [bash, fileEditor, dateTimeTool];
+  const tools = [bash, fileEditor, dateTimeTool, ...mcpTools];
   const botPath = generateBotPath(botDirectory, botName);
   // Create an agent with tools
   const agent = new Agent({
@@ -73,7 +74,18 @@ export function createAgent(
   agent.addHook(BeforeToolCallEvent, (event) => {
     logger.info(JSON.stringify(event, null, 2));
   });
-
+  agent.addHook(BeforeToolCallEvent, (event) => {
+    if (event.toolUse.name === "bash" && isRecord(event.toolUse.input)) {
+      const { command } = event.toolUse.input;
+      if (
+        typeof command === "string" &&
+        /\b(node|npm|yarn|python3?|pip3?|cargo|rustc)\b/.test(command)
+      ) {
+        event.cancel = bashInstructions;
+      }
+    }
+    logger.info(JSON.stringify(event, null, 2));
+  });
   agent.addHook(InterruptEvent, (event) => {
     const messageText = JSON.stringify(event, null, 2);
     logger.info(messageText);
