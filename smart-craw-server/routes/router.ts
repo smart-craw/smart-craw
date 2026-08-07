@@ -14,12 +14,13 @@ import { logger } from "../logging.ts";
 import { type StreamUtils } from "./utils.ts";
 import { Agent } from "@strands-agents/sdk";
 
-export const routeCreateBot = (
+export async function routeCreateBot(
   { id, description, name, instructions, cron }: CreateBotInput,
   llmUrl: string,
   botDirectory: string,
   manageBotFolder: ({ id, name }: Pick<CreateBotInput, "id" | "name">) => void,
   sessionStorageDirectory: string,
+  mcpServerUrls: string[],
   insertBot: (
     id: string,
     name: string,
@@ -30,18 +31,19 @@ export const routeCreateBot = (
   streamUtils: StreamUtils,
   insertMessage: (id: string, message: string, reasoning: string) => void,
   holdAgents: Map<string, AgentWithSchedule>,
-) => {
+) {
   const newBot = id === undefined;
   const botId = id || uuidv4();
   logger.info(newBot ? `Creating new bot ${botId}` : `Update bot ${botId}`);
   manageBotFolder({ id, name });
   insertBot(botId, name, description, instructions);
-  const agent = createAgent(
+  const agent = await createAgent(
     llmUrl,
     botId,
     name,
     botDirectory,
     sessionStorageDirectory,
+    mcpServerUrls,
     notification(streamUtils.sendToClient),
   );
 
@@ -65,7 +67,7 @@ export const routeCreateBot = (
       action: newBot ? Action.CreateBot : Action.UpdateBot,
     }),
   );
-};
+}
 
 export const routeRemoveBot = (
   { id }: BotIdInput,
