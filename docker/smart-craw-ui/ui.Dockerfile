@@ -7,8 +7,8 @@ RUN ls -la
 RUN npm run build
 
 FROM nginx:stable-alpine3.21-perl
-ADD docker/nginx.entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-ADD docker/nginx.conf /etc/nginx/nginx.conf.template
+ADD docker/smart-craw-ui/nginx.entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+ADD docker/smart-craw-ui/nginx.conf /etc/nginx/nginx.conf.template
 COPY --from=builder /app/smart-craw-ui/dist /app/dist/
 
 RUN mkdir -p /var/run/nginx && chown -R nginx:nginx /var/run/nginx

@@ -57,6 +57,34 @@ On a Mac, you need to proxy remote calls through your host.  A simple way to do 
 
 Modify [docker-compose](./docker/docker-compose.yml) with your relevant variables ([smart-craw-server](#smart-craw-server-available-environment-variables), [smart-craw-signal](#smart-craw-signal-env-variables)).  The run `docker compose -f docker-compose.yml up`.  Note that you can mix and match: only run agent and ui, or only run the app with Signal based on your needs.
 
+A recommended file structure and permissions can be created as follows:
+
+```sh
+# create a place for agent to put persistent files
+mkdir $HOME/smart-craw/storage/memory
+
+# location for agent to put files
+mkdir $HOME/smart-craw/storage/agents
+
+# allow group writes (for both the agents and mcp services to access)
+chmod -R 775 $HOME/smart-craw/storage/agents
+
+# keep group consistent for new files
+chmod g+s $HOME/smart-craw/storage
+```
+
+Run at startup:
+
+Put your (modified) [docker-compose](./docker/docker-compose.yml) in `$HOME/smart-craw/docker`.  Place your [service](./service/smart-craw.service) in `~/.config/systemd/user/`.
+
+Then:
+
+```sh
+systemctl --user daemon-reload
+systemctl --user enable smart-craw
+systemctl --user start smart-craw
+sudo loginctl enable-linger $USER
+```
 
 # Architecture
 
@@ -72,13 +100,13 @@ Mount docker's `/app/memory` into your file system to persistently store bot mem
 
 ### Network Topology and Security
 
-For ease of use I've given the agent carte blanche.  There is no approval requests for the `bash`, `fileEditor`, or (optional) `mcpCodeClient`.  This requires tight controls elsewhere to ensure that any deleterious actions have a small blast radius.  The [docker-compose](./docker/docker-compose.yml) helps to reduce this blast radius.
+For ease of use I've given the agent carte blanche.  There is no approval requests for the `bash`, `fileEditor`, or (optional) MCP clients.  This requires tight controls elsewhere to ensure that any deleterious actions have a small blast radius.  The [docker-compose](./docker/docker-compose.yml) helps to reduce this blast radius.
 
 Docker itself provides some sandboxing.  For example, the agent can only operate on host files via the mounted volume.  The agent could change directory, but will only be traversing directories in the docker container itself.  The agent does NOT have write access to its own code within the docker container.
 
 ### Private Networks
 
-The network topology limits what the agent service and the code mcp service can access.  The agent can only access github.com, npmjs.com, pypi.org, and the LLM Api. the code mcp service can only access github.com, npmjs.com, and pypi.org.  Programatically the agent service only accesses the LLM Api.
+The network topology limits what the agent service and the mcp services can access.  The agent services themselves has no outbound connectivity.  It can only indirectly access github.com, npmjs.com, pypi.org, and the LLM Api through the Squid and nginx proxies. The code mcp service can only access github.com, npmjs.com, and pypi.org.
 
 ![alt text](./docs/docker_network_topology.svg)
 
@@ -125,35 +153,6 @@ If you have a Google account you can create a new free phone number.
 
 `./node_modules/signal-sdk/bin/signal-cli -a +1[number] verify [number]`
 
-### Run with docker compose
-
-Setup:
-
-```sh
-# create a place for claude to put persistent files
-mkdir $HOME/signal/storage/memory
-
-# allow group writes (for both the agent and mcp services to access)
-chmod -R 775 $HOME/signal/storage
-
-# keep group consistent for new files
-chmod g+s $HOME/signal/storage
-```
-
-Modify [docker-compose](./docker/docker-compose.yml) with your relevant [env](#env-variables) variables.  The run `docker compose -f docker-compose.yml up`.
-
-Run at startup:
-
-Put your (modified) [docker-compose](./docker/docker-compose.yml) in `$HOME/signal/docker`.  Place your [service](./service/llm-signal.service) in `~/.config/systemd/user/`.
-
-Then:
-
-```sh
-systemctl --user daemon-reload
-systemctl --user enable llm-signal
-systemctl --user start llm-signal
-sudo loginctl enable-linger $USER
-```
 
 ### Smart Craw Signal Env variables
 
