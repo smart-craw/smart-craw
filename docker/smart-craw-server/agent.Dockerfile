@@ -1,6 +1,6 @@
 FROM node:24-alpine
 COPY smart-craw-server/ /app/smart-craw-server/
-COPY docker/script.sh /app/smart-craw-server/script.sh
+COPY docker/smart-craw-server/script.sh /app/smart-craw-server/script.sh
 COPY shared/ /app/shared/
 RUN apk add --no-cache bash # bash is needed for tool calls
 # location of sqlite db

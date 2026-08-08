@@ -1,0 +1,107 @@
+services:
+  signal-cli-rest-api:
+    ports: [] # no host ports needed
+    networks:
+      - signal-network # to access signal servers
+      - signal-internal # so agent can hit this rest api
+    image: bbernhard/signal-cli-rest-api:0.100-rootless
+    environment:
+      - MODE=json-rpc-native #supported modes: json-rpc, native, normal
+    volumes:
+      - "$HOME/.local/share/signal-api:/home/.local/share/signal-cli" #map "signal-cli-config" folder on host system into docker container. the folder contains the password and cryptographic keys when a new number is registered
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  squid-proxy:
+    ports: [] # no host ports needed
+    networks:
+      - public-outbound # so this can hit host network (and internet)
+      - mcp-internal # so mcp can hit this
+    image: ghcr.io/smart-craw/smart-craw-signal-squid:v0.2.2
+
+  nginx: # proxy out to LLM service
+    ports: [] # no host ports needed
+    image: ghcr.io/smart-craw/smart-craw-signal-nginx:v0.2.2
+    networks:
+      - agent-internal # reachable by (OPTIONAL) agent.  If you don't use the agent, don't use this network
+      - signal-internal # reachable by signal
+      - public-outbound # so this can hit host network
+    environment:
+      BACKEND_SERVICE: [your_openai_base_url_with_port]
+
+  code-mcp:
+    networks:
+      - mcp-internal # private only
+    image: ghcr.io/danielhstahl/mcp-code-execution:v0.2.0
+    user: "appuser:1500" # same group as smart-craw-signal since both read/write to the same directory
+    environment:
+      HTTP_PROXY: http://squid-proxy:3128
+      HTTPS_PROXY: http://squid-proxy:3128
+    volumes:
+      - $HOME/signal/storage:/app/code_location
+
+  smart-craw-signal:
+    networks:
+      - signal-internal # so agent can hit internal signal and nginx
+      - mcp-internal # so agent can hit code-mcp
+    image: ghcr.io/smart-craw/smart-craw-signal:v0.3.4
+    user: "node:1500" # same group as code-mcp since both read/write to the same directory
+    volumes:
+      - "$HOME/signal/storage:/app/mounts"
+      - "$HOME/signal/storage/memory:/app/memory"
+    environment:
+      OPEN_API_COMPATIBLE_ENDPOINT: http://nginx:8080
+      SIGNAL_BOT_PHONE_NUMBER: [yourbotphonenumber]
+      SIGNAL_USER_ADMIN_NUMBER: [yourrealphonenumber]
+      SIGNAL_REST_ENDPOINT: http://signal-cli-rest-api:8080
+      MCP_CODE_SERVER_ENDPOINT: http://code-mcp:8000/mcp
+      START_THINK_TOKEN: "<think>"
+      END_THINK_TOKEN: "</think>"
+    logging:
+      driver: journald # systemctl will track these logs
+    depends_on:
+      signal-cli-rest-api:
+        condition: service_healthy
+
+  smart-craw-ui:
+    ports:
+      - "8080:80"
+      - "8081:443"
+    networks:
+      - public-outbound # so this can be hit by the host network
+      - agent-internal # so can hit smart-craw-agent
+    image: ghcr.io/smart-craw/smart-craw-ui:v0.2.9
+    environment:
+      AGENT_SERVICE: http://smart-craw-agent:8000
+      ALLOWED_IP_ADDRESS: [yourinternalclient]
+    volumes:
+      - "path/to/your/certs:/etc/nginx/certs"
+
+  smart-craw-agent:
+    networks:
+      - agent-internal # isolate
+    image: ghcr.io/smart-craw/smart-craw-agent:v0.2.9
+    environment:
+      OPEN_API_COMPATIBLE_ENDPOINT: http://nginx:8080
+      START_THINK_TOKEN: "<|channel>"
+      END_THINK_TOKEN: "<channel|>"
+      MCP_SERVER_LIST: '["http://code-mcp:8000/mcp"]'
+    volumes:
+      - "path/to/your/db:/app/db"
+      - "path/to/your/bots:/app/bots"
+      - "path/to/your/memory:/app/memory"
+
+networks:
+  signal-network:
+    driver: bridge
+  public-outbound:
+    driver: bridge
+  signal-internal:
+    internal: true
+  mcp-internal:
+    internal: true
+  agent-internal:
+    internal: true

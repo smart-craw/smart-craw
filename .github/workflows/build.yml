@@ -24,7 +24,7 @@ jobs:
 
       - name: generate docker
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw:${{ github.event.release.tag_name }} -f docker/Dockerfile . --push
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw:${{ github.event.release.tag_name }} -f docker/smart-craw-server/monolith.Dockerfile . --push
 
   build_agent_standalone:
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
 
       - name: generate docker
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-agent:${{ github.event.release.tag_name }} -f docker/agent.Dockerfile . --push
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-agent:${{ github.event.release.tag_name }} -f docker/smart-craw-server/agent.Dockerfile . --push
 
   build_ui_standalone:
     runs-on: ubuntu-latest
@@ -72,7 +72,7 @@ jobs:
 
       - name: generate docker
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-ui:${{ github.event.release.tag_name }} -f docker/ui.Dockerfile . --push
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-ui:${{ github.event.release.tag_name }} -f docker/smart-craw-ui/ui.Dockerfile . --push
 
   build_websocket_docs:
     runs-on: ubuntu-latest
@@ -104,3 +104,35 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           gh release upload ${{ github.event.release.tag_name }} ./api_docs/asyncapi.json
+
+  build_smart_craw_signal:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup buildx docker
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: generate docker
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-signal:${{ github.event.release.tag_name }} -f docker/smart-craw-signal/Dockerfile . --push
+
+      - name: generate nginx docker
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-signal-nginx:${{ github.event.release.tag_name }} -f docker/smart-craw-signal/nginx.Dockerfile . --push
+
+      - name: generate squid docker
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-signal-squid:${{ github.event.release.tag_name }} -f docker/smart-craw-signal/squid.Dockerfile . --push

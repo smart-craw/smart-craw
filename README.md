@@ -18,6 +18,7 @@ Architecture:
 * ReactJS UI
 * NodeJS server
 * Strands' SDK
+* Signal server for accessing remotely
 
 ## What if I told you 2 bots and a self-hosted model?
 
@@ -51,21 +52,31 @@ ghcr.io/smart-craw/smart-craw:v0.2.3
 
 On a Mac, you need to proxy remote calls through your host.  A simple way to do that is to run something like `socat TCP-LISTEN:9000,fork TCP:[yourllmurl]` in a seperate terminal (or using nohup), and then set `http://host.docker.internal:9000` as your OPEN_API_COMPATIBLE_ENDPOINT.  Alternatively, run the [example script](./example/startup_mac.sh) passing in `[yourllmurl]` (without the "http://") and the docker tag (eg, `v0.2.3`) as the arguments to the script.  Eg, `./example/startup_mac.sh llm.home:8080 v0.2.3 "<|channel>" "<channel|>"`.
 
-### All available environment variables
+# Architecture
 
-Full env variables:
-* OPEN_API_COMPATIBLE_ENDPOINT (defaults to `http://host.docker.internal:11434`, local Ollama)
-* LOG_LEVEL (defaults to `info`)
-* START_THINK_TOKEN (start token for thinking, defaults to `<think/>`)
-* END_THINK_TOKEN (start token for thinking, defaults to `</think>`)
+This is a mono-repo with [smart-craw-server](./smart-craw-server) as a back-end agent factory, [smart-craw-signal](./smart-craw-signal) as a stripped-down Signal server, and [smart-craw-ui](./smart-craw-ui) as the front-end assets.
 
-## Design Approach
+## Smart Craw server
+
+### Design Approach
 
 Your bot fleet is constrained to the folder that you mount into your docker container. Each new bot will have its own directory within this folder.  If you want a bot to act on a set of files (code or other text documents) you must put them inside the bot's directory.  To do this, mount the docker `/app/bots` directory into your file system.
 
 Mount docker's `/app/memory` into your file system to persistently store bot memories.  If this memory isn't mounted your bots will "lose" their memory on every pod restart.
 
-## Cautions
+### Network Topology and Security
+
+For ease of use I've given the agent carte blanche.  There is no approval requests for the `bash`, `fileEditor`, or (optional) `mcpCodeClient`.  This requires tight controls elsewhere to ensure that any deleterious actions have a small blast radius.  The [docker-compose](./docker/docker-compose.yml) helps to reduce this blast radius.
+
+Docker itself provides some sandboxing.  For example, the agent can only operate on host files via the mounted volume.  The agent could change directory, but will only be traversing directories in the docker container itself.  The agent does NOT have write access to its own code within the docker container.
+
+### Private Networks
+
+The network topology limits what the agent service and the code mcp service can access.  The agent can only access github.com, npmjs.com, pypi.org, and the LLM Api. the code mcp service can only access github.com, npmjs.com, and pypi.org.  Programatically the agent service only accesses the LLM Api.
+
+![alt text](./docs/docker_network_topology.svg)
+
+### Cautions
 
 This is intended for local and trusted networks.  An ideal setup would be to run this and access it on a local workstation.  The LLM service can be hosted elsewhere.
 
@@ -75,7 +86,99 @@ I may at some point set up authentication which would allow exposure to a wider 
 
 Under no circumstances should you host this on a cloud system or expose your ports outside of your LAN.
 
+### Smart Craw Server available environment variables
 
-## Screenshot
+Full env variables:
+* OPEN_API_COMPATIBLE_ENDPOINT (defaults to `http://host.docker.internal:11434`, local Ollama)
+* LOG_LEVEL (defaults to `info`)
+* START_THINK_TOKEN (start token for thinking, defaults to `<think/>`)
+* END_THINK_TOKEN (start token for thinking, defaults to `</think>`)
+* MCP_SERVER_LIST.  JSON string array of MCP urls
+
+## Smart Craw UI
+
+### Screenshot
 
 ![homepage](./docs/ui.png)
+
+## Smart Craw Signal
+
+### Get a free phone number from Google
+
+If you have a Google account you can create a new free phone number.
+
+### Install openjdk on mac
+
+`brew install openjdk`
+
+### Register (sends SMS verification code)
+
+`./node_modules/signal-sdk/bin/signal-cli -a +1[number] register`
+
+### Verify with the code received
+
+`./node_modules/signal-sdk/bin/signal-cli -a +1[number] verify [number]`
+
+### Run with docker compose
+
+Setup:
+
+```sh
+# create a place for claude to put persistent files
+mkdir $HOME/signal/storage/memory
+
+# allow group writes (for both the agent and mcp services to access)
+chmod -R 775 $HOME/signal/storage
+
+# keep group consistent for new files
+chmod g+s $HOME/signal/storage
+```
+
+Modify [docker-compose](./docker/docker-compose.yml) with your relevant [env](#env-variables) variables.  The run `docker compose -f docker-compose.yml up`.
+
+Run at startup:
+
+Put your (modified) [docker-compose](./docker/docker-compose.yml) in `$HOME/signal/docker`.  Place your [service](./service/llm-signal.service) in `~/.config/systemd/user/`.
+
+Then:
+
+```sh
+systemctl --user daemon-reload
+systemctl --user enable llm-signal
+systemctl --user start llm-signal
+sudo loginctl enable-linger $USER
+```
+
+### Smart Craw Signal Env variables
+
+* OPEN_API_COMPATIBLE_ENDPOINT (defaults to "http://host.docker.internal:11434", local Ollama.  If using docker compose, don't update this in `docker-compose.yml`...instead update the BACKEND_SERVICE environment variable for `nginx`.)
+* LOG_LEVEL (defaults to "info")
+* START_THINK_TOKEN (start token for thinking, defaults to "<think>")
+* END_THINK_TOKEN (start token for thinking, defaults to "</think>")
+* SIGNAL_BOT_PHONE_NUMBER (your free phone number from Google)
+* SIGNAL_USER_ADMIN_NUMBER (your actual phone number)
+* SIGNAL_REST_ENDPOINT (endpoint exposed by signal server docker, defaults to http://localhost:9001)
+
+These can also be placed in a .env file.
+
+### Run signal server locally
+
+```sh
+docker run  -p 9001:8080 \
+    -v $HOME/.local/share/signal-cli:/home/.local/share/signal-cli \
+    -e MODE=json-rpc-native bbernhard/signal-cli-rest-api:0.100-rootless
+```
+
+### Run
+
+```sh
+cd smart-craw-signal
+node index.ts
+```
+
+### Run CLI without Signal for debugging
+
+```sh
+cd smart-craw-signal
+MOCK=yes node index.ts
+```
