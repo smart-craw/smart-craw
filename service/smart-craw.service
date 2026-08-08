@@ -5,8 +5,7 @@ Description=smart craw docker service
 Type=oneshot
 RemainAfterExit=yes
 # see install.sh
-WorkingDirectory=%h/signal/docker
-ExecStartPre=mkdir -p %h/signal/storage/memory
+WorkingDirectory=%h/smart-craw/docker
 ExecStart=/usr/bin/docker compose -f docker-compose.yml up --detach
 ExecStop=/usr/bin/docker compose -f docker-compose.yml stop
 
