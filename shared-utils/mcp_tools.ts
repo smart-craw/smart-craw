@@ -1,4 +1,4 @@
-import { tool, McpClient, McpTransport } from "@strands-agents/sdk";
+import { tool, McpClient } from "@strands-agents/sdk";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
 export function generateNoRuntimeInstructions(tools: string[]) {
@@ -21,7 +21,7 @@ export async function getAllMcpTools(mcpServerUrls: string[]) {
       new McpClient({
         transport: new StreamableHTTPClientTransport(
           new URL(url),
-        ) as McpTransport,
+        )
       }),
   );
 

@@ -16,7 +16,9 @@ RUN chown -R root:root /app && chmod -R 755 /app
 RUN chown node:node /app/mounts /app/memory && chmod 700 /app/mounts /app/memory
 
 WORKDIR /app/smart-craw-signal/
-RUN npm ci --only=production
+RUN npm ci --omit=dev
+# this lets both the "standard" app and shared-utils access the node_modules
+RUN mv node_modules /app/
 # Switch to the non-root user
 USER node
 # don't manually set AGENT_CWD...keep this default
