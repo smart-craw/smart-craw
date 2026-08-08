@@ -1,6 +1,6 @@
 FROM nginx:stable-alpine3.21-perl
-ADD docker/smart-craw-signal/nginx.docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-ADD docker/smart-craw-signal/nginx.conf /etc/nginx/nginx.conf.template
+ADD docker/llm-proxy/nginx.docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+ADD docker/llm-proxy/nginx.conf /etc/nginx/nginx.conf.template
 
 RUN mkdir -p /var/run/nginx && chown -R nginx:nginx /var/run/nginx
 RUN chown -R nginx:nginx /var/cache/nginx && \

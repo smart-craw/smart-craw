@@ -105,6 +105,54 @@ jobs:
         run: |
           gh release upload ${{ github.event.release.tag_name }} ./api_docs/asyncapi.json
 
+  build_smart_craw_llm_proxy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup buildx docker
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: generate nginx docker
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-llm-proxy:${{ github.event.release.tag_name }} -f docker/llm-proxy/nginx.Dockerfile . --push
+
+  build_smart_craw_web_proxy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup buildx docker
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: generate squid docker
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-web-proxy:${{ github.event.release.tag_name }} -f docker/web-proxy/squid.Dockerfile . --push
+
   build_smart_craw_signal:
     runs-on: ubuntu-latest
     permissions:
@@ -127,12 +175,4 @@ jobs:
 
       - name: generate docker
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-signal:${{ github.event.release.tag_name }} -f docker/smart-craw-signal/Dockerfile . --push
-
-      - name: generate nginx docker
-        run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-signal-nginx:${{ github.event.release.tag_name }} -f docker/smart-craw-signal/nginx.Dockerfile . --push
-
-      - name: generate squid docker
-        run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-signal-squid:${{ github.event.release.tag_name }} -f docker/smart-craw-signal/squid.Dockerfile . --push
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/smart-craw/smart-craw-signal:${{ github.event.release.tag_name }} -f docker/smart-craw-signal/signal.Dockerfile . --push
