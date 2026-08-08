@@ -15,7 +15,7 @@ export const createSessionManager = (
   sessionStorageLocation: string,
   onComplete: (fullMessage: string, isError: boolean) => void,
   workingDirectory: string,
-  mcpCodeUrl?: string,
+  mcpServerUrls: string[],
   agentId?: string,
 ) => {
   let agent: Agent | undefined;
@@ -87,7 +87,7 @@ export const createSessionManager = (
       sessionDirectory,
       sessionStorageLocation,
       localAgentId,
-      mcpCodeUrl,
+      mcpServerUrls,
     );
     return agent;
   };

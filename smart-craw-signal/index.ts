@@ -22,12 +22,14 @@ const workingDirectory = process.env.AGENT_CWD || cwd();
 const sessionDirectory =
   process.env.SESSION_DIRECTORY || path.join(cwd(), "./sessions");
 const signalUrl = process.env.SIGNAL_REST_ENDPOINT || "http://localhost:9001";
-const codeMcpEndpoint = process.env.MCP_CODE_SERVER_ENDPOINT;
+const MCP_URLS = process.env.MCP_SERVER_LIST
+  ? JSON.parse(process.env.MCP_SERVER_LIST)
+  : [];
 const commandPrefix = "/";
 
 logger.info(`Start think token: ${startThink}, End think Token ${endThink}`);
 logger.info(`API endpoint: ${process.env.OPEN_API_COMPATIBLE_ENDPOINT}`);
-logger.info(`Code MCP endpoint: ${codeMcpEndpoint}`);
+logger.info(`MCP endpoints: ${MCP_URLS.join(",")}`);
 
 const bot = new SignalBot({
   phoneNumber: `+1${process.env.SIGNAL_BOT_PHONE_NUMBER}`,
@@ -62,7 +64,7 @@ const sessionManager = createSessionManager(
   sessionDirectory,
   onComplete,
   workingDirectory,
-  codeMcpEndpoint,
+  MCP_URLS,
 );
 
 bot.addCommand({

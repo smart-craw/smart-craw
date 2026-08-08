@@ -164,6 +164,7 @@ sudo loginctl enable-linger $USER
 * SIGNAL_BOT_PHONE_NUMBER (your free phone number from Google)
 * SIGNAL_USER_ADMIN_NUMBER (your actual phone number)
 * SIGNAL_REST_ENDPOINT (endpoint exposed by signal server docker, defaults to http://localhost:9001)
+* MCP_SERVER_LIST.  JSON string array of MCP urls
 
 These can also be placed in a .env file.
 
