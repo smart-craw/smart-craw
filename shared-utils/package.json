@@ -1,0 +1,29 @@
+{
+  "name": "smart-craw-utils",
+  "version": "1.0.0",
+  "description": "Utilities for Smart Craw",
+  "keywords": [
+    "ai",
+    "llm",
+    "smart-craw"
+  ],
+  "license": "ISC",
+  "author": "Daniel Stahl",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "test": "vitest"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@strands-agents/sdk": "^1.2.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@strands-agents/sdk": "^1.2.0",
+    "@types/node": "^25.6.0",
+    "@vitest/coverage-v8": "^4.1.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.4"
+  }
+}

@@ -26,6 +26,7 @@ Any model that works with Anthropic's API can be used.  Want a fully private exp
 
 ## Get smarted!
 
+### Local agent, run in Docker
 Store memories for later use:
 `mkdir memory`
 
@@ -51,6 +52,11 @@ ghcr.io/smart-craw/smart-craw:v0.2.3
 ```
 
 On a Mac, you need to proxy remote calls through your host.  A simple way to do that is to run something like `socat TCP-LISTEN:9000,fork TCP:[yourllmurl]` in a seperate terminal (or using nohup), and then set `http://host.docker.internal:9000` as your OPEN_API_COMPATIBLE_ENDPOINT.  Alternatively, run the [example script](./example/startup_mac.sh) passing in `[yourllmurl]` (without the "http://") and the docker tag (eg, `v0.2.3`) as the arguments to the script.  Eg, `./example/startup_mac.sh llm.home:8080 v0.2.3 "<|channel>" "<channel|>"`.
+
+### Full app with Docker Compose
+
+Modify [docker-compose](./docker/docker-compose.yml) with your relevant variables ([smart-craw-server](#smart-craw-server-available-environment-variables), [smart-craw-signal](#smart-craw-signal-env-variables)).  The run `docker compose -f docker-compose.yml up`.  Note that you can mix and match: only run agent and ui, or only run the app with Signal based on your needs.
+
 
 # Architecture
 
@@ -78,7 +84,7 @@ The network topology limits what the agent service and the code mcp service can 
 
 ### Cautions
 
-This is intended for local and trusted networks.  An ideal setup would be to run this and access it on a local workstation.  The LLM service can be hosted elsewhere.
+This is intended for local and trusted networks.
 
 If you run this on a Raspberry Pi and access the UI "remotely" it is strongly recommended to set static IPs and block all traffic except from your workstation.  Similarly, if you want to access this from your phone on your local network, have your local router assign a static IP to your phone and block all traffic except from your phone.
 

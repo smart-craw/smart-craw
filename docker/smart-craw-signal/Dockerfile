@@ -1,8 +1,7 @@
 FROM node:24-alpine
-COPY smart-craw-signal/llm /app/llm/
-COPY smart-craw-signal/signal /app/signal/
-COPY *.json /app/
-COPY *.ts /app/
+COPY smart-craw-signal/ /app/smart-craw-signal/
+COPY shared-utils/ /app/shared-utils/
+
 RUN apk add --no-cache bash # bash is needed for claude code
 
 # location of mounted files
@@ -16,7 +15,7 @@ RUN chown -R root:root /app && chmod -R 755 /app
 # Grant node write access ONLY to the specific dirs
 RUN chown node:node /app/mounts /app/memory && chmod 700 /app/mounts /app/memory
 
-WORKDIR /app/
+WORKDIR /app/smart-craw-signal/
 RUN npm ci --only=production
 # Switch to the non-root user
 USER node

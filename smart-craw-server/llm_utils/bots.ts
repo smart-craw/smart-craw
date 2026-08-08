@@ -17,11 +17,10 @@ import {
   dateTimeTool,
   generateNoRuntimeInstructions,
   getAllMcpTools,
-} from "./tools.ts";
+} from "../../shared-utils/mcp_tools.ts";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+import { blockProgramExecution } from "../../shared-utils/utils.ts";
+
 export async function createAgent(
   llmUrl: string,
   botId: string,
@@ -75,15 +74,7 @@ export async function createAgent(
     logger.info(JSON.stringify(event, null, 2));
   });
   agent.addHook(BeforeToolCallEvent, (event) => {
-    if (event.toolUse.name === "bash" && isRecord(event.toolUse.input)) {
-      const { command } = event.toolUse.input;
-      if (
-        typeof command === "string" &&
-        /\b(node|npm|yarn|python3?|pip3?|cargo|rustc)\b/.test(command)
-      ) {
-        event.cancel = bashInstructions;
-      }
-    }
+    blockProgramExecution(event, bashInstructions);
     logger.info(JSON.stringify(event, null, 2));
   });
   agent.addHook(InterruptEvent, (event) => {

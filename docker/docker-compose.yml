@@ -41,7 +41,8 @@ services:
       HTTP_PROXY: http://squid-proxy:3128
       HTTPS_PROXY: http://squid-proxy:3128
     volumes:
-      - $HOME/signal/storage:/app/code_location
+      # same storage location as smart-craw-signal and smart-craw-agent
+      - path/to/your/storage:/app/code_location
 
   smart-craw-signal:
     networks:
@@ -50,8 +51,8 @@ services:
     image: ghcr.io/smart-craw/smart-craw-signal:v0.3.4
     user: "node:1500" # same group as code-mcp since both read/write to the same directory
     volumes:
-      - "$HOME/signal/storage:/app/mounts"
-      - "$HOME/signal/storage/memory:/app/memory"
+      - "path/to/your/storage:/app/mounts"
+      - "path/to/your/memory:/app/memory"
     environment:
       OPEN_API_COMPATIBLE_ENDPOINT: http://nginx:8080
       SIGNAL_BOT_PHONE_NUMBER: [yourbotphonenumber]
