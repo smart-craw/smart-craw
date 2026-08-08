@@ -1,5 +1,3 @@
-import { generateBotPath } from "../file_utils/utils.ts";
-import { logger } from "../logging.ts";
 import {
   Agent,
   SessionManager,
@@ -7,12 +5,14 @@ import {
   BeforeInvocationEvent,
   BeforeToolCallEvent,
   BeforeModelCallEvent,
-  InterruptEvent,
 } from "@strands-agents/sdk";
 import { OpenAIModel } from "@strands-agents/sdk/models/openai";
-import { LocalFileStorage } from "@strands-agents/sdk/storage";
+import { logger } from "../logging.ts";
+import { getSystemPrompt } from "./prompt.ts";
+
 import { bash } from "@strands-agents/sdk/vended-tools/bash";
 import { fileEditor } from "@strands-agents/sdk/vended-tools/file-editor";
+import { LocalFileStorage } from "@strands-agents/sdk/storage";
 import {
   dateTimeTool,
   generateNoRuntimeInstructions,
@@ -23,13 +23,12 @@ import { blockProgramExecution } from "../../shared-utils/utils.ts";
 
 export async function createAgent(
   llmUrl: string,
-  botId: string,
-  botName: string,
-  botDirectory: string,
-  sessionStorageDirectory: string,
+  sessionId: string,
+  sessionDirectory: string, //where agent should store its files
+  sessionStorageLocation: string, //equivalent to ~/.claude in claude code
+  agentId: string,
   mcpServerUrls: string[],
-  notificationCb: (message: string, type: string) => void,
-): Promise<Agent> {
+) {
   const model = new OpenAIModel({
     api: "chat",
     apiKey: "helloworld",
@@ -40,23 +39,22 @@ export async function createAgent(
   });
 
   const session = new SessionManager({
-    sessionId: botId,
-    storage: new LocalFileStorage(sessionStorageDirectory),
+    sessionId,
+    storage: new LocalFileStorage(sessionStorageLocation),
   });
   const mcpTools = await getAllMcpTools(mcpServerUrls);
   const mcpToolNames = mcpTools.map((v) => v.name);
   const bashInstructions = generateNoRuntimeInstructions(mcpToolNames);
-
   const tools = [bash, fileEditor, dateTimeTool, ...mcpTools];
-  const botPath = generateBotPath(botDirectory, botName);
+
   // Create an agent with tools
   const agent = new Agent({
-    systemPrompt: `Perform your actions in this directory: ${botPath}.  Your directions will come via messages that may often repeat.  Don't worry if they repeat, simply follow the directions.`,
+    systemPrompt: getSystemPrompt(sessionDirectory),
     sessionManager: session,
     model,
     printer: false,
     tools,
-    id: botId, //bot id and session id are the same
+    id: agentId,
     conversationManager: new SummarizingConversationManager({
       summaryRatio: 0.5,
       preserveRecentMessages: 10,
@@ -71,16 +69,8 @@ export async function createAgent(
     logger.info(JSON.stringify(event, null, 2));
   });
   agent.addHook(BeforeToolCallEvent, (event) => {
-    logger.info(JSON.stringify(event, null, 2));
-  });
-  agent.addHook(BeforeToolCallEvent, (event) => {
     blockProgramExecution(event, bashInstructions);
     logger.info(JSON.stringify(event, null, 2));
-  });
-  agent.addHook(InterruptEvent, (event) => {
-    const messageText = JSON.stringify(event, null, 2);
-    logger.info(messageText);
-    notificationCb(messageText, "interrupt");
   });
   return agent;
 }

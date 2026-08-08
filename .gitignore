@@ -1,1 +1,4 @@
 bots.db
+docker/docker-compose-*.yml
+node_modules
+error.log

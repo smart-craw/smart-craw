@@ -1,16 +1,7 @@
-FROM node:24-alpine AS builder
-COPY smart-craw-ui/ /app/smart-craw-ui/
-COPY shared/ /app/shared/
-WORKDIR /app/smart-craw-ui/
-RUN npm ci
-RUN ls -la
-RUN npm run build
-
 FROM node:24-alpine
-
-COPY --from=builder /app/smart-craw-ui/dist /app/dist/
 COPY smart-craw-server/ /app/smart-craw-server/
-COPY docker/script.sh /app/smart-craw-server/script.sh
+COPY shared-utils/ /app/shared-utils/
+COPY docker/smart-craw-server/script.sh /app/smart-craw-server/script.sh
 COPY shared/ /app/shared/
 RUN apk add --no-cache bash # bash is needed for tool calls
 # location of sqlite db
@@ -31,13 +22,13 @@ RUN npm ci --only=production
 # Switch to the non-root user
 USER node
 # don't manually set...keep this default
-ENV STATIC_HTML_LOCATION="/app/dist"
-# don't manually set...keep this default
 ENV DB_LOCATION="/app/db"
 # don't manually set...keep this default
 ENV BOT_LOCATION="/app/bots"
 # don't manually set...keep this default
 ENV SESSION_STORAGE_LOCATION="/app/memory"
+# doesn't matter the value, just needs to be set
+ENV SERVER_ONLY="serveronly"
 ENV OPEN_API_COMPATIBLE_ENDPOINT="http://host.docker.internal:11434"
 ENV LOG_LEVEL="info"
 # "<|channel>" for gemma

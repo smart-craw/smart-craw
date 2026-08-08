@@ -1,0 +1,4 @@
+{
+  "private": true,
+  "workspaces": ["shared-utils", "smart-craw-signal", "smart-craw-server"]
+}
