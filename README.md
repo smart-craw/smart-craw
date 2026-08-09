@@ -66,6 +66,9 @@ mkdir $HOME/smart-craw/storage/memory
 # location for agent to put files
 mkdir $HOME/smart-craw/storage/agents
 
+# mkdir so that docker compose doesn't (which has wrong file perms)
+mkdir $HOME/smart-craw/storage/db
+
 # allow group writes (for both the agents and mcp services to access)
 chmod -R 775 $HOME/smart-craw/storage/agents
 
