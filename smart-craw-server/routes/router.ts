@@ -151,6 +151,7 @@ export const routeExecuteBot = (
   );
 };
 export const LLM_ID = "llm";
+export const LLM_NAME = "llm";
 export const routeInstantiateLlm = (streamUtils: StreamUtils) => {
   streamUtils.sendToClient(
     JSON.stringify({

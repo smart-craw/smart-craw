@@ -1,4 +1,11 @@
 {
   "private": true,
-  "workspaces": ["shared-utils", "smart-craw-signal", "smart-craw-server"]
+  "workspaces": [
+    "shared-utils",
+    "smart-craw-signal",
+    "smart-craw-server"
+  ],
+  "devDependencies": {
+    "prettier": "^3.9.6"
+  }
 }

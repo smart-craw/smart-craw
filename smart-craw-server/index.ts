@@ -30,19 +30,24 @@ import { setAgents } from "./llm_utils/agentStore.ts";
 import { logger } from "./logging.ts";
 import { createDirectoriesOnStart } from "./file_utils/startup.ts";
 import { manageBotFolder } from "./file_utils/bot_folder.ts";
-import { uiPath, botPath, isServerOnly } from "./locations.ts";
+import { uiPath, isServerOnly } from "./locations.ts";
 import { handleStreamingMessage } from "./routes/utils.ts";
 import { generateServer } from "./server.ts";
-const startThink = process.env.START_THINK_TOKEN || "<think>";
-const endThink = process.env.END_THINK_TOKEN || "</think>";
-const sessionStorageDirectory =
-  process.env.SESSION_STORAGE_LOCATION || process.cwd();
+
+import {
+  startThinkToken,
+  endThinkToken,
+  workingDirectory,
+  sessionDirectory,
+  mcpUrls,
+  openAiEndpoint,
+} from "../shared-utils/env.ts";
 
 if (!isServerOnly) {
   logger.debug(`UI path: ${uiPath}`);
 }
-logger.debug(`Bot path: ${botPath}`);
-logger.info(`Start and end tokens: ${startThink}, ${endThink}`);
+logger.debug(`Bot path: ${workingDirectory}`);
+logger.info(`Start and end tokens: ${startThinkToken}, ${endThinkToken}`);
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 8000;
 const server = generateServer(isServerOnly, uiPath, port);
@@ -57,33 +62,29 @@ const writeAllClients = (wss: WebSocketServer) => (message: string) => {
 };
 
 //async
-createDirectoriesOnStart(botPath, getBots);
+createDirectoriesOnStart(workingDirectory, getBots);
 
 //Global state
 const streamUtils = handleStreamingMessage(
   writeAllClients(wss),
-  startThink,
-  endThink,
+  startThinkToken,
+  endThinkToken,
 );
-const LLM_URL =
-  process.env.OPEN_API_COMPATIBLE_ENDPOINT || "http://localhost:11434";
-const MCP_URLS = process.env.MCP_SERVER_LIST
-  ? JSON.parse(process.env.MCP_SERVER_LIST)
-  : [];
+
 const holdAgents = await setAgents(
-  LLM_URL,
+  openAiEndpoint,
   getBots,
   streamUtils,
-  botPath,
-  sessionStorageDirectory,
-  MCP_URLS,
+  workingDirectory,
+  sessionDirectory,
+  mcpUrls,
   insertMessage,
 );
 
 //pass wss to anything that writes back, and write back to ALL
 wss.on("connection", function connection(ws) {
   logger.info("Connection established");
-  logger.info(`LLM server url: ${LLM_URL}`);
+  logger.info(`LLM server url: ${openAiEndpoint}`);
   ws.on("error", (err) => {
     logger.error(err);
   });
@@ -93,11 +94,11 @@ wss.on("connection", function connection(ws) {
       case "/bot/create":
         routeCreateBot(
           input as CreateBotInput,
-          LLM_URL,
-          botPath,
-          manageBotFolder(botPath, getBot),
-          sessionStorageDirectory,
-          MCP_URLS,
+          openAiEndpoint,
+          workingDirectory,
+          manageBotFolder(workingDirectory, getBot),
+          sessionDirectory,
+          mcpUrls,
           insertBot,
           insertBotCron,
           streamUtils,

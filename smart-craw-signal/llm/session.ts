@@ -16,20 +16,16 @@ export const createSessionManager = (
   onComplete: (fullMessage: string, isError: boolean) => void,
   workingDirectory: string,
   mcpServerUrls: string[],
-  agentId?: string,
 ) => {
   let agent: Agent | undefined;
-  const localAgentId = agentId || "agent";
+  const localAgentId = "agent";
   let currentSessionId: string = randomUUID();
   const queue: string[] = [];
   let running = false;
 
-  const absoluteWorkingDirectory = path.isAbsolute(workingDirectory)
-    ? workingDirectory
-    : path.join(cwd(), workingDirectory);
   //tools adopt the process.cwd()
-  logger.info(`Working directory is ${absoluteWorkingDirectory}`);
-  chdir(absoluteWorkingDirectory);
+  logger.info(`Working directory is ${workingDirectory}`);
+  chdir(workingDirectory);
 
   // while in theory no messages will arrive while
   // previous response is still running, this ensures that
@@ -77,7 +73,7 @@ export const createSessionManager = (
   };
 
   const startSession = async (sessionId: string) => {
-    const sessionDirectory = path.join(absoluteWorkingDirectory, sessionId);
+    const sessionDirectory = path.join(workingDirectory, sessionId);
     //does not error if directory already exists
     await mkdir(sessionDirectory, { recursive: true });
     cancelMessage();
@@ -92,55 +88,64 @@ export const createSessionManager = (
     return agent;
   };
 
-  // this ONLY gets from filesystem.  If you create a new session
-  // and IMMEDIATELY list all sessions, the newest won't be displayed
-  const getSessions = async () => {
+  const getSessionFolders = async () => {
     const files = await readdir(sessionStorageLocation);
     const fileStats = await Promise.all(
       files.map((v) =>
         Promise.all([v, stat(path.join(sessionStorageLocation, v))]),
       ),
     );
-    const sessions = await Promise.all(
-      fileStats
-        .filter(([_, v]) => v.isDirectory())
-        .map(async ([folderName]) => {
-          //see https://strandsagents.com/docs/user-guide/concepts/agents/session-management/#file-storage-structure
-          const latestSessionInfo = path.join(
-            sessionStorageLocation,
-            folderName,
-            "scopes",
-            "agent",
-            localAgentId,
-            "snapshots",
-            "snapshot_latest.json",
-          );
-          try {
-            const { createdAt, data } = JSON.parse(
-              await readFile(latestSessionInfo, "utf-8"),
-            );
+    return fileStats
+      .filter(([_, v]) => v.isDirectory())
+      .map(([folderName, stats]) => ({
+        fsCreatedAt: stats.birthtime,
+        sessionId: folderName,
+      }));
+  };
 
-            return {
-              createdAt,
-              summary: data.messages[0].content[0]["text"],
-              sessionId: folderName,
-            };
-          } catch (err) {
-            const error = err as Error;
-            logger.error(`Error! ${error.name}: ${error.message}`);
-            return null;
-          }
-        }),
+  // this ONLY gets from filesystem.  If you create a new session
+  // and IMMEDIATELY list all sessions, the newest won't be displayed
+  const getSessions = async () => {
+    const fileStats = await getSessionFolders();
+    const sessions = await Promise.all(
+      fileStats.map(async ({ sessionId }) => {
+        //see https://strandsagents.com/docs/user-guide/concepts/agents/session-management/#file-storage-structure
+        const latestSessionInfo = path.join(
+          sessionStorageLocation,
+          sessionId,
+          "scopes",
+          "agent",
+          localAgentId,
+          "snapshots",
+          "snapshot_latest.json",
+        );
+        try {
+          const { createdAt, data } = JSON.parse(
+            await readFile(latestSessionInfo, "utf-8"),
+          );
+          return {
+            createdAt,
+            summary: data.messages[0].content[0]["text"],
+            sessionId,
+          };
+        } catch (err) {
+          const error = err as Error;
+          logger.error(`Error! ${error.name}: ${error.message}`);
+          return null;
+        }
+      }),
     );
     return sessions.filter((v) => v !== null);
   };
 
   const loadLastSessionOrCreateInitial = async () => {
-    const sessions = await getSessions();
-    sessions.sort((a, b) => b.createdAt - a.createdAt);
-    logger.debug(`Sessions: ${JSON.stringify(sessions, null, 2)}`);
-    if (sessions.length > 0) {
-      currentSessionId = sessions[0].sessionId;
+    const sessionIds = await getSessionFolders();
+    sessionIds.sort(
+      (a, b) => b.fsCreatedAt.getTime() - a.fsCreatedAt.getTime(),
+    );
+    logger.debug(`Sessions: ${JSON.stringify(sessionIds, null, 2)}`);
+    if (sessionIds.length > 0) {
+      currentSessionId = sessionIds[0].sessionId;
     }
     await startSession(currentSessionId);
   };

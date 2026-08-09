@@ -9,27 +9,29 @@ async function loadSignalBot() {
 }
 const { SignalBot } = await loadSignalBot();
 import "dotenv/config";
-import path from "node:path";
-import { cwd } from "node:process";
 import { parseMessage } from "./llm/response.ts";
 import { logger } from "./logging.ts";
 import { createSessionManager } from "./llm/session.ts";
 
-const startThink = process.env.START_THINK_TOKEN || "<think>";
-const endThink = process.env.END_THINK_TOKEN || "</think>";
+import {
+  startThinkToken,
+  endThinkToken,
+  workingDirectory,
+  sessionDirectory,
+  mcpUrls,
+  openAiEndpoint,
+} from "../shared-utils/env.ts";
+
 const adminNumber = `+1${process.env.SIGNAL_USER_ADMIN_NUMBER}`;
-const workingDirectory = process.env.AGENT_CWD || cwd();
-const sessionDirectory =
-  process.env.SESSION_DIRECTORY || path.join(cwd(), "./sessions");
 const signalUrl = process.env.SIGNAL_REST_ENDPOINT || "http://localhost:9001";
-const MCP_URLS = process.env.MCP_SERVER_LIST
-  ? JSON.parse(process.env.MCP_SERVER_LIST)
-  : [];
+
 const commandPrefix = "/";
 
-logger.info(`Start think token: ${startThink}, End think Token ${endThink}`);
+logger.info(
+  `Start think token: ${startThinkToken}, End think Token ${endThinkToken}`,
+);
 logger.info(`API endpoint: ${process.env.OPEN_API_COMPATIBLE_ENDPOINT}`);
-logger.info(`MCP endpoints: ${MCP_URLS.join(",")}`);
+logger.info(`MCP endpoints: ${mcpUrls.join(",")}`);
 
 const bot = new SignalBot({
   phoneNumber: `+1${process.env.SIGNAL_BOT_PHONE_NUMBER}`,
@@ -51,8 +53,8 @@ const onComplete = (fullMessage: string, isError: boolean) => {
     bot.sendMessage(`Bot didn't complete successfully! ${fullMessage}`);
   } else {
     const { reasoning, message } = parseMessage(
-      startThink,
-      endThink,
+      startThinkToken,
+      endThinkToken,
       fullMessage,
     );
     bot.sendMessage(message);
@@ -60,11 +62,11 @@ const onComplete = (fullMessage: string, isError: boolean) => {
   }
 };
 const sessionManager = createSessionManager(
-  process.env.OPEN_API_COMPATIBLE_ENDPOINT || "http://localhost:11434",
+  openAiEndpoint,
   sessionDirectory,
   onComplete,
   workingDirectory,
-  MCP_URLS,
+  mcpUrls,
 );
 
 bot.addCommand({
