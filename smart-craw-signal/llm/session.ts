@@ -1,5 +1,4 @@
 import path from "node:path";
-import { chdir, cwd } from "node:process";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { logger } from "../logging.ts";
@@ -25,7 +24,7 @@ export const createSessionManager = (
 
   //tools adopt the process.cwd()
   logger.info(`Working directory is ${workingDirectory}`);
-  chdir(workingDirectory);
+  process.chdir(workingDirectory);
 
   // while in theory no messages will arrive while
   // previous response is still running, this ensures that
