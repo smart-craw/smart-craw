@@ -21,7 +21,7 @@
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.0.0",
     "@strands-agents/sdk": "^1.2.0",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.9.5",
     "@vitest/coverage-v8": "^4.1.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.4"

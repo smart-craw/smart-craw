@@ -27,9 +27,9 @@ USER node
 # don't manually set...keep this default
 ENV DB_LOCATION="/app/db"
 # don't manually set...keep this default
-ENV BOT_LOCATION="/app/bots"
+ENV AGENT_CWD="/app/bots"
 # don't manually set...keep this default
-ENV SESSION_STORAGE_LOCATION="/app/memory"
+ENV SESSION_DIRECTORY="/app/memory"
 # doesn't matter the value, just needs to be set
 ENV SERVER_ONLY="serveronly"
 ENV OPEN_API_COMPATIBLE_ENDPOINT="http://host.docker.internal:11434"

@@ -23,12 +23,9 @@ export const createSessionManager = (
   const queue: string[] = [];
   let running = false;
 
-  const absoluteWorkingDirectory = path.isAbsolute(workingDirectory)
-    ? workingDirectory
-    : path.join(cwd(), workingDirectory);
   //tools adopt the process.cwd()
-  logger.info(`Working directory is ${absoluteWorkingDirectory}`);
-  chdir(absoluteWorkingDirectory);
+  logger.info(`Working directory is ${workingDirectory}`);
+  chdir(workingDirectory);
 
   // while in theory no messages will arrive while
   // previous response is still running, this ensures that
@@ -76,7 +73,7 @@ export const createSessionManager = (
   };
 
   const startSession = async (sessionId: string) => {
-    const sessionDirectory = path.join(absoluteWorkingDirectory, sessionId);
+    const sessionDirectory = path.join(workingDirectory, sessionId);
     //does not error if directory already exists
     await mkdir(sessionDirectory, { recursive: true });
     cancelMessage();

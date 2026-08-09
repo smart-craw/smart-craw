@@ -7,6 +7,7 @@ export async function createDirectoriesOnStart(
   directory: string,
   getBots: () => BotOutput[],
 ) {
+  //tools adopt the process.cwd()
   chdir(directory);
   const allNames = [...getBots().map((b) => b.name), LLM_NAME];
   return await Promise.all(
