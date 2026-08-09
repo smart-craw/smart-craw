@@ -40,7 +40,7 @@ services:
     environment:
       HTTP_PROXY: http://squid-proxy:3128
       HTTPS_PROXY: http://squid-proxy:3128
-    volumes: # docker compose creates these directories if they don't exist
+    volumes: # docker compose creates these directories if they don't exist, but possibly with wrong permissions
       # same storage location as smart-craw-signal and smart-craw-agent
       - $HOME/smart-craw/storage/agents:/app/code_location
 
@@ -50,7 +50,7 @@ services:
       - mcp-internal # so agent can hit code-mcp
     image: ghcr.io/smart-craw/smart-craw-signal:v0.5.2
     user: "node:1500" # same group as code-mcp since both read/write to the same directory
-    volumes: # docker compose creates these directories if they don't exist
+    volumes: # docker compose creates these directories if they don't exist, but possibly with wrong permissions
       - "$HOME/smart-craw/storage/agents:/app/mounts"
       - "$HOME/smart-craw/storage/memory:/app/memory"
     environment:
@@ -91,7 +91,7 @@ services:
       START_THINK_TOKEN: "<|channel>"
       END_THINK_TOKEN: "<channel|>"
       MCP_SERVER_LIST: '["http://code-mcp:8000/mcp"]'
-    volumes: # docker compose creates these directories if they don't exist
+    volumes: # docker compose creates these directories if they don't exist, but possibly with wrong permissions
       - "$HOME/smart-craw/storage/db:/app/db"
       - "$HOME/smart-craw/storage/agents:/app/bots"
       - "$HOME/smart-craw/storage/memory:/app/memory"
