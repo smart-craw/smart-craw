@@ -15,18 +15,22 @@ export const dateTimeTool = tool({
   },
 });
 
-export async function getAllMcpTools(mcpServerUrls: string[]) {
-  const mcpCodeClients = mcpServerUrls.map(
+export async function getAllMcps(mcpServerUrls: string[]) {
+  const mcpClients = mcpServerUrls.map(
     (url) =>
       new McpClient({
-        transport: new StreamableHTTPClientTransport(
-          new URL(url),
-        )
+        transport: new StreamableHTTPClientTransport(new URL(url)),
       }),
   );
-
   const mcpTools = (
-    await Promise.all(mcpCodeClients.map((v) => v.listTools()))
+    await Promise.all(mcpClients.map((v) => v.listTools()))
   ).flat();
-  return mcpTools;
+  return { mcpTools, mcpClients };
+}
+export function refreshMcps(clients: McpClient[]) {
+  clients.forEach((mcp) => {
+    if (mcp.connectionState !== "connected") {
+      mcp.connect();
+    }
+  });
 }
