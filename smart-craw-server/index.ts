@@ -14,7 +14,6 @@ import {
   getMessages,
   insertBotCron,
 } from "./db_utils/use_db.ts";
-import { chdir } from "node:process";
 import { WebSocketServer } from "ws";
 import {
   routeCreateBot,
@@ -49,7 +48,7 @@ if (!isServerOnly) {
 logger.info(`Bot path: ${workingDirectory}`);
 logger.info(`Start and end tokens: ${startThinkToken}, ${endThinkToken}`);
 //tools adopt the process.cwd()
-chdir(workingDirectory);
+process.chdir(workingDirectory);
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 8000;
 const server = generateServer(isServerOnly, uiPath, port);
