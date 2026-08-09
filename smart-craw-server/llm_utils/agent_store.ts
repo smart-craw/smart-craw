@@ -3,6 +3,7 @@ import { type BotOutput, type AgentWithSchedule } from "../models.ts";
 import { LLM_ID, LLM_NAME, notification, runAgent } from "../routes/router.ts";
 import { type StreamUtils } from "../routes/utils.ts";
 import { createAgent } from "./bots.ts";
+import { chdir } from "node:process";
 
 export async function setAgents(
   llmUrl: string,
@@ -13,6 +14,8 @@ export async function setAgents(
   mcpServerUrls: string[],
   insertMessage: (id: string, message: string, reasoning: string) => void,
 ) {
+  //tools adopt the process.cwd()
+  chdir(botDirectory);
   const botAgents: Promise<[string, AgentWithSchedule][]> = Promise.all(
     getBots().map(async ({ name, instructions, id, cron }: BotOutput) => {
       const agent = await createAgent(

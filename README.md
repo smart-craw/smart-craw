@@ -60,8 +60,9 @@ Modify [docker-compose](./docker/docker-compose.yml) with your relevant variable
 A recommended file structure and permissions can be created as follows:
 
 ```sh
-# create a place for agent to put persistent files
-mkdir $HOME/smart-craw/storage/memory
+# create a place for agent to put session history
+mkdir -p $HOME/smart-craw/storage/memory/server
+mkdir $HOME/smart-craw/storage/memory/signal
 
 # location for agent to put files
 mkdir $HOME/smart-craw/storage/agents
