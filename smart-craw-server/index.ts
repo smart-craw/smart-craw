@@ -26,7 +26,7 @@ import {
   routeStopBot,
   routeInstantiateLlm,
 } from "./routes/router.ts";
-import { setAgents } from "./llm_utils/agentStore.ts";
+import { setAgents } from "./llm_utils/agent_store.ts";
 import { logger } from "./logging.ts";
 import { createDirectoriesOnStart } from "./file_utils/startup.ts";
 import { manageBotFolder } from "./file_utils/bot_folder.ts";
@@ -46,7 +46,7 @@ import {
 if (!isServerOnly) {
   logger.debug(`UI path: ${uiPath}`);
 }
-logger.debug(`Bot path: ${workingDirectory}`);
+logger.info(`Bot path: ${workingDirectory}`);
 logger.info(`Start and end tokens: ${startThinkToken}, ${endThinkToken}`);
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 8000;

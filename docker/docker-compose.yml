@@ -52,7 +52,7 @@ services:
     user: "node:1500" # same group as code-mcp since both read/write to the same directory
     volumes: # docker compose creates these directories if they don't exist, but possibly with wrong permissions
       - "$HOME/smart-craw/storage/agents:/app/mounts"
-      - "$HOME/smart-craw/storage/memory:/app/memory"
+      - "$HOME/smart-craw/storage/memory/signal:/app/memory"
     environment:
       OPEN_API_COMPATIBLE_ENDPOINT: http://nginx:8080
       SIGNAL_BOT_PHONE_NUMBER: [yourbotphonenumber]
@@ -94,7 +94,7 @@ services:
     volumes: # docker compose creates these directories if they don't exist, but possibly with wrong permissions
       - "$HOME/smart-craw/storage/db:/app/db"
       - "$HOME/smart-craw/storage/agents:/app/bots"
-      - "$HOME/smart-craw/storage/memory:/app/memory"
+      - "$HOME/smart-craw/storage/memory/server:/app/memory"
 
 networks:
   signal-network:
