@@ -85,6 +85,7 @@ services:
     networks:
       - agent-internal # isolate
     image: ghcr.io/smart-craw/smart-craw-agent:v0.5.2
+    user: "node:1500" # same group as code-mcp since both read/write to the same directory
     environment:
       OPEN_API_COMPATIBLE_ENDPOINT: http://nginx:8080
       START_THINK_TOKEN: "<|channel>"

@@ -1,6 +1,6 @@
 import nodeCron from "node-cron";
 import { type BotOutput, type AgentWithSchedule } from "../models.ts";
-import { LLM_ID, notification, runAgent } from "../routes/router.ts";
+import { LLM_ID, LLM_NAME, notification, runAgent } from "../routes/router.ts";
 import { type StreamUtils } from "../routes/utils.ts";
 import { createAgent } from "./bots.ts";
 
@@ -32,11 +32,12 @@ export async function setAgents(
       return [id, { agent, cronTask, instructions } as AgentWithSchedule];
     }),
   );
+  //creates an "llm agent" in the same folder as the bots, but with the name "llm"
   const llmAgent: Promise<[string, AgentWithSchedule]> = createAgent(
     llmUrl,
     LLM_ID,
-    "llm",
-    process.cwd(),
+    LLM_NAME,
+    botDirectory,
     sessionStorageDirectory,
     mcpServerUrls,
     notification(streamUtils.sendToClient),

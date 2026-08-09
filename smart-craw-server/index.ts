@@ -33,6 +33,7 @@ import { manageBotFolder } from "./file_utils/bot_folder.ts";
 import { uiPath, botPath, isServerOnly } from "./locations.ts";
 import { handleStreamingMessage } from "./routes/utils.ts";
 import { generateServer } from "./server.ts";
+
 const startThink = process.env.START_THINK_TOKEN || "<think>";
 const endThink = process.env.END_THINK_TOKEN || "</think>";
 const sessionStorageDirectory =
