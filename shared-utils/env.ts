@@ -1,7 +1,7 @@
 import { cwd, env } from "node:process";
 import path from "node:path";
 export const sessionDirectory =
-  env.SESSION_STORAGE_LOCATION || path.join(cwd(), "./sessions");
+  env.SESSION_DIRECTORY || path.join(cwd(), "./sessions");
 export const startThinkToken = env.START_THINK_TOKEN || "<think>";
 export const endThinkToken = env.END_THINK_TOKEN || "</think>";
 const localWorkingDirectory = env.AGENT_CWD || cwd();

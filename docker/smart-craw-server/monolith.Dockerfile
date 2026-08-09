@@ -38,7 +38,7 @@ ENV STATIC_HTML_LOCATION="/app/dist"
 # don't manually set...keep this default
 ENV DB_LOCATION="/app/db"
 # don't manually set...keep this default
-ENV BOT_LOCATION="/app/bots"
+ENV AGENT_CWD="/app/bots"
 # don't manually set...keep this default
 ENV SESSION_STORAGE_LOCATION="/app/memory"
 ENV OPEN_API_COMPATIBLE_ENDPOINT="http://host.docker.internal:11434"
