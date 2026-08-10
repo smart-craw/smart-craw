@@ -32,6 +32,9 @@ logger.info(
 );
 logger.info(`API endpoint: ${process.env.OPEN_API_COMPATIBLE_ENDPOINT}`);
 logger.info(`MCP endpoints: ${mcpUrls.join(",")}`);
+//tools adopt the process.cwd()
+logger.info(`Working directory is ${workingDirectory}`);
+process.chdir(workingDirectory);
 
 const bot = new SignalBot({
   phoneNumber: `+1${process.env.SIGNAL_BOT_PHONE_NUMBER}`,
@@ -64,9 +67,9 @@ const onComplete = (fullMessage: string, isError: boolean) => {
 const sessionManager = createSessionManager(
   openAiEndpoint,
   sessionDirectory,
-  onComplete,
   workingDirectory,
   mcpUrls,
+  onComplete,
 );
 
 bot.addCommand({

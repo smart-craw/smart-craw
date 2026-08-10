@@ -66,6 +66,8 @@ mkdir $HOME/smart-craw/storage/memory/signal
 
 # location for agent to put files
 mkdir $HOME/smart-craw/storage/agents
+# location for signal to put files
+mkdir $HOME/smart-craw/storage/signal
 
 # mkdir so that docker compose doesn't (which has wrong file perms)
 mkdir $HOME/smart-craw/storage/db
