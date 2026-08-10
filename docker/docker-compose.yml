@@ -19,7 +19,8 @@ services:
     ports: [] # no host ports needed
     networks:
       - public-outbound # so this can hit host network (and internet)
-      - mcp-internal # so mcp can hit this
+      - mcp-internal-signal # so mcp can hit this
+      - mcp-internal-agent # so mcp can hit this
     image: ghcr.io/smart-craw/smart-craw-web-proxy:v0.5.7
 
   nginx: # proxy out to LLM service
@@ -32,33 +33,45 @@ services:
     environment:
       BACKEND_SERVICE: [your_openai_base_url_with_port]
 
-  code-mcp:
+  code-mcp-signal:
     networks:
-      - mcp-internal # private only
+      - mcp-internal-signal # private only
     image: ghcr.io/danielhstahl/mcp-code-execution:v0.2.0
     user: "appuser:1500" # same group as smart-craw-signal since both read/write to the same directory
     environment:
       HTTP_PROXY: http://squid-proxy:3128
       HTTPS_PROXY: http://squid-proxy:3128
     volumes: # docker compose creates these directories if they don't exist, but possibly with wrong permissions
-      # same storage location as smart-craw-signal and smart-craw-agent
+      # same storage location as smart-craw-signal
+      - $HOME/smart-craw/storage/signal:/app/code_location
+
+  code-mcp-agent:
+    networks:
+      - mcp-internal-agent # private only
+    image: ghcr.io/danielhstahl/mcp-code-execution:v0.2.0
+    user: "appuser:1500" # same group as smart-craw-signal since both read/write to the same directory
+    environment:
+      HTTP_PROXY: http://squid-proxy:3128
+      HTTPS_PROXY: http://squid-proxy:3128
+    volumes: # docker compose creates these directories if they don't exist, but possibly with wrong permissions
+      # same storage location as smart-craw-agent
       - $HOME/smart-craw/storage/agents:/app/code_location
 
   smart-craw-signal:
     networks:
       - signal-internal # so agent can hit internal signal and nginx
-      - mcp-internal # so agent can hit code-mcp
+      - mcp-internal-signal # so agent can hit code-mcp
     image: ghcr.io/smart-craw/smart-craw-signal:v0.5.7
     user: "node:1500" # same group as code-mcp since both read/write to the same directory
     volumes: # docker compose creates these directories if they don't exist, but possibly with wrong permissions
-      - "$HOME/smart-craw/storage/agents:/app/mounts"
+      - "$HOME/smart-craw/storage/signal:/app/mounts"
       - "$HOME/smart-craw/storage/memory/signal:/app/memory"
     environment:
       OPEN_API_COMPATIBLE_ENDPOINT: http://nginx:8080
       SIGNAL_BOT_PHONE_NUMBER: [yourbotphonenumber]
       SIGNAL_USER_ADMIN_NUMBER: [yourrealphonenumber]
       SIGNAL_REST_ENDPOINT: http://signal-cli-rest-api:8080
-      MCP_SERVER_LIST: '["http://code-mcp:8000/mcp"]'
+      MCP_SERVER_LIST: '["http://code-mcp-signal:8000/mcp"]'
       START_THINK_TOKEN: "<think>"
       END_THINK_TOKEN: "</think>"
     logging:
@@ -84,13 +97,14 @@ services:
   smart-craw-agent:
     networks:
       - agent-internal # isolate
+      - mcp-internal-agent
     image: ghcr.io/smart-craw/smart-craw-agent:v0.5.7
     user: "node:1500" # same group as code-mcp since both read/write to the same directory
     environment:
       OPEN_API_COMPATIBLE_ENDPOINT: http://nginx:8080
       START_THINK_TOKEN: "<|channel>"
       END_THINK_TOKEN: "<channel|>"
-      MCP_SERVER_LIST: '["http://code-mcp:8000/mcp"]'
+      MCP_SERVER_LIST: '["http://code-mcp-agent:8000/mcp"]'
     volumes: # docker compose creates these directories if they don't exist, but possibly with wrong permissions
       - "$HOME/smart-craw/storage/db:/app/db"
       - "$HOME/smart-craw/storage/agents:/app/bots"
@@ -103,7 +117,9 @@ networks:
     driver: bridge
   signal-internal:
     internal: true
-  mcp-internal:
+  mcp-internal-signal:
     internal: true
   agent-internal:
+    internal: true
+  mcp-internal-agent:
     internal: true

@@ -9,22 +9,21 @@ import { handleLLMResponse } from "./response.ts";
 
 export type SessionManager = ReturnType<typeof createSessionManager>;
 
+// There is a corresponding [sessionId] in the workingDirectory
+// Strands handles session memory
+// This sessionManager handles keeping the workingDirectory in sync
 export const createSessionManager = (
   llmUrl: string,
-  sessionStorageLocation: string,
-  onComplete: (fullMessage: string, isError: boolean) => void,
-  workingDirectory: string,
+  sessionMemoryDirectory: string, //for automatic storage of conversations
+  workingDirectory: string, //where actual work happens
   mcpServerUrls: string[],
+  onComplete: (fullMessage: string, isError: boolean) => void,
 ) => {
   let agent: Agent | undefined;
   const localAgentId = "agent";
   let currentSessionId: string = randomUUID();
   const queue: string[] = [];
   let running = false;
-
-  //tools adopt the process.cwd()
-  logger.info(`Working directory is ${workingDirectory}`);
-  process.chdir(workingDirectory);
 
   // while in theory no messages will arrive while
   // previous response is still running, this ensures that
@@ -72,27 +71,25 @@ export const createSessionManager = (
   };
 
   const startSession = async (sessionId: string) => {
-    const sessionDirectory = path.join(workingDirectory, sessionId);
+    const sessionWorkingDirectory = path.join(workingDirectory, sessionId);
     //does not error if directory already exists
-    await mkdir(sessionDirectory, { recursive: true });
+    await mkdir(sessionWorkingDirectory, { recursive: true });
     cancelMessage();
     agent = await createAgent(
       llmUrl,
       sessionId,
-      sessionDirectory,
-      sessionStorageLocation,
+      sessionWorkingDirectory,
+      sessionMemoryDirectory,
       localAgentId,
       mcpServerUrls,
     );
     return agent;
   };
 
-  const getSessionFolders = async () => {
-    const files = await readdir(sessionStorageLocation);
+  const getSessionFolders = async (directory: string) => {
+    const files = await readdir(directory);
     const fileStats = await Promise.all(
-      files.map((v) =>
-        Promise.all([v, stat(path.join(sessionStorageLocation, v))]),
-      ),
+      files.map((v) => Promise.all([v, stat(path.join(directory, v))])),
     );
     return fileStats
       .filter(([_, v]) => v.isDirectory())
@@ -102,15 +99,15 @@ export const createSessionManager = (
       }));
   };
 
-  // this ONLY gets from filesystem.  If you create a new session
-  // and IMMEDIATELY list all sessions, the newest won't be displayed
+  // this ONLY gets from memory filesystem.
+  // workingDirectory may have a different set of folders
   const getSessions = async () => {
-    const fileStats = await getSessionFolders();
+    const fileStats = await getSessionFolders(sessionMemoryDirectory);
     const sessions = await Promise.all(
       fileStats.map(async ({ sessionId }) => {
         //see https://strandsagents.com/docs/user-guide/concepts/agents/session-management/#file-storage-structure
         const latestSessionInfo = path.join(
-          sessionStorageLocation,
+          sessionMemoryDirectory,
           sessionId,
           "scopes",
           "agent",
@@ -138,7 +135,7 @@ export const createSessionManager = (
   };
 
   const loadLastSessionOrCreateInitial = async () => {
-    const sessionIds = await getSessionFolders();
+    const sessionIds = await getSessionFolders(workingDirectory);
     sessionIds.sort(
       (a, b) => b.fsCreatedAt.getTime() - a.fsCreatedAt.getTime(),
     );
@@ -157,5 +154,7 @@ export const createSessionManager = (
     getSessions,
     cancelMessage,
     loadLastSessionOrCreateInitial,
+    //exported for testing only
+    getSessionFolders,
   };
 };
