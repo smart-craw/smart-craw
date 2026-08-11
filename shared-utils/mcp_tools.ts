@@ -1,4 +1,4 @@
-import { tool, McpClient } from "@strands-agents/sdk";
+import { tool, McpClient, BeforeToolCallEvent } from "@strands-agents/sdk";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
 export function generateNoRuntimeInstructions(tools: string[]) {
@@ -22,15 +22,24 @@ export async function getAllMcps(mcpServerUrls: string[]) {
         transport: new StreamableHTTPClientTransport(new URL(url)),
       }),
   );
-  const mcpTools = (
-    await Promise.all(mcpClients.map((v) => v.listTools()))
-  ).flat();
-  return { mcpTools, mcpClients };
-}
-export function refreshMcps(clients: McpClient[]) {
-  clients.forEach((mcp) => {
-    if (mcp.connectionState !== "connected") {
-      mcp.connect();
-    }
+
+  const mcpToolsWithClient = await Promise.all(
+    mcpClients.map(async (v) => ({ client: v, tools: await v.listTools() })),
+  );
+
+  const mcpTools = mcpToolsWithClient.map((v) => v.tools).flat();
+
+  const mcpToolsToClient = new Map<string, McpClient>();
+  mcpToolsWithClient.forEach(({ client, tools }) => {
+    tools.forEach((tool) => mcpToolsToClient.set(tool.name, client));
   });
+  return { mcpTools, mcpToolsToClient };
+}
+
+export async function refreshMcps(
+  clients: Map<string, McpClient>,
+  event: BeforeToolCallEvent,
+) {
+  const client = clients.get(event.toolUse.name);
+  if (client) await client.connect(true);
 }

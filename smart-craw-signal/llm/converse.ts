@@ -43,7 +43,7 @@ export async function createAgent(
     sessionId,
     storage: new LocalFileStorage(sessionStorageLocation),
   });
-  const { mcpTools, mcpClients } = await getAllMcps(mcpServerUrls);
+  const { mcpTools, mcpToolsToClient } = await getAllMcps(mcpServerUrls);
   const mcpToolNames = mcpTools.map((v) => v.name);
   const bashInstructions = generateNoRuntimeInstructions(mcpToolNames);
   const tools = [bash, fileEditor, dateTimeTool, ...mcpTools];
@@ -68,9 +68,9 @@ export async function createAgent(
   agent.addHook(BeforeModelCallEvent, (event) => {
     logger.info(JSON.stringify(event, null, 2));
   });
-  agent.addHook(BeforeToolCallEvent, (event) => {
+  agent.addHook(BeforeToolCallEvent, async (event) => {
     blockProgramExecution(event, bashInstructions);
-    refreshMcps(mcpClients);
+    await refreshMcps(mcpToolsToClient, event);
     logger.info(JSON.stringify(event, null, 2));
   });
   return agent;
