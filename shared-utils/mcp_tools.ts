@@ -19,7 +19,7 @@ export async function getAllMcps(mcpServerUrls: string[]) {
   const mcpClients = mcpServerUrls.map(
     (url) =>
       new McpClient({
-        transport: new StreamableHTTPClientTransport(new URL(url)),
+        url,
       }),
   );
 
@@ -41,6 +41,6 @@ export async function refreshMcps(
   event: BeforeToolCallEvent,
 ) {
   const client = clients.get(event.toolUse.name);
-  //strands will automatically call 'connect' on the next tool invocation
-  if (client) await client.disconnect();
+  //recreation of transport on each connect
+  if (client) await client.connect(true);
 }
