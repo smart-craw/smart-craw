@@ -41,5 +41,6 @@ export async function refreshMcps(
   event: BeforeToolCallEvent,
 ) {
   const client = clients.get(event.toolUse.name);
-  if (client) await client.connect(true);
+  //strands will automatically call 'connect' on the next tool invocation
+  if (client) await client.disconnect();
 }
