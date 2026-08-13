@@ -16,8 +16,7 @@ import { fileEditor } from "@strands-agents/sdk/vended-tools/file-editor";
 import {
   dateTimeTool,
   generateNoRuntimeInstructions,
-  getAllMcps,
-  refreshMcps,
+  createAllMcpTools,
 } from "../../shared-utils/mcp_tools.ts";
 
 import { blockProgramExecution } from "../../shared-utils/utils.ts";
@@ -44,7 +43,7 @@ export async function createAgent(
     sessionId: botId,
     storage: new LocalFileStorage(sessionStorageDirectory),
   });
-  const { mcpTools, mcpToolsToClient } = await getAllMcps(mcpServerUrls);
+  const mcpTools = await createAllMcpTools(mcpServerUrls);
   const mcpToolNames = mcpTools.map((v) => v.name);
   const bashInstructions = generateNoRuntimeInstructions(mcpToolNames);
   const tools = [bash, fileEditor, dateTimeTool, ...mcpTools];
@@ -69,9 +68,8 @@ export async function createAgent(
   agent.addHook(BeforeModelCallEvent, (event) => {
     logger.info(JSON.stringify(event, null, 2));
   });
-  agent.addHook(BeforeToolCallEvent, async (event) => {
+  agent.addHook(BeforeToolCallEvent, (event) => {
     blockProgramExecution(event, bashInstructions);
-    await refreshMcps(mcpToolsToClient, event);
     logger.info(JSON.stringify(event, null, 2));
   });
   agent.addHook(InterruptEvent, (event) => {

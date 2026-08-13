@@ -1,4 +1,9 @@
-import { tool, McpClient, BeforeToolCallEvent } from "@strands-agents/sdk";
+import {
+  tool,
+  McpClient,
+  type JSONSchema,
+  type JSONValue,
+} from "@strands-agents/sdk";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
 export function generateNoRuntimeInstructions(tools: string[]) {
@@ -15,32 +20,44 @@ export const dateTimeTool = tool({
   },
 });
 
-export async function getAllMcps(mcpServerUrls: string[]) {
-  const mcpClients = mcpServerUrls.map(
-    (url) =>
-      new McpClient({
-        url,
-      }),
-  );
-
-  const mcpToolsWithClient = await Promise.all(
-    mcpClients.map(async (v) => ({ client: v, tools: await v.listTools() })),
-  );
-
-  const mcpTools = mcpToolsWithClient.map((v) => v.tools).flat();
-
-  const mcpToolsToClient = new Map<string, McpClient>();
-  mcpToolsWithClient.forEach(({ client, tools }) => {
-    tools.forEach((tool) => mcpToolsToClient.set(tool.name, client));
+function makeMcpClient(url: string) {
+  return new McpClient({
+    transport: new StreamableHTTPClientTransport(new URL(url)),
   });
-  return { mcpTools, mcpToolsToClient };
 }
 
-export async function refreshMcps(
-  clients: Map<string, McpClient>,
-  event: BeforeToolCallEvent,
-) {
-  const client = clients.get(event.toolUse.name);
-  //recreation of transport on each connect
-  if (client) await client.connect(true);
+function asToolArgs(input: unknown): { [x: string]: unknown } | undefined {
+  if (input === undefined) return undefined;
+  if (typeof input !== "object" || input === null) {
+    throw new Error(`Expected object arguments, got ${typeof input}`);
+  }
+  return input as { [x: string]: unknown };
+}
+async function createMcpTool(mcpServerUrl: string) {
+  const bootstrap = makeMcpClient(mcpServerUrl);
+  const mcpTools = await bootstrap.listTools();
+  await bootstrap.disconnect();
+
+  return mcpTools.map((mcpTool) =>
+    tool({
+      name: mcpTool.name,
+      description: mcpTool.description,
+      inputSchema: mcpTool.toolSpec.inputSchema as JSONSchema, // JSON schema straight from MCP
+      callback: async (input) => {
+        // fresh client + transport, every single call
+        const client = makeMcpClient(mcpServerUrl);
+        await client.connect();
+        const result = await client.client.callTool({
+          name: mcpTool.name,
+          arguments: asToolArgs(input),
+        });
+        await client.disconnect();
+        return result as unknown as JSONValue;
+      },
+    }),
+  );
+}
+
+export async function createAllMcpTools(mcpServerUrls: string[]) {
+  return (await Promise.all(mcpServerUrls.map(createMcpTool))).flat();
 }
