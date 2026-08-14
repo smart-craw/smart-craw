@@ -131,7 +131,22 @@ export const runAgent = (
     notification(streamUtils.sendToClient),
   );
 };
-
+export const routeDeleteSession = (
+  { id }: BotIdInput,
+  streamUtils: StreamUtils,
+  holdAgents: Map<string, AgentWithSchedule>,
+) => {
+  const agent = holdAgents.get(id);
+  if (agent) {
+    agent.agent.sessionManager?.deleteSession();
+  }
+  streamUtils.sendToClient(
+    JSON.stringify({
+      id,
+      action: Action.LlmDeleteSession,
+    }),
+  );
+};
 export const routeExecuteBot = (
   { id }: BotIdInput,
   streamUtils: StreamUtils,
