@@ -191,6 +191,14 @@ export function stopBot(ws: WebSocket, id: string) {
   );
 }
 
+export function clearLlmSession(ws: WebSocket) {
+  ws.send(
+    JSON.stringify({
+      path: "/llm/clear",
+    }),
+  );
+}
+
 export function getBots(ws: WebSocket) {
   ws.send(
     JSON.stringify({

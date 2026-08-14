@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import { Card, Space, Tag } from "antd";
-import { converseLlm, stopBot } from "../services/ws";
+import { clearLlmSession, converseLlm, stopBot } from "../services/ws";
 import { useAppStore } from "../state/store";
 import { Think, Sender } from "@ant-design/x";
 import { XMarkdown } from "@ant-design/x-markdown";
 import { SyncOutlined } from "@ant-design/icons";
+import { Button } from "antd";
+import { ClearOutlined } from "@ant-design/icons";
 
 const MainChat: React.FC = () => {
   const ws = useAppStore((state) => state.ws)!;
-
   const [command, setCommand] = useState("");
   const llmState = useAppStore((state) => state.llm);
   const startLlm = useAppStore((state) => state.startLlm);
@@ -27,9 +28,20 @@ const MainChat: React.FC = () => {
     stopBot(ws, id); //works on LLM as well
     finishLlm(true);
   };
+  const clearSession = (id: string) => {
+    setMessages(id, []);
+    clearLlmSession(ws);
+  };
   return (
     <Card title="Bot Playground">
       <Space orientation="vertical" style={{ width: "100%" }}>
+        <Button
+          type="primary"
+          onClick={() => clearSession(id)}
+          icon={<ClearOutlined />}
+        >
+          Clear Session
+        </Button>
         <Sender
           loading={isExecuting}
           value={command}

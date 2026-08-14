@@ -24,6 +24,8 @@ import {
   routeRemoveBot,
   routeStopBot,
   routeInstantiateLlm,
+  routeDeleteSession,
+  LLM_ID,
 } from "./routes/router.ts";
 import { setAgents } from "./llm_utils/agent_store.ts";
 import { logger } from "./logging.ts";
@@ -138,6 +140,9 @@ wss.on("connection", function connection(ws) {
       case "/llm/converse":
         const { message } = input as ConverseInput;
         routeExecuteLlm(message, streamUtils, holdAgents);
+        break;
+      case "/llm/clear":
+        routeDeleteSession({ id: LLM_ID }, streamUtils, holdAgents);
         break;
     }
     logger.debug(`received: ${data}`);

@@ -10,6 +10,7 @@ export const Action = {
   LlmInstantiate: "llminstantiate",
   ExecutionStarted: "executionstarted",
   ToolMessage: "toolmessage",
+  LlmDeleteSession: "deletesession",
 } as const;
 
 export type ActionType = (typeof Action)[keyof typeof Action];
