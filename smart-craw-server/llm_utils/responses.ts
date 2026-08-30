@@ -14,7 +14,6 @@ export async function handleLLMResponse(
       switch (msg.type) {
         case "modelStreamUpdateEvent": {
           const { event } = msg;
-          console.log(event);
           if (event.type === "modelContentBlockDeltaEvent") {
             if (
               event.delta.type === "reasoningContentDelta" &&
