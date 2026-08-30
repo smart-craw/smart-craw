@@ -8,7 +8,6 @@ export async function handleLLMResponse(
   onComplete: (id: string, message: string, reasoning: string) => void,
   notificationCb: (message: string, type: string) => void,
 ) {
-  let isThinking = false; //default to no thinking
   //need to ensure the app doesn't completely crash if claude errors
   try {
     for await (const msg of query) {
@@ -16,12 +15,21 @@ export async function handleLLMResponse(
         case "modelStreamUpdateEvent": {
           const { event } = msg;
           if (event.type === "modelContentBlockDeltaEvent") {
-            if (event.delta.type === "textDelta") {
-              isThinking = streamUtils.detectThinking(
+            if (
+              event.delta.type === "reasoningContentDelta" &&
+              event.delta.text
+            ) {
+              streamUtils.sendMessage(
                 event.delta.text,
-                isThinking,
+                id,
+                /* isThinking */ true,
               );
-              streamUtils.sendMessage(event.delta.text, id, isThinking);
+            } else if (event.delta.type === "textDelta") {
+              streamUtils.sendMessage(
+                event.delta.text,
+                id,
+                /* isThinking */ false,
+              );
             }
           }
           break;

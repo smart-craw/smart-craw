@@ -9,7 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/ws": {
-        target: "ws://localhost:8080",
+        target: "ws://localhost:8000",
         changeOrigin: true,
         ws: true,
         rewrite: (path: string) => path,
