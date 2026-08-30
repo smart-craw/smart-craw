@@ -32,7 +32,7 @@ export async function createAgent(
   const model = new OpenAIModel({
     api: "chat",
     apiKey: "helloworld",
-    contextWindowLimit: 256_000, //needed to get proactive compaction working correctly
+    contextWindowLimit: 128_000, //needed to get proactive compaction working correctly
     clientConfig: {
       baseURL: llmUrl,
     },

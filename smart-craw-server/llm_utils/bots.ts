@@ -9,7 +9,7 @@ import {
   BeforeModelCallEvent,
   InterruptEvent,
 } from "@strands-agents/sdk";
-import { OpenAIModel } from "@strands-agents/sdk/models/openai";
+import { AnthropicModel } from "@strands-agents/sdk/models/anthropic";
 import { LocalFileStorage } from "@strands-agents/sdk/storage";
 import { bash } from "@strands-agents/sdk/vended-tools/bash";
 import { fileEditor } from "@strands-agents/sdk/vended-tools/file-editor";
@@ -30,13 +30,13 @@ export async function createAgent(
   mcpServerUrls: string[],
   notificationCb: (message: string, type: string) => void,
 ): Promise<Agent> {
-  const model = new OpenAIModel({
-    api: "chat",
+  //anthropic reasoning is fuly supported
+  const model = new AnthropicModel({
     apiKey: "helloworld",
-    contextWindowLimit: 256_000, //needed to get proactive compaction working correctly
-    clientConfig: {
-      baseURL: llmUrl,
-    },
+    modelId: "local-model",
+    maxTokens: 1028,
+    contextWindowLimit: 128_000, //needed to get proactive compaction working correctly
+    clientConfig: { baseURL: llmUrl },
   });
 
   const session = new SessionManager({
