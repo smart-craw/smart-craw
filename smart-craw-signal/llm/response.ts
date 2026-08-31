@@ -4,25 +4,6 @@ export interface SplitReasoning {
   reasoning: string;
   message: string;
 }
-export const parseMessage = (
-  startThink: string,
-  endThink: string,
-  text: string,
-) => {
-  if (text.includes(endThink)) {
-    const [reasoning, message] = text.split(endThink);
-    return {
-      reasoning: reasoning.replace(startThink, "").trim(),
-      message: (message || "").trim(),
-    } as SplitReasoning;
-  } else {
-    //not a reasoning model
-    return {
-      reasoning: "",
-      message: text.trim(),
-    } as SplitReasoning;
-  }
-};
 
 export async function handleLLMResponse(
   query: AsyncGenerator<AgentStreamEvent, AgentResult, undefined>,
@@ -40,7 +21,7 @@ export async function handleLLMResponse(
           ) {
             onComplete(
               result.lastMessage.content
-                .filter((v) => v.type === "textBlock")
+                .filter((v) => v.type === "textBlock") //if want to capture reasoning, need to filter on reasoningBlock
                 .reduce((agg, curr) => agg + curr.text, ""),
               false,
             );

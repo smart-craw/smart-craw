@@ -7,8 +7,6 @@ export type StreamUtils = {
     isThinking: boolean,
     isTool?: boolean,
   ) => void;
-  parseCompleteMessage: (text: string) => SplitReasoning;
-  detectThinking: (text: string, isThinking: boolean) => boolean;
   sendToClient: (message: string) => void;
 };
 export interface SplitReasoning {
@@ -17,8 +15,6 @@ export interface SplitReasoning {
 }
 export function handleStreamingMessage(
   sendToClient: (message: string) => void,
-  startThink: string,
-  endThink: string,
 ): StreamUtils {
   return {
     sendMessage: (
@@ -29,39 +25,12 @@ export function handleStreamingMessage(
     ) => {
       sendToClient(
         JSON.stringify({
-          message: message.replace(startThink, "").replace(endThink, ""),
+          message,
           id,
           isThinking,
           action: isTool ? Action.ToolMessage : Action.AssistantMessage,
         }),
       );
-    },
-    parseCompleteMessage: (text: string) => {
-      if (text.includes(endThink)) {
-        const [reasoning, message] = text.split(endThink);
-        return {
-          reasoning: reasoning.replace(startThink, "").trim(),
-          message: (message || "").trim(),
-        } as SplitReasoning;
-      } else {
-        //not a reasoning model
-        return {
-          reasoning: "",
-          message: text.trim(),
-        } as SplitReasoning;
-      }
-    },
-    detectThinking: (text: string, isThinking: boolean) => {
-      if (text.includes(startThink)) {
-        // need the ternary in case startThink is the same as endThink
-        // otherwise could just return `true`
-        return isThinking ? false : true;
-      } else if (text.includes(endThink)) {
-        //only gets here if endThink is different from startThink
-        return false;
-      } else {
-        return isThinking;
-      }
     },
     sendToClient,
   };

@@ -46,11 +46,12 @@ export async function handleLLMResponse(
             result.stopReason === "endTurn" ||
             result.stopReason === "stopSequence"
           ) {
-            const text = result.lastMessage.content
+            const message = result.lastMessage.content
               .filter((v) => v.type === "textBlock")
               .reduce((agg, curr) => agg + curr.text, "");
-            const { message, reasoning } =
-              streamUtils.parseCompleteMessage(text);
+            const reasoning = result.lastMessage.content
+              .filter((v) => v.type === "reasoningBlock")
+              .reduce((agg, curr) => agg + curr.text, "");
             onComplete(id, message, reasoning);
           } else if (result.stopReason === "interrupt") {
             onComplete(id, "error", result.stopReason);

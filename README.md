@@ -51,7 +51,7 @@ docker run -p 8000:8000 -v $(pwd):/app/db \
 ghcr.io/smart-craw/smart-craw:v0.5.2
 ```
 
-On a Mac, you need to proxy remote calls through your host.  A simple way to do that is to run something like `socat TCP-LISTEN:9000,fork TCP:[yourllmurl]` in a seperate terminal (or using nohup), and then set `http://host.docker.internal:9000` as your OPEN_API_COMPATIBLE_ENDPOINT.  Alternatively, run the [example script](./example/startup_mac.sh) passing in `[yourllmurl]` (without the "http://") and the docker tag (eg, `v0.5.2`) as the arguments to the script.  Eg, `./example/startup_mac.sh llm.home:8080 v0.5.2 "<|channel>" "<channel|>"`.
+On a Mac, you need to proxy remote calls through your host.  A simple way to do that is to run something like `socat TCP-LISTEN:9000,fork TCP:[yourllmurl]` in a seperate terminal (or using nohup), and then set `http://host.docker.internal:9000` as your OPEN_API_COMPATIBLE_ENDPOINT.  Alternatively, run the [example script](./example/startup_mac.sh) passing in `[yourllmurl]` (without the "http://") and the docker tag (eg, `v0.6.1`) as the arguments to the script.  Eg, `./example/startup_mac.sh llm.home:8080 v0.6.1`.
 
 ### Full app with Docker Compose
 
@@ -131,8 +131,6 @@ Under no circumstances should you host this on a cloud system or expose your por
 Full env variables:
 * OPEN_API_COMPATIBLE_ENDPOINT (defaults to `http://host.docker.internal:11434`, local Ollama)
 * LOG_LEVEL (defaults to `info`)
-* START_THINK_TOKEN (start token for thinking, defaults to `<think/>`)
-* END_THINK_TOKEN (start token for thinking, defaults to `</think>`)
 * MCP_SERVER_LIST.  JSON string array of MCP urls
 
 ## Smart Craw UI
@@ -162,10 +160,8 @@ If you have a Google account you can create a new free phone number.
 
 ### Smart Craw Signal Env variables
 
-* OPEN_API_COMPATIBLE_ENDPOINT (defaults to "http://host.docker.internal:11434", local Ollama.  If using docker compose, don't update this in `docker-compose.yml`...instead update the BACKEND_SERVICE environment variable for `nginx`.)
+* LLAMA_CPP_ENDPOINT (defaults to "http://host.docker.internal:11434", local Ollama.  If using docker compose, don't update this in `docker-compose.yml`...instead update the BACKEND_SERVICE environment variable for `nginx`.)
 * LOG_LEVEL (defaults to "info")
-* START_THINK_TOKEN (start token for thinking, defaults to "<think>")
-* END_THINK_TOKEN (start token for thinking, defaults to "</think>")
 * SIGNAL_BOT_PHONE_NUMBER (your free phone number from Google)
 * SIGNAL_USER_ADMIN_NUMBER (your actual phone number)
 * SIGNAL_REST_ENDPOINT (endpoint exposed by signal server docker, defaults to http://localhost:9001)

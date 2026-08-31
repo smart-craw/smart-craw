@@ -9,17 +9,14 @@ async function loadSignalBot() {
 }
 const { SignalBot } = await loadSignalBot();
 import "dotenv/config";
-import { parseMessage } from "./llm/response.ts";
 import { logger } from "./logging.ts";
 import { createSessionManager } from "./llm/session.ts";
 
 import {
-  startThinkToken,
-  endThinkToken,
   workingDirectory,
   sessionDirectory,
   mcpUrls,
-  openAiEndpoint,
+  llamaCppEndpoint,
 } from "../shared-utils/env.ts";
 
 const adminNumber = `+1${process.env.SIGNAL_USER_ADMIN_NUMBER}`;
@@ -27,10 +24,7 @@ const signalUrl = process.env.SIGNAL_REST_ENDPOINT || "http://localhost:9001";
 
 const commandPrefix = "/";
 
-logger.info(
-  `Start think token: ${startThinkToken}, End think Token ${endThinkToken}`,
-);
-logger.info(`API endpoint: ${process.env.OPEN_API_COMPATIBLE_ENDPOINT}`);
+logger.info(`API endpoint: ${llamaCppEndpoint}`);
 logger.info(`MCP endpoints: ${mcpUrls.join(",")}`);
 //tools adopt the process.cwd()
 logger.info(`Working directory is ${workingDirectory}`);
@@ -55,17 +49,12 @@ const onComplete = (fullMessage: string, isError: boolean) => {
   if (isError) {
     bot.sendMessage(`Bot didn't complete successfully! ${fullMessage}`);
   } else {
-    const { reasoning, message } = parseMessage(
-      startThinkToken,
-      endThinkToken,
-      fullMessage,
-    );
-    bot.sendMessage(message);
-    logger.debug(`Reasoning: ${reasoning}, Message: ${message}`);
+    bot.sendMessage(fullMessage);
+    logger.debug(`Message: ${fullMessage}`);
   }
 };
 const sessionManager = createSessionManager(
-  openAiEndpoint,
+  llamaCppEndpoint,
   sessionDirectory,
   workingDirectory,
   mcpUrls,
