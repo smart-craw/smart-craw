@@ -6,7 +6,7 @@ import {
   BeforeToolCallEvent,
   BeforeModelCallEvent,
 } from "@strands-agents/sdk";
-import { OpenAIModel } from "@strands-agents/sdk/models/openai";
+import { AnthropicModel } from "@strands-agents/sdk/models/anthropic";
 import { logger } from "../logging.ts";
 import { getSystemPrompt } from "./prompt.ts";
 
@@ -29,13 +29,12 @@ export async function createAgent(
   agentId: string,
   mcpServerUrls: string[],
 ) {
-  const model = new OpenAIModel({
-    api: "chat",
+  const model = new AnthropicModel({
     apiKey: "helloworld",
+    modelId: "local-model",
+    maxTokens: 1028,
     contextWindowLimit: 128_000, //needed to get proactive compaction working correctly
-    clientConfig: {
-      baseURL: llmUrl,
-    },
+    clientConfig: { baseURL: llmUrl },
   });
 
   const session = new SessionManager({
@@ -69,7 +68,6 @@ export async function createAgent(
   });
   agent.addHook(BeforeToolCallEvent, (event) => {
     blockProgramExecution(event, bashInstructions);
-    //await refreshMcps(mcpToolsToClient, event);
     logger.info(JSON.stringify(event, null, 2));
   });
   return agent;

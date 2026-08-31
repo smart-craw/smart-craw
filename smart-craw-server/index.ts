@@ -36,19 +36,16 @@ import { handleStreamingMessage } from "./routes/utils.ts";
 import { generateServer } from "./server.ts";
 
 import {
-  startThinkToken,
-  endThinkToken,
   workingDirectory,
   sessionDirectory,
   mcpUrls,
-  openAiEndpoint,
+  llamaCppEndpoint,
 } from "../shared-utils/env.ts";
 
 if (!isServerOnly) {
   logger.debug(`UI path: ${uiPath}`);
 }
 logger.info(`Bot path: ${workingDirectory}`);
-logger.info(`Start and end tokens: ${startThinkToken}, ${endThinkToken}`);
 //tools adopt the process.cwd()
 process.chdir(workingDirectory);
 
@@ -68,14 +65,10 @@ const writeAllClients = (wss: WebSocketServer) => (message: string) => {
 createDirectoriesOnStart(workingDirectory, getBots);
 
 //Global state
-const streamUtils = handleStreamingMessage(
-  writeAllClients(wss),
-  startThinkToken,
-  endThinkToken,
-);
+const streamUtils = handleStreamingMessage(writeAllClients(wss));
 
 const holdAgents = await setAgents(
-  openAiEndpoint,
+  llamaCppEndpoint,
   getBots,
   streamUtils,
   workingDirectory,
@@ -87,7 +80,7 @@ const holdAgents = await setAgents(
 //pass wss to anything that writes back, and write back to ALL
 wss.on("connection", function connection(ws) {
   logger.info("Connection established");
-  logger.info(`LLM server url: ${openAiEndpoint}`);
+  logger.info(`LLM server url: ${llamaCppEndpoint}`);
   ws.on("error", (err) => {
     logger.error(err);
   });
@@ -97,7 +90,7 @@ wss.on("connection", function connection(ws) {
       case "/bot/create":
         routeCreateBot(
           input as CreateBotInput,
-          openAiEndpoint,
+          llamaCppEndpoint,
           workingDirectory,
           manageBotFolder(workingDirectory, getBot),
           sessionDirectory,
