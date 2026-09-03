@@ -39,13 +39,14 @@ import {
   workingDirectory,
   sessionDirectory,
   mcpUrls,
-  llamaCppEndpoint,
+  anthropicEndpoint,
 } from "../shared-utils/env.ts";
 
 if (!isServerOnly) {
   logger.debug(`UI path: ${uiPath}`);
 }
 logger.info(`Bot path: ${workingDirectory}`);
+logger.info(`LLM server url: ${anthropicEndpoint}`);
 //tools adopt the process.cwd()
 process.chdir(workingDirectory);
 
@@ -68,7 +69,7 @@ createDirectoriesOnStart(workingDirectory, getBots);
 const streamUtils = handleStreamingMessage(writeAllClients(wss));
 
 const holdAgents = await setAgents(
-  llamaCppEndpoint,
+  anthropicEndpoint,
   getBots,
   streamUtils,
   workingDirectory,
@@ -80,7 +81,6 @@ const holdAgents = await setAgents(
 //pass wss to anything that writes back, and write back to ALL
 wss.on("connection", function connection(ws) {
   logger.info("Connection established");
-  logger.info(`LLM server url: ${llamaCppEndpoint}`);
   ws.on("error", (err) => {
     logger.error(err);
   });
@@ -90,7 +90,7 @@ wss.on("connection", function connection(ws) {
       case "/bot/create":
         routeCreateBot(
           input as CreateBotInput,
-          llamaCppEndpoint,
+          anthropicEndpoint,
           workingDirectory,
           manageBotFolder(workingDirectory, getBot),
           sessionDirectory,

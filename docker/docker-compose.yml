@@ -103,7 +103,7 @@ services:
     image: ghcr.io/smart-craw/smart-craw-agent:v0.6.1
     user: "node:1500" # same group as code-mcp since both read/write to the same directory
     environment:
-      LLAMA_CPP_ENDPOINT: http://nginx:8080
+      ANTHROPIC_COMPATIBLE_ENDPOINT: http://nginx:8080
       MCP_SERVER_LIST: '["http://code-mcp-agent:8000/mcp", "http://nginx-github:8080/mcp"]'
     volumes: # docker compose creates these directories if they don't exist, but possibly with wrong permissions
       - "$HOME/smart-craw/storage/db:/app/db"
@@ -120,7 +120,7 @@ services:
       - "$HOME/smart-craw/storage/signal:/app/mounts"
       - "$HOME/smart-craw/storage/memory/signal:/app/memory"
     environment:
-      LLAMA_CPP_ENDPOINT: http://nginx:8080
+      ANTHROPIC_COMPATIBLE_ENDPOINT: http://nginx:8080
       SIGNAL_BOT_PHONE_NUMBER: [yourbotphonenumber]
       SIGNAL_USER_ADMIN_NUMBER: [yourrealphonenumber]
       SIGNAL_REST_ENDPOINT: http://signal-cli-rest-api:8080

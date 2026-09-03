@@ -50,7 +50,7 @@ export async function handleLLMResponse(
               .filter((v) => v.type === "textBlock")
               .reduce((agg, curr) => agg + curr.text, "");
             const reasoning = result.lastMessage.content
-              .filter((v) => v.type === "reasoningBlock")
+              .filter((v) => v.type === "reasoningBlock") //this typically isn't filled out, but UI doesn't require it
               .reduce((agg, curr) => agg + curr.text, "");
             onComplete(id, message, reasoning);
           } else if (result.stopReason === "interrupt") {
