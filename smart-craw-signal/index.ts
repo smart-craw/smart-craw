@@ -16,7 +16,7 @@ import {
   workingDirectory,
   sessionDirectory,
   mcpUrls,
-  llamaCppEndpoint,
+  anthropicEndpoint,
 } from "../shared-utils/env.ts";
 
 const adminNumber = `+1${process.env.SIGNAL_USER_ADMIN_NUMBER}`;
@@ -24,7 +24,7 @@ const signalUrl = process.env.SIGNAL_REST_ENDPOINT || "http://localhost:9001";
 
 const commandPrefix = "/";
 
-logger.info(`API endpoint: ${llamaCppEndpoint}`);
+logger.info(`API endpoint: ${anthropicEndpoint}`);
 logger.info(`MCP endpoints: ${mcpUrls.join(",")}`);
 //tools adopt the process.cwd()
 logger.info(`Working directory is ${workingDirectory}`);
@@ -54,7 +54,7 @@ const onComplete = (fullMessage: string, isError: boolean) => {
   }
 };
 const sessionManager = createSessionManager(
-  llamaCppEndpoint,
+  anthropicEndpoint,
   sessionDirectory,
   workingDirectory,
   mcpUrls,
@@ -150,7 +150,7 @@ bot.addCommand({
 bot.on("message", (msg) => {
   const sender = msg.source;
   if (sender !== adminNumber) {
-    console.error(`Unrecognized number ${sender}`);
+    logger.error(`Unrecognized number ${sender}`);
     return;
   }
   sessionManager.queueMessage(msg.message);

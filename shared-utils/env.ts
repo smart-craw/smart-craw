@@ -13,5 +13,5 @@ export const mcpUrls = env.MCP_SERVER_LIST
   ? JSON.parse(env.MCP_SERVER_LIST)
   : [];
 
-export const llamaCppEndpoint =
-  env.LLAMA_CPP_ENDPOINT || "http://localhost:11434";
+export const anthropicEndpoint =
+  env.ANTHROPIC_COMPATIBLE_ENDPOINT || "http://localhost:11434";

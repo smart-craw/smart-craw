@@ -34,7 +34,7 @@ export async function createAgent(
   const model = new AnthropicModel({
     apiKey: "helloworld",
     modelId: "local-model",
-    maxTokens: 1028,
+    maxTokens: -1,
     contextWindowLimit: 128_000, //needed to get proactive compaction working correctly
     clientConfig: { baseURL: llmUrl },
   });
