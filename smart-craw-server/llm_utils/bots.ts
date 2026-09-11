@@ -20,6 +20,7 @@ import {
 } from "../../shared-utils/mcp_tools.ts";
 
 import { blockProgramExecution } from "../../shared-utils/utils.ts";
+import { modelId } from "../../shared-utils/env.ts";
 
 export async function createAgent(
   llmUrl: string,
@@ -33,8 +34,8 @@ export async function createAgent(
   //anthropic reasoning is fuly supported
   const model = new AnthropicModel({
     apiKey: "helloworld",
-    modelId: "local-model",
-    maxTokens: -1,
+    modelId,
+    maxTokens: 16_384,
     contextWindowLimit: 128_000, //needed to get proactive compaction working correctly
     clientConfig: { baseURL: llmUrl },
   });

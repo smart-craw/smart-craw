@@ -132,6 +132,7 @@ Full env variables:
 * ANTHROPIC_COMPATIBLE_ENDPOINT (defaults to `http://host.docker.internal:11434`, local Ollama)
 * LOG_LEVEL (defaults to `info`)
 * MCP_SERVER_LIST.  JSON string array of MCP urls
+* MODEL_ID.  Defaults to halogen-qwen3.8-flash-next.
 
 ## Smart Craw UI
 
@@ -166,6 +167,7 @@ If you have a Google account you can create a new free phone number.
 * SIGNAL_USER_ADMIN_NUMBER (your actual phone number)
 * SIGNAL_REST_ENDPOINT (endpoint exposed by signal server docker, defaults to http://localhost:9001)
 * MCP_SERVER_LIST.  JSON string array of MCP urls
+* MODEL_ID.  Defaults to halogen-qwen3.8-flash-next.
 
 These can also be placed in a .env file.
 

@@ -22,7 +22,7 @@
   "scripts": {
     "test": "vitest",
     "init_db": "node db_utils/create_db.ts",
-    "start": "PORT=8080 node index.ts",
+    "start": "PORT=8000 node index.ts",
     "generate_json_schema": "typescript-json-schema ../shared/models.ts '*' --required  --out ./api_docs/models.json",
     "generate_single_doc": "node ./scripts/merge.ts"
   },
