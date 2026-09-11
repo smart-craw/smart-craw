@@ -15,3 +15,5 @@ export const mcpUrls = env.MCP_SERVER_LIST
 
 export const anthropicEndpoint =
   env.ANTHROPIC_COMPATIBLE_ENDPOINT || "http://localhost:11434";
+
+export const modelId = env.MODEL_ID || "halogen-qwen3.8-flash-next";

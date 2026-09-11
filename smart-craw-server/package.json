@@ -22,7 +22,7 @@
   "scripts": {
     "test": "vitest",
     "init_db": "node db_utils/create_db.ts",
-    "start": "PORT=8080 node index.ts",
+    "start": "PORT=8000 node index.ts",
     "generate_json_schema": "typescript-json-schema ../shared/models.ts '*' --required  --out ./api_docs/models.json",
     "generate_single_doc": "node ./scripts/merge.ts"
   },
@@ -44,9 +44,9 @@
     "@types/node-cron": "^3.0.11",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.18.1",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^5.0.0",
     "typescript": "^5.9.3",
     "typescript-json-schema": "^0.67.1",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.0"
   }
 }
