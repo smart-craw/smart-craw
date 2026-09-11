@@ -46,7 +46,7 @@
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^5.0.0",
     "typescript": "^5.9.3",
-    "typescript-json-schema": "^0.67.1",
+    "typescript-json-schema": "^0.68.0",
     "vitest": "^5.0.0"
   }
 }
