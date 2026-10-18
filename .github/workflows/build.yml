@@ -2,6 +2,20 @@ on:
   release:
     types: [published]
 jobs:
+  upload_docker_compose:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: upload artifact
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          sed -i 's/{{ TAG }}/${{ github.event.release.tag_name }}/g' docker/docker-compose.yml
+          gh release upload ${{ github.event.release.tag_name }} docker/docker-compose.yml
+
   build_smart_craw:
     runs-on: ubuntu-latest
     permissions:
