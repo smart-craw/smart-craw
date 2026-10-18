@@ -93,7 +93,7 @@ services:
       AGENT_SERVICE: http://smart-craw-agent:8000
       ALLOWED_IP_ADDRESS: "{{ HOST_SERVICE_IP }}"
     volumes:
-      - "path/to/your/certs:/etc/nginx/certs"
+      - "{{ CERT_PATH }}:/etc/nginx/certs"
 
   smart-craw-agent:
     networks:
