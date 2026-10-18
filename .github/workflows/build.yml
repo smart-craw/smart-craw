@@ -14,6 +14,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           sed -i 's/{{ TAG }}/${{ github.event.release.tag_name }}/g' docker/docker-compose.yml
+          cat docker/docker-compose.yml
           gh release upload ${{ github.event.release.tag_name }} docker/docker-compose.yml
 
   build_smart_craw:
