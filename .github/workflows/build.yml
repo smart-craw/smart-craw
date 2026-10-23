@@ -16,6 +16,26 @@ jobs:
           cat docker/docker-compose.yml
           gh release upload ${{ github.event.release.tag_name }} docker/docker-compose.yml
 
+  upload_raw_html:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./smart-craw-ui
+    permissions:
+      contents: write # release changes require contents write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.1.0"
+      - name: upload artifact
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          npm run build
+          tar -czf static-html.tar.gz dist
+          gh release upload ${{ github.event.release.tag_name }} static-html.tar.gz
+
   build_smart_craw:
     runs-on: ubuntu-latest
     permissions:
