@@ -7,6 +7,12 @@ RUN ls -la
 RUN npm run build
 
 FROM nginx:stable-alpine3.21-perl
+ENV UI_TLS=tls
+
+COPY docker/smart-craw-ui/listen-plain.conf docker/smart-craw-ui/listen-tls.conf /etc/nginx/snippets/
+COPY docker/smart-craw-ui/check-tls.sh /usr/local/bin/check-tls.sh
+RUN chmod +x /usr/local/bin/check-tls.sh
+
 ADD docker/smart-craw-ui/nginx.entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 ADD docker/smart-craw-ui/nginx.conf /etc/nginx/nginx.conf.template
 COPY --from=builder /app/smart-craw-ui/dist /app/dist/
