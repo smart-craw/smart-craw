@@ -32,6 +32,7 @@ jobs:
         working-directory: smart-craw-server
         run: |
           npm ci
+          node db_utils/create_db.ts
           set +e
           timeout 60s  node index.ts
           code=$?
