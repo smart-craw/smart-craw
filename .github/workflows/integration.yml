@@ -1,0 +1,45 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [master]
+
+  pull_request:
+    branches: [master]
+
+jobs:
+  integration-with-mcp:
+    name: Run integration tests against MCP
+    env:
+      MCP_TAG: v0.2.1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: run image in background
+        run: |
+          docker run -p 7999:8000 ghcr.io/danielhstahl/mcp-code-execution:${{ env.MCP_TAG }} & # nohup
+
+      - name: Wait for port 7999
+        run: |
+          # Loop until localhost:7999 returns a 200 OK
+          timeout 60s bash -c 'until curl -s localhost:7999; do sleep 1; done'
+
+      - name: Run agent
+        env:
+          MCP_SERVER_LIST: '["http://localhost:7999/mcp"]'
+        working-directory: smart-craw-server
+        run: |
+          npm ci
+          set +e
+          timeout 60s  node index.ts
+          code=$?
+          set -e
+
+          if [ "$code" -eq 124 ]; then
+            echo "Server was still running after 60s. Success."
+          else
+            echo "Server exited early with code $code. Failure."
+            exit 1
+          fi
