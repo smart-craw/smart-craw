@@ -9,6 +9,6 @@ trap 'kill %1' EXIT
 socat TCP-LISTEN:9000,fork TCP:$1 &
 
 docker run -p 8000:8000 \
-    -e LLAMA_CPP_ENDPOINT="http://host.docker.internal:9000" \
+    -e ANTHROPIC_COMPATIBLE_ENDPOINT="http://host.docker.internal:9000" \
     -v $(pwd):/app/db -v $(pwd):/app/bots -v $(pwd)/memory:/app/memory \
     --add-host=host.docker.internal:host-gateway ghcr.io/smart-craw/smart-craw:$2

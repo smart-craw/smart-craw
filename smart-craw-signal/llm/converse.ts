@@ -11,7 +11,7 @@ import { logger } from "../logging.ts";
 import { getSystemPrompt } from "./prompt.ts";
 
 import { bash } from "@strands-agents/sdk/vended-tools/bash";
-import { fileEditor } from "@strands-agents/sdk/vended-tools/file-editor";
+import { edit } from "@strands-agents/sdk/vended-tools/edit";
 import { LocalFileStorage } from "@strands-agents/sdk/storage";
 import {
   dateTimeTool,
@@ -45,7 +45,7 @@ export async function createAgent(
   const mcpTools = await createAllMcpTools(mcpServerUrls);
   const mcpToolNames = mcpTools.map((v) => v.name);
   const bashInstructions = generateNoRuntimeInstructions(mcpToolNames);
-  const tools = [bash, fileEditor, dateTimeTool, ...mcpTools];
+  const tools = [bash, edit, dateTimeTool, ...mcpTools];
 
   // Create an agent with tools
   const agent = new Agent({
